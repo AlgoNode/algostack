@@ -1,21 +1,17 @@
-import { merge } from 'lodash';
+import Options, { OptionsProps } from './modules/Options';
+import Filters from './modules/Filters';
 import Query from './modules/Query';
-import { Options } from './types';
 
 
 export default class Algolib {
-  protected options: Options;
+  public options: Options;
+  public filters: Filters;
   public query: Query;
 
-  constructor (options?: Options) {
-    this.options = merge({
-      mode: 'MAINNET',
-      indexerAPI: 'https://mainnet-idx.algonode.cloud',
-      nodeAPI: 'https://mainnet-api.algonode.cloud',
-    }, options);
-
-
-    this.query = new Query(this.options);
+  constructor (userOptions?: OptionsProps) {
+    this.options = new Options(userOptions);
+    this.filters = new Filters(this);
+    this.query = new Query(this);
   }
 
 }

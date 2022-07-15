@@ -1,7 +1,9 @@
+import Options, { OptionsProps } from './modules/Options';
+import Filters from './modules/Filters';
 import Query from './modules/Query';
-import { Options } from './types';
 export default class Algolib {
-    protected options: Options;
+    options: Options;
+    filters: Filters;
     query: Query;
-    constructor(options?: Options);
+    constructor(userOptions?: OptionsProps);
 }

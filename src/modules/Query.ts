@@ -1,8 +1,8 @@
 import axios from 'axios';
 import camelcaseKeys from 'camelcase-keys';
-import BaseModule from './Base';
-import { stringifyObjectValues } from '../helpers/object'; 
-
+import Algolib from '../index';
+import Filters from './Filters';
+import Options from './Options';
 
 export interface QueryParams {
   limit?: number,
@@ -13,28 +13,15 @@ export interface QueryParams {
 //
 // QUERY class
 // ----------------------------------------------
-export default class Query extends BaseModule {
-  constructor (...args: [any]) {
-    super(...args);
+export default class Query {
+  protected options: Options;
+  protected filters: Filters;
+  constructor(forwarded: Algolib) {
+    this.options = forwarded.options;
+    this.filters = forwarded.filters;
   }
 
-  //
-  // Fetch data
-  // ----------------------------------------------
-  private async fetchData(endpoint: string, params: QueryParams = {}) {
-    try {
-      const stringParams = stringifyObjectValues(params);
-      const queryString: string = new URLSearchParams(stringParams).toString();  
-      const response = await axios.get(`${this.options.indexerAPI}${endpoint}?${queryString}`);
-      const data = camelcaseKeys(response.data, {deep: true});
-      return data;
-    }
-    catch (error) {
-      console.dir(error);
-      return {};
-    }
-  }
-
+ 
   //
   // Query wrapper
   // ----------------------------------------------
@@ -57,6 +44,26 @@ export default class Query extends BaseModule {
       }
     }
     return data
+  }
+
+  
+  //
+  // Fetch data
+  // ----------------------------------------------
+  private async fetchData(endpoint: string, params: QueryParams = {}) {
+    try {
+      let filteredParams: {[k:string]: string};
+      filteredParams = this.filters.stringifyValues(params);
+      filteredParams = this.filters.convertCaseIn(filteredParams); 
+      const queryString: string = new URLSearchParams(filteredParams).toString();  
+      const response = await axios.get(`${this.options.indexerAPI}${endpoint}?${queryString}`);
+      const data = this.filters.convertCaseOut(response.data);
+      return data;
+    }
+    catch (error) {
+      console.dir(error);
+      return {};
+    }
   }
 
 
@@ -109,3 +116,4 @@ export default class Query extends BaseModule {
   }
 
 }
+

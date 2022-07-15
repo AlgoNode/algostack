@@ -1,19 +1,4 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -75,48 +60,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var axios_1 = __importDefault(require("axios"));
-var camelcase_keys_1 = __importDefault(require("camelcase-keys"));
-var Base_1 = __importDefault(require("./Base"));
-var object_1 = require("../helpers/object");
 //
 // QUERY class
 // ----------------------------------------------
-var Query = /** @class */ (function (_super) {
-    __extends(Query, _super);
-    function Query() {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        return _super.apply(this, args) || this;
+var Query = /** @class */ (function () {
+    function Query(forwarded) {
+        this.options = forwarded.options;
+        this.filters = forwarded.filters;
     }
-    //
-    // Fetch data
-    // ----------------------------------------------
-    Query.prototype.fetchData = function (endpoint, params) {
-        if (params === void 0) { params = {}; }
-        return __awaiter(this, void 0, void 0, function () {
-            var stringParams, queryString, response, data, error_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        stringParams = (0, object_1.stringifyObjectValues)(params);
-                        queryString = new URLSearchParams(stringParams).toString();
-                        return [4 /*yield*/, axios_1.default.get("".concat(this.options.indexerAPI).concat(endpoint, "?").concat(queryString))];
-                    case 1:
-                        response = _a.sent();
-                        data = (0, camelcase_keys_1.default)(response.data, { deep: true });
-                        return [2 /*return*/, data];
-                    case 2:
-                        error_1 = _a.sent();
-                        console.dir(error_1);
-                        return [2 /*return*/, {}];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        });
-    };
     //
     // Query wrapper
     // ----------------------------------------------
@@ -151,6 +102,35 @@ var Query = /** @class */ (function (_super) {
                         });
                         return [3 /*break*/, 2];
                     case 4: return [2 /*return*/, data];
+                }
+            });
+        });
+    };
+    //
+    // Fetch data
+    // ----------------------------------------------
+    Query.prototype.fetchData = function (endpoint, params) {
+        if (params === void 0) { params = {}; }
+        return __awaiter(this, void 0, void 0, function () {
+            var filteredParams, queryString, response, data, error_1;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        filteredParams = void 0;
+                        filteredParams = this.filters.stringifyValues(params);
+                        filteredParams = this.filters.convertCaseIn(filteredParams);
+                        queryString = new URLSearchParams(filteredParams).toString();
+                        return [4 /*yield*/, axios_1.default.get("".concat(this.options.indexerAPI).concat(endpoint, "?").concat(queryString))];
+                    case 1:
+                        response = _a.sent();
+                        data = this.filters.convertCaseOut(response.data);
+                        return [2 /*return*/, data];
+                    case 2:
+                        error_1 = _a.sent();
+                        console.dir(error_1);
+                        return [2 /*return*/, {}];
+                    case 3: return [2 /*return*/];
                 }
             });
         });
@@ -297,5 +277,5 @@ var Query = /** @class */ (function (_super) {
         });
     };
     return Query;
-}(Base_1.default));
+}());
 exports.default = Query;
