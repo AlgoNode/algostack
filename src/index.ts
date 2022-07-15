@@ -13,5 +13,6 @@ export default class Algolib {
     this.filters = new Filters(this);
     this.query = new Query(this);
   }
-
 }
+
+
