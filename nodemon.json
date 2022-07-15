@@ -1,0 +1,6 @@
+{
+  "watch": ["src"],
+  "delay": 1,
+  "ext": "ts, tsx, jsx",
+  "exec" : "tsc & node ./dist/index.js"
+}
