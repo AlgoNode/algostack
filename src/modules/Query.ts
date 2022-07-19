@@ -1,5 +1,4 @@
 import axios from 'axios';
-import camelcaseKeys from 'camelcase-keys';
 import Algolib from '../index';
 import Filters from './Filters';
 import Options from './Options';
