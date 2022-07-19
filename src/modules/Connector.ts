@@ -66,15 +66,12 @@ export default class Connector {
 
         this.client.on("connect", (error, payload) => {
           if (error) throw error;
-          console.log('connected');
           this.addresses = payload.params[0];
           resolve(this.addresses);
         });
 
         this.client.on("session_update", (error, payload) => {
           if (error)  throw error;
-          const { accounts } = payload.params[0];
-          console.log('updated', accounts);
           this.addresses = payload.params[0];
           this.sign = this.client.sendCustomRequest;
           resolve(this.addresses);
@@ -92,12 +89,12 @@ export default class Connector {
     });
   }
   
+  
   //
   // disconnect
   // ----------------------------------------------
   disconnect() {
     if (this.connected === 'pera') {
-      console.log('kill')
       this.client.killSession();
     }
     this.connected = undefined;

@@ -1,5 +1,5 @@
-// import camelcaseKeys from 'camelcase-keys';
-// import snakecaseKeys from 'snakecase-keys';
+import camelcaseKeys from 'camelcase-keys';
+import snakecaseKeys from 'snakecase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
 import Algolib from '../index';
 import Options, { Cases } from './Options';
@@ -19,8 +19,8 @@ export default class Filters {
   // ----------------------------------------------
   public convertCase(obj: Object, toCase = this.options.convertCase as Cases) {
     if (toCase === 'none') return obj; 
-    // if (toCase === 'camelcase') return camelcaseKeys(obj, {deep:true});
-    // if (toCase === 'snakecase') return snakecaseKeys(obj, {deep:true});
+    if (toCase === 'camelcase') return camelcaseKeys(obj, {deep:true});
+    if (toCase === 'snakecase') return snakecaseKeys(obj, {deep:true});
     if (toCase === 'kebabcase') return kebabcaseKeys(obj, {deep:true});
   }
   public convertCaseOut = this.convertCase;
