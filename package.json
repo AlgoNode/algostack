@@ -17,6 +17,8 @@
   "devDependencies": {
     "@json-rpc-tools/utils": "^1.7.6",
     "@randlabs/myalgo-connect": "^1.2.0",
+    "@types/lodash": "^4.14.165",
+    "@types/node": "^13.13.15",
     "@walletconnect/client": "^1.7.8",
     "algorand-walletconnect-qrcode-modal": "^1.7.4",
     "algosdk": "^1.18.1",
@@ -24,10 +26,9 @@
     "buffer": "^6.0.3",
     "camelcase-keys": "^7.0.2",
     "kebabcase-keys": "^1.0.0",
-    "snakecase-keys": "^5.4.2",
     "lodash": "^4.17.19",
-    "@types/lodash": "^4.14.165",
-    "@types/node": "^13.13.15",
+    "snakecase-keys": "^5.4.2",
+    "tslib": "^2.4.0",
     "typescript": "^4.7.4"
   }
 }

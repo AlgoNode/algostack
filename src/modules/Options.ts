@@ -13,6 +13,10 @@ export interface OptionsProps {
   // The case to use for variables names. 
   // They'll be automatically converted when interacting with the blockchain.
   convertCase?: Cases,
+  // localstorage namespace
+  storageNamespace?: string,
+  // persist wallet connections, even after reload
+  persistConnection?: boolean,
 }
 
 
@@ -24,6 +28,8 @@ export default class Options {
   public indexerAPI = 'https://mainnet-idx.algonode.cloud';
   public nodeAPI = 'https://mainnet-api.algonode.cloud';
   public convertCase = 'none';
+  public storageNamespace = 'algolib';
+  public persistConnection = true;
 
   constructor (userOptions?: OptionsProps) {
     Object.assign(this, userOptions);
