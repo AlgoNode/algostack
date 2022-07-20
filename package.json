@@ -4,12 +4,27 @@
   "description": "",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./client": {
+      "import": "./dist/esm/modules/client.js",
+      "require": "./dist/cjs/modules/client.js"
+    },
+    "./query": {
+      "import": "./dist/esm/modules/query.js",
+      "require": "./dist/cjs/modules/query.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "/dist"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
-    "dev": "tsc -p tsconfig.json -w && tsc -p tsconfig-cjs.json -w"
+    "dev": "tsc -p tsconfig.json -w"
   },
   "author": "",
   "license": "MIT",

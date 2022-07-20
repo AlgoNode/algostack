@@ -1,14 +1,13 @@
 import axios from 'axios';
 import Algolib from '../index';
-import Filters from './Filters';
-import Options from './Options';
+import Filters from '../utils/filters';
+import Options from '../utils/options';
 
+export type QueryModule = typeof Query;
 export interface QueryParams {
   limit?: number,
   [key: string]: string|number|boolean|undefined,
 }
-
-
 //
 // QUERY class
 // ----------------------------------------------

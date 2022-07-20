@@ -3,21 +3,21 @@ import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "algorand-walletconnect-qrcode-modal/dist/umd/index.min";
 // import { formatJsonRpcRequest } from "@json-rpc-tools/utils";
 import Algolib from '../index';
-import Options from './Options';
-import Storage from './Storage';
+import Options from '../utils/options';
+import Storage from '../utils/storage';
 import { windowIsDefined } from '../helpers/isDefined';
 
-
-export type Connectors = 'myalgo' | 'pera' | 'mnemonic';
+export type ClientModule = typeof Client;
+export type ConnectorStrings = 'MYALGO' | 'PERA' | 'MNEMONIC';
 
 //
-// Connector class
+// Client class
 // ----------------------------------------------
-export default class Connector {
+export default class Client {
   protected options: Options;
   protected storage: Storage;
-  protected client?: any = undefined; 
-  protected currentClient?: Connectors = undefined;
+  protected connector?: any = undefined; 
+  protected connected?: ConnectorStrings = undefined;
   protected addresses: string[] = [];
   public sign;
 
@@ -31,16 +31,16 @@ export default class Connector {
   //
   // MYALGO
   // ----------------------------------------------
-  setMyalgoClient() {
-    this.currentClient = 'myalgo'; 
-    this.client = new MyAlgoConnect();
-    this.sign = this.client.signTransaction;
+  setMyAlgoClient() {
+    this.connected = 'MYALGO'; 
+    this.connector = new MyAlgoConnect();
+    this.sign = this.connector.signTransaction;
   }
-  async myalgo() {
+  async connectMyAlgo() {
     if (!windowIsDefined()) return;
-    this.setMyalgoClient();
+    this.setMyAlgoClient();
     try {
-      const accounts = await this.client.connect({shouldSelectOneAccount: true});
+      const accounts = await this.connector.connect({shouldSelectOneAccount: true});
       this.addresses = accounts.map(account => account.address);
       if (this.options.persistConnection) this.persist();
     } 
@@ -56,34 +56,34 @@ export default class Connector {
   // PERA
   // ----------------------------------------------
   setPeraClient() {
-    this.currentClient = 'pera'; 
-    this.client = new WalletConnect({
+    this.connected = 'PERA'; 
+    this.connector = new WalletConnect({
       bridge: "https://bridge.walletconnect.org",
       qrcodeModal: QRCodeModal.default,
     });
-    this.sign = this.client.sendCustomRequest;
+    this.sign = this.connector.sendCustomRequest;
   }
-  async pera() {
+  async connectPera() {
     if (!windowIsDefined()) return;
     return new Promise(async (resolve) => {
       this.setPeraClient();
       try {
-        if (!this.client.currentClient) {
-          await this.client.createSession();
+        if (!this.connector.connector) {
+          await this.connector.createSession();
         }
-        this.client.on("connect", (error, payload) => {
+        this.connector.on("connect", (error, payload) => {
           if (error) throw error;
           this.addresses = payload.params[0].accounts;
           if (this.options.persistConnection) this.persist();
           resolve(this.addresses);
         });
-        this.client.on("session_update", (error, payload) => {
+        this.connector.on("session_update", (error, payload) => {
           if (error)  throw error;
           this.addresses = payload.params[0].accounts;
           if (this.options.persistConnection) this.persist();
           resolve(this.addresses);
         });
-        this.client.on("disconnect", (error, payload) => {
+        this.connector.on("disconnect", (error, payload) => {
           if (error)  throw error;
         });
       } 
@@ -99,11 +99,11 @@ export default class Connector {
   // disconnect
   // ----------------------------------------------
   disconnect() {
-    if (this.currentClient === 'pera') {
-      this.client.killSession();
+    if (this.connected === 'PERA') {
+      this.connector.killSession();
     }
-    this.currentClient = undefined;
-    this.client = undefined;
+    this.connected = undefined;
+    this.connector = undefined;
     this.addresses = [];
     this.sign = undefined;
     if (this.options.persistConnection) this.persist();
@@ -113,17 +113,17 @@ export default class Connector {
   // Persist connection
   // ----------------------------------------------
   persist() {
-    this.storage.set('connection', {
-      currentClient: this.currentClient,
+    this.storage.set('connect', {
+      connector: this.connected,
       addresses: this.addresses,
     });
   }
   loadPersisted() {
-    const connection = this.storage.get('connection');
-    if (!connection.currentClient) return;
-    if (connection.currentClient === 'myalgo') this.setMyalgoClient();
-    if (connection.currentClient === 'pera') this.setPeraClient();
-    if (connection.addresses) this.addresses = connection.addresses;
+    const persisted = this.storage.get('client');
+    if (!persisted || !persisted.connector) return;
+    if (persisted.connector === 'MYALGO') this.setMyAlgoClient();
+    if (persisted.connector === 'PERA') this.setPeraClient();
+    if (persisted.addresses) this.addresses = persisted.addresses;
   }
 }
 

@@ -2,7 +2,7 @@ import camelcaseKeys from 'camelcase-keys';
 import snakecaseKeys from 'snakecase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
 import Algolib from '../index';
-import Options, { Cases } from './Options';
+import Options, { Cases } from './options';
 
 
 //

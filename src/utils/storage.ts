@@ -1,5 +1,5 @@
 import Algolib from "../index";
-import Options from "./Options";
+import Options from "./options";
 
 //
 // Storage class
