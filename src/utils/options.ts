@@ -8,8 +8,11 @@ export interface OptionsProps {
   // Network mode
   mode?: Modes,
   // Indexer and Node urls used to interact with the blockchain
-  indexerAPI?: string,
-  nodeAPI?: string,
+  indexerUrl?: string,
+  apiUrl?: string,
+  apiPort?: number,
+  apiToken?: string,
+  
   // The case to use for variables names. 
   // They'll be automatically converted when interacting with the blockchain.
   convertCase?: Cases,
@@ -25,8 +28,10 @@ export interface OptionsProps {
 // ----------------------------------------------
 export default class Options {
   public mode = 'MAINNET';
-  public indexerAPI = 'https://mainnet-idx.algonode.cloud';
-  public nodeAPI = 'https://mainnet-api.algonode.cloud';
+  public indexerUrl = 'https://mainnet-idx.algonode.cloud';
+  public apiUrl = 'https://mainnet-api.algonode.cloud';
+  public apiToken = undefined;
+  public apiPort = undefined;
   public convertCase = 'none';
   public storageNamespace = 'algolib';
   public persistConnection = true;

@@ -9,9 +9,10 @@
     "strict": true,
     "importHelpers": true,
     "moduleResolution": "node",
-    "noImplicitAny": false,
     "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "noImplicitAny": false
   },
   "include": ["./src/**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]

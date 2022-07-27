@@ -4,6 +4,8 @@ import Filters from '../utils/filters';
 import Options from '../utils/options';
 
 export type QueryModule = typeof Query;
+
+
 export interface QueryParams {
   limit?: number,
   [key: string]: string|number|boolean|undefined,
@@ -54,7 +56,7 @@ export default class Query {
       filteredParams = this.filters.stringifyValues(params);
       filteredParams = this.filters.convertCaseIn(filteredParams); 
       const queryString: string = new URLSearchParams(filteredParams).toString();  
-      const response = await axios.get(`${this.options.indexerAPI}${endpoint}?${queryString}`);
+      const response = await axios.get(`${this.options.indexerUrl}${endpoint}?${queryString}`);
       const data = this.filters.convertCaseOut(response.data);
       return data;
     }
