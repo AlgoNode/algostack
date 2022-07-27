@@ -66,8 +66,8 @@ export default class Txns {
   // Sign
   // ----------------------------------------------
   async signTxn (txn) {
-    if (!this.client || !this.client.connected || !this.client.sign) return false;
-    const signedTxn = await this.client.sign(txn);
+    if (!this.client || !this.client.connector) return false;
+    const signedTxn = await this.client.connector.sign(txn);
     return signedTxn;  
   } 
 
