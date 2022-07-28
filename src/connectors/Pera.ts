@@ -53,19 +53,17 @@ export default class Pera extends BaseConnector {
   //
   // Sign transaction(s)
   // ----------------------------------------------
-  public async sign(txns: Transaction): Promise<Uint8Array|Uint8Array[]|false> { 
+  public async sign(txns: Transaction[]): Promise<Uint8Array[]|false> { 
     if (!this.connector) return false;
-    const encoded = [{
+    const encoded = txns.map(txn => ({
       txn: Buffer
-        .from(algosdk.encodeUnsignedTransaction(txns))
+        .from(algosdk.encodeUnsignedTransaction(txn))
         .toString("base64"),
-        message: 'test',
-    }];
+    }));
     const request = formatJsonRpcRequest("algo_signTxn", [encoded]);
     try {
       const result = await this.connector.sendCustomRequest(request);
       const signedBytes = result.map(arr => Uint8Array.from(arr));
-      console.log('pera signed');
       return signedBytes;
     } catch(err) {
       console.log(err);

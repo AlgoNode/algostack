@@ -29,13 +29,12 @@ export default class MyAlgo extends BaseConnector {
   //
   // Sign transaction(s)
   // ----------------------------------------------
-  public async sign(txns: Transaction): Promise<Uint8Array|Uint8Array[]|false> { 
+  public async sign(txns: Transaction[]): Promise<Uint8Array[]|false> { 
     if (!this.connector) return false;
     try {
-      const txnBytes = txns.toByte();
-      const result = await this.connector.signTransaction(txnBytes);
-      const signedBytes = result.blob;
-      console.log('myalgo signed');
+      const txnsBytes = txns.map(txn => txn.toByte());
+      const result = await this.connector.signTransaction(txnsBytes);
+      const signedBytes = result.map(signed => signed.blob);
       return signedBytes;
     } catch(err) {
       console.log(err);
