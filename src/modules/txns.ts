@@ -33,7 +33,7 @@ export default class Txns {
   //
   // Single Transaction
   // ----------------------------------------------
-  async txn(params: TransactionLike) {
+  async sendTxn(params: TransactionLike) {
     try {
       const baseParams = await this.getTxnParams();
       const txn = new algosdk.Transaction({
@@ -42,7 +42,7 @@ export default class Txns {
       }); 
       const signedTxn = await this.signTxn(txn);
       if (!signedTxn) return;
-      const response = await this.sendTxn(signedTxn);
+      const response = await this.submitTxn(signedTxn);
       if (!response.txId) return;
       const confirmation = await this.wait(response.txId);
       return confirmation;
@@ -55,7 +55,7 @@ export default class Txns {
   //
   // Grouped Transactions
   // ----------------------------------------------
-  async groupedTxns(paramsGroup: TransactionLike[]) {
+  async sendGroupedTxns(paramsGroup: TransactionLike[]) {
     try {
       const baseParams = await this.getTxnParams();
       let group: Transaction[] = [];
@@ -71,7 +71,7 @@ export default class Txns {
       });
       const signedTxns = await this.signTxn(group);
       if (!signedTxns) return;
-      const response = await this.sendTxn(signedTxns);
+      const response = await this.submitTxn(signedTxns);
       if (!response.txId) return;
       const confirmation = await this.wait(response.txId);
       return confirmation;
@@ -84,7 +84,7 @@ export default class Txns {
   //
   // Sequenced transactions
   // ----------------------------------------------
-  async sequencedTxns(paramsSequence: TransactionLike[]) {
+  async sendSequencedTxns(paramsSequence: TransactionLike[]) {
     try {
       const baseParams = await this.getTxnParams();
       let sequence: Transaction[] = [];
@@ -100,7 +100,7 @@ export default class Txns {
       const confirmations: any[] = [];
 
       for(let i=0; i<signedTxns.length; i++) {
-        const response = await this.sendTxn(signedTxns[i]);
+        const response = await this.submitTxn(signedTxns[i]);
         if (!response.txId) return;
         const confirmation = await this.wait(response.txId);
         confirmations.push(confirmation)
@@ -136,7 +136,7 @@ export default class Txns {
   //
   // Send transaction
   // ----------------------------------------------
-  async sendTxn (signedTxn: Uint8Array|Uint8Array[]) {
+  async submitTxn (signedTxn: Uint8Array|Uint8Array[]) {
     const txn = await this.algod.sendRawTransaction(signedTxn).do();
     return txn;
   }

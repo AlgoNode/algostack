@@ -65,7 +65,7 @@ peraBtn.addEventListener('click', () => algostack.client.connectPera());
 
 ## Wait for connection, then update your app
 
-Connect methods are `async` functions, so you can wait for them to resolve before doing other stuff, like updating your app.
+Connect methods are `async` functions, so you can wait for them to resolve before doing other stuff, like updating your app. Here's a quick example for updating variables: `connnected` and `addresses`. Note that in this example we call our `updateState()` function right after declaring it. Doing this, we can get the persisted values, if the client was already connected.
 
 ```js
 import AlgoStack from 'algostack';

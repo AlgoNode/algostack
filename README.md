@@ -1,22 +1,22 @@
-# ![AlgoStack.js](assets/algostack-badge.svg)
+# ![AlgoStack.js](doc/algostack-badge.svg)
 
 
-Everything you need to interact with the **Algorand** blockchain, all bundled together to make your life easier. **All modules are optional**, so you can make sure the compiled code is as small as possible.
+Everything you need to interact with the **Algorand** blockchain, all bundled together to make your life easier. **All modules are optional**, so you make your own compiled stack as small as possible.
 
 ## Table of Contents
 
 - [📦 What's in there](#whats-bundled-in-the-stack)
 - [⚡ Getting Started](#getting-started)
 - [🔐 Connecting a wallet](/doc/client.md)
+- [📡 Sending transactions](/doc/txns.md)
 - [❌ Common issues](/doc/issues.md)
 
 
-## What's bundled in the stack?
+## 📦 What's in the stack?
 - [js-algorand-sdk](https://github.com/algorand/js-algorand-sdk)
 - [myalgo-connect](https://github.com/randlabs/myalgo-connect)
 - [walletconnect/client](https://github.com/WalletConnect/walletconnect-monorepo)
 - [algorand-walletconnect-qrcode-modal](https://github.com/algorand/walletconnect-monorepo)
-
 
 
 
