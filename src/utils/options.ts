@@ -5,8 +5,6 @@ export type Cases = 'kebabcase' | 'snakecase' | 'camelcase' | 'none';
 // All options available in AlgoStack
 // ----------------------------------------------
 export interface OptionsProps {
-  // Network mode
-  mode?: Modes,
   // Indexer and Node urls used to interact with the blockchain
   indexerUrl?: string,
   apiUrl?: string,
@@ -16,10 +14,11 @@ export interface OptionsProps {
   // The case to use for variables names. 
   // They'll be automatically converted when interacting with the blockchain.
   convertCase?: Cases,
-  // localstorage namespace
-  storageNamespace?: string,
-  // persist wallet connections, even after reload
+
+  // Persist wallet connections, even after refreshing
+  // Only available in browsers
   persistConnection?: boolean,
+  storageNamespace?: string,
 }
 
 
@@ -27,7 +26,6 @@ export interface OptionsProps {
 // Options class
 // ----------------------------------------------
 export default class Options {
-  public mode = 'MAINNET';
   public indexerUrl = 'https://mainnet-idx.algonode.cloud';
   public apiUrl = 'https://mainnet-api.algonode.cloud';
   public apiToken = undefined;
