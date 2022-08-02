@@ -1,4 +1,4 @@
-import Algolib from '../index';
+import AlgoStack from '../index';
 import Options from '../utils/options';
 import Storage from '../utils/storage';
 import MyAlgo from '../connectors/MyAlgo';
@@ -18,7 +18,7 @@ export default class Client {
   private _connected?: ConnectorStrings = undefined;
   private _addresses: string[] = [];
 
-  constructor(forwarded: Algolib) {
+  constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
     this.storage = forwarded.storage;
     this.optionallyLoadPersisted();
@@ -79,7 +79,6 @@ export default class Client {
     }
     else {
       this.disconnect();
-      this.optionallyPersist();
       return false;
     }
   }
@@ -89,9 +88,11 @@ export default class Client {
   // disconnect
   // ----------------------------------------------
   public disconnect() {
+    if (this._connector) this._connector.disconnect();
     this._connected = undefined;
     this._connector = undefined;
     this._addresses = [];
+    this.optionallyPersist();
   }
 
 

@@ -1,4 +1,4 @@
-import Algolib from "../index";
+import AlgoStack from "../index";
 import Options from "./options";
 
 //
@@ -9,7 +9,7 @@ export default class Storage {
   public available: boolean = true;
   public data: Object = {}
 
-  constructor(forwarded: Algolib) {
+  constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
     this.available = typeof localStorage !== 'undefined';
     if (!this.available) return;

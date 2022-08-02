@@ -2,7 +2,7 @@ export type Modes = 'MAINNET' | 'TESTNET' | 'BETANET';
 export type Cases = 'kebabcase' | 'snakecase' | 'camelcase' | 'none';
 
 //
-// All options available in Algolib
+// All options available in AlgoStack
 // ----------------------------------------------
 export interface OptionsProps {
   // Network mode
@@ -33,7 +33,7 @@ export default class Options {
   public apiToken = undefined;
   public apiPort = undefined;
   public convertCase = 'none';
-  public storageNamespace = 'algolib';
+  public storageNamespace = 'algostack';
   public persistConnection = true;
 
   constructor (userOptions?: OptionsProps) {

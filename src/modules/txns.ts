@@ -1,6 +1,6 @@
 // import Buffer from 'buffer';
 import algosdk, { SignedTransaction, Transaction, TransactionLike } from 'algosdk';
-import Algolib from '../index';
+import AlgoStack from '../index';
 import Filters from '../utils/filters';
 import Options from '../utils/options';
 import Client from './client';
@@ -19,7 +19,7 @@ export default class Txns {
   public algosdk;
   public algod;
 
-  constructor(forwarded: Algolib) {
+  constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
     this.filters = forwarded.filters;
     this.client = forwarded.client || new Client(forwarded);

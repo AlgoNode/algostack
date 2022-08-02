@@ -17,7 +17,7 @@ export interface PlugableModules {
 
 
 polyfills;
-export default class Algolib {
+export default class AlgoStack {
   // Utils
   public options: Options;
   public filters: Filters;

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import Algolib from '../index';
+import AlgoStack from '../index';
 import Filters from '../utils/filters';
 import Options from '../utils/options';
 
@@ -16,7 +16,7 @@ export interface QueryParams {
 export default class Query {
   protected options: Options;
   protected filters: Filters;
-  constructor(forwarded: Algolib) {
+  constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
     this.filters = forwarded.filters;
   }

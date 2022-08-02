@@ -1,7 +1,7 @@
 import camelcaseKeys from 'camelcase-keys';
 import snakecaseKeys from 'snakecase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
-import Algolib from '../index';
+import AlgoStack from '../index';
 import Options, { Cases } from './options';
 
 
@@ -10,7 +10,7 @@ import Options, { Cases } from './options';
 // ----------------------------------------------
 export default class Filters {
   protected options: Options;
-  constructor (forwarded: Algolib) {
+  constructor (forwarded: AlgoStack) {
     this.options = forwarded.options;
   }
 

@@ -26,9 +26,12 @@ export default class Pera extends BaseConnector {
         return;
       }
       try {
-        if (!this.connector.connected) {
-          await this.connector.createSession();
+        if (this.connector.connected) {
+          this.connector.killSession();
         }
+
+        await this.connector.createSession();
+
         this.connector.on("connect", (error, payload) => {
           if (error) throw error;
           const addresses = payload.params[0].accounts;
