@@ -3,6 +3,14 @@
 
 Everything you need to interact with the **Algorand** blockchain, all bundled together to make your life easier. **All modules are optional**, so you can make sure the compiled code is as small as possible.
 
+## Table of Contents
+
+- [📦 What's in there](#whats-bundled-in-the-stack)
+- [⚡ Getting Started](#getting-started)
+- [🔐 Connecting a wallet](/doc/client.md)
+- [❌ Common issues](/doc/issues.md)
+
+
 ## What's bundled in the stack?
 - [js-algorand-sdk](https://github.com/algorand/js-algorand-sdk)
 - [myalgo-connect](https://github.com/randlabs/myalgo-connect)
@@ -10,12 +18,14 @@ Everything you need to interact with the **Algorand** blockchain, all bundled to
 - [algorand-walletconnect-qrcode-modal](https://github.com/algorand/walletconnect-monorepo)
 
 
-## Getting Started
+
+
+## ⚡ Getting Started
 
 First, import the main package, and all modules you need. Then initiate your AlgoStack with the desired options and modules.
 
-```js
-const algostack = new AlgoStack(options: {}, modules: [])
+```ts
+const algostack = new AlgoStack(options: OptionsProps, modules: PlugableModules)
 ```
 
 Example: 
@@ -30,16 +40,22 @@ const algostack = new AlgoStack(
   {
     convertCase: 'camelcase',
     apiUrl: 'https://testnet-api.algonode.cloud',
-    indexerUrl: '	https://testnet-idx.algonode.cloud', 
+    indexerUrl: 'https://testnet-idx.algonode.cloud', 
   }, 
   { Client, Txns, Query }
+  // ^ Same as... 
+  // { 
+  //   Client: Client, 
+  //   Txns: Txns, 
+  //   Query: Query,
+  // }
 );
 ```
 
 
 ### ⚙️ Options
 ```ts
-export interface OptionsProps {
+interface OptionsProps {
   // Indexer and Node urls used to interact with the blockchain
   indexerUrl?: string, // default: 'https://mainnet-idx.algonode.cloud'
   apiUrl?: string, // default: 'https://mainnet-api.algonode.cloud'
@@ -60,84 +76,17 @@ export interface OptionsProps {
 
 ### 🔌 Plugable Modules
 
-```js
-// Connect to Algorand using popular wallets
-// Currently available: MyAglo, Pera Wallet
-import Client from 'algostack/client';
+```ts
+interface PlugableModules {
+  // Connect to Algorand using popular wallets
+  // Currently available: MyAglo, Pera Wallet
+  Client?: ClientModule,
+  
+  // Create, sign, send transactions and wait for confirmation 
+  Txns?: TxnsModule,
 
-// Create, sign, send transactions and wait for confirmation 
-import Txns from 'algostack/txns';
-
-// Get data from the blockchain
-// Currently using the indexers only
-import Query from 'algostack/query';
-```
-
-
-
-## Common Compiler Problems
-
-AlgoStack is built using the ESModule version of its dependencies to make sure that the final compilation is the one responsible for making everything nice and tidy. That being said, it can lead to some compiler complications when trying to build a browser version of the stack.
-
-**AlgoStack.js might include a pre-compiled browser version in the future.* 
-
-
-
-#### ❌ Failed to resolve module specifier "crypto"
-
-##### Problem `browser console`
-```
-Uncaught TypeError: Failed to resolve module specifier "crypto". Relative references must start with either "/", "./", or "../".
-```
-
-##### Fix `Rollup.js`
-
-This happens when you're trying to compile for the browser, and the `crypto` module is only available in a NodeJs environment. To prevent the error, you can ignore the module if you're using commonjs to transpile your code.
-```js
-// rollup.config.js
-export default {
-  // ...
-  plugins: [
-    commonjs({
-      ignore: ['crypto'],
-    }),
-  ]
-}
-```
-
-
-
-#### ❌ Illegal reassignment GENTLY
-
-##### Problem `compiler`
-```
-Illegal reassignment to import 'commonjsRequire'
-1: if (global.GENTLY) require = GENTLY.hijack(require);
-```
-##### Fix `Rollup.js` 
-
- [DIRTY HACK] Add a plugin to find/replace this reassignment coming from a dependency of the `algosdk.js` package.
-
-```js
-// rollup.config.js
-import replace from 'rollup-plugin-re'
-
-export default {
-  // ...
-  plugins: [
-    // resolve(),
-    // ...
-    replace({ // after resolve(), before commonjs()
-      patterns: [
-        {
-          match: /formidable(\/|\\)lib/, 
-          test: 'if (global.GENTLY) require = GENTLY.hijack(require);', 
-          replace: '',
-        }
-      ]
-    }),
-    // ...
-    // commonjs(),
-  ]
-}
+  // Get data from the blockchain
+  // Currently using the indexers only
+  Query?: QueryModule,
+} 
 ```

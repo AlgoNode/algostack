@@ -93,7 +93,7 @@ export default class Query {
     return await this.get(`/v2/assets/${assetId}/transactions`, params);
   }
   // block
-  async lookupBlock(round: number, params: QueryParams = {}) {
+  async block(round: number, params: QueryParams = {}) {
     return await this.get(`/v2/blocks/${round}`, params);
   }
   // transaction
