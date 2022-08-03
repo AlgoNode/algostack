@@ -4,12 +4,14 @@ import Filters from '../utils/filters';
 import Options from '../utils/options';
 
 export type QueryModule = typeof Query;
-
+export type LookupMethods = Query['lookup'];
+export type SearchMethods = Query['search'];
 
 export interface QueryParams {
   limit?: number,
   [key: string]: string|number|boolean|undefined,
 }
+
 //
 // QUERY class
 // ----------------------------------------------
@@ -25,14 +27,16 @@ export default class Query {
   //
   // Query wrapper
   // ----------------------------------------------
-  async get(endpoint: string, params: QueryParams = {}) {
+  private async callEndpoint(endpoint: string, params: QueryParams = {}) {
     const loop:boolean = params.limit === -1;
     if (loop) delete params.limit; 
 
-    const data: Object  = await this.fetchData(endpoint, params);
+    const kebabCaseParams = this.filters.convertCaseIn(params); 
+    const data: Object  = await this.fetchData(endpoint, kebabCaseParams);
+    
     if (loop) {
       while (data['next-token']) {
-        const nextData: Object = await this.fetchData(endpoint, { ...params, next: data['next-token']});
+        const nextData: Object = await this.fetchData(endpoint, { ...kebabCaseParams, next: data['next-token']});
         delete data['next-token'];
         // merge arrays, including possible new 'next-token'
         Object.entries(nextData).forEach(([key, value]) => {
@@ -43,7 +47,8 @@ export default class Query {
         });
       }
     }
-    return data
+
+    return this.filters.convertCaseOut(data);
   }
 
   
@@ -52,13 +57,10 @@ export default class Query {
   // ----------------------------------------------
   private async fetchData(endpoint: string, params: QueryParams = {}) {
     try {
-      let filteredParams: {[k:string]: string};
-      filteredParams = this.filters.stringifyValues(params);
-      filteredParams = this.filters.convertCaseIn(filteredParams); 
-      const queryString: string = new URLSearchParams(filteredParams).toString();  
+      const stringifiedParams = this.filters.stringifyValues(params);
+      const queryString: string = new URLSearchParams(stringifiedParams).toString();  
       const response = await axios.get(`${this.options.indexerUrl}${endpoint}?${queryString}`);
-      const data = this.filters.convertCaseOut(response.data);
-      return data;
+      return response.data;
     }
     catch (error) {
       console.dir(error);
@@ -68,51 +70,73 @@ export default class Query {
 
 
   //
-  // Quick methods
+  // Lookup methods
   // ----------------------------------------------
-
   // accounts
-  async account(accountId: string, params: QueryParams = {}) {
-    return await this.get(`/v2/accounts/${accountId}`, params);
+  private async account(accountId: string, params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/accounts/${accountId}`, params);
   }
-  async accountTransactions(accountId: string, params: QueryParams = {}) {
-    return await this.get(`/v2/accounts/${accountId}/transactions`, params);
+  private async accountTransactions(accountId: string, params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/accounts/${accountId}/transactions`, params);
   }
   // app
-  async application(appId: number, params: QueryParams = {}) {
-    return await this.get(`/v2/applications/${appId}`, params);
+  private async application(appId: number, params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/applications/${appId}`, params);
   }
   // asset
-  async asset(assetId: number, params: QueryParams = {}) {
-    return await this.get(`/v2/assets/${assetId}`, params);
+  private async asset(assetId: number, params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/assets/${assetId}`, params);
   }
-  async assetBalances(assetId: number, params: QueryParams = {}) {
-    return await this.get(`/v2/assets/${assetId}/balances`, params);
+  private async assetBalances(assetId: number, params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/assets/${assetId}/balances`, params);
   }
-  async assetTransactions(assetId: number, params: QueryParams = {}) {
-    return await this.get(`/v2/assets/${assetId}/transactions`, params);
+  private async assetTransactions(assetId: number, params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/assets/${assetId}/transactions`, params);
   }
   // block
-  async block(round: number, params: QueryParams = {}) {
-    return await this.get(`/v2/blocks/${round}`, params);
+  private async block(round: number, params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/blocks/${round}`, params);
   }
   // transaction
-  async transaction(id: string, params: QueryParams = {}) {
-    return await this.get(`/v2/transactions/${id}`, params);
+  private async transaction(id: string, params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/transactions/${id}`, params);
   }
 
-  //search
-  async accounts(params: QueryParams = {}) {
-    return await this.get(`/v2/accounts`, params);
+  // Wrap everything together
+  public lookup = {
+    account: this.account.bind(this),
+    accountTransactions: this.accountTransactions.bind(this),
+    application: this.application.bind(this),
+    asset: this.asset.bind(this),
+    assetBalances: this.assetBalances.bind(this),
+    assetTransactions: this.assetTransactions.bind(this),
+    block: this.block.bind(this),
+    transaction: this.transaction.bind(this),
   }
-  async applications(params: QueryParams = {}) {
-    return await this.get(`/v2/applications`, params);
+
+
+  //
+  // Search
+  // ---------------------------------------------
+  private async accounts(params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/accounts`, params);
   }
-  async assets(params: QueryParams = {}) {
-    return await this.get(`/v2/assets`, params);
+  private async applications(params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/applications`, params);
   }
-  async transactions(params: QueryParams = {}) {
-    return await this.get(`/v2/transactions`, params);
+  private async assets(params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/assets`, params);
+  }
+  private async transactions(params: QueryParams = {}) {
+    return await this.callEndpoint(`/v2/transactions`, params);
+  }
+
+  // Wrap everything together
+  public search = {
+    accounts: this.accounts.bind(this),
+    applications: this.applications.bind(this),
+    assets: this.assets.bind(this),
+    transactions: this.transactions.bind(this),
   }
 
 }

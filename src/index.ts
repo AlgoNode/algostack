@@ -5,7 +5,7 @@ import Storage from './utils/storage';
 import type Query from './modules/query';
 import type Client from './modules/client';
 import type Txns from './modules/txns';
-import type { QueryModule } from './modules/query';
+import type { QueryModule, LookupMethods, SearchMethods } from './modules/query';
 import type { ClientModule } from './modules/client';
 import type { TxnsModule } from './modules/txns';
 
@@ -23,17 +23,24 @@ export default class AlgoStack {
   public filters: Filters;
   public storage: Storage;
   // Modules
-  public query?: Query;
   public client?: Client;
   public txns?: Txns;
+  public query?: Query;
+  // Methods
+  public lookup?: LookupMethods;
+  public search?: SearchMethods;
 
   constructor (userOptions?: OptionsProps, modules: PlugableModules = {}) {
     this.options = new Options(userOptions);
     this.filters = new Filters(this);
     this.storage = new Storage(this);
-    if (modules.Query) this.query = new modules.Query(this);
     if (modules.Client) this.client = new modules.Client(this);
     if (modules.Txns) this.txns = new modules.Txns(this);
+    if (modules.Query) {
+      this.query = new modules.Query(this);
+      this.lookup = this.query.lookup;
+      this.search = this.query.search;
+    } 
 
   }
 

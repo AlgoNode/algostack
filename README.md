@@ -43,12 +43,6 @@ const algostack = new AlgoStack(
     indexerUrl: 'https://testnet-idx.algonode.cloud', 
   }, 
   { Client, Txns, Query }
-  // ^ Same as... 
-  // { 
-  //   Client: Client, 
-  //   Txns: Txns, 
-  //   Query: Query,
-  // }
 );
 ```
 

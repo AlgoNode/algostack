@@ -14,7 +14,7 @@ const algostack = new AlgoStack({}, { Client, Txns });
 ## Txns Methods
 
 ```ts
-// AlgoStack.Txns
+// algostack.txns
 class Txns {
   // Send a single transaction
   sendTxn(params: TransactionLike): Promise<Record<string, any> | undefined>;

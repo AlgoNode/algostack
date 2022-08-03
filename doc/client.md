@@ -19,7 +19,7 @@ const algostack = new AlgoStack({}, { Client });
 ## Client Methods
 
 ```ts
-// AlgoStack.Client
+// algostack.client
 class Client {
   // [async] Connect to a wallet
   // Returns an array containing the connected address(es)
