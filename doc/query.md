@@ -1,4 +1,4 @@
-#  Querying Blockchain Data
+# 📚 Reading Blockchain Data
 
 The `Query` module makes it easy to fetch data from nodes and indexers. It uses params passed as an object, rather than query strings. It can also convert the results in the desired naming case if needed.
 

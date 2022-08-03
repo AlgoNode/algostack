@@ -1,4 +1,4 @@
-# ![AlgoStack.js](doc/algostack-badge.svg)
+# ![AlgoStack.js](doc/algostack-badge-beta.svg)
 
 
 Everything you need to interact with the **Algorand** blockchain, all bundled together to make your life easier. **All modules are optional**, so you make your own compiled stack as small as possible.
@@ -9,6 +9,7 @@ Everything you need to interact with the **Algorand** blockchain, all bundled to
 - [⚡ Getting Started](#getting-started)
 - [🔐 Connecting a wallet](/doc/client.md)
 - [📡 Sending transactions](/doc/txns.md)
+- [📚 Reading blockchain data](/doc/query.md)
 - [❌ Common issues](/doc/issues.md)
 
 
