@@ -1,9 +1,9 @@
 // import Buffer from 'buffer';
 import algosdk, { SignedTransaction, Transaction, TransactionLike } from 'algosdk';
-import AlgoStack from '../index';
-import Filters from '../utils/filters';
-import Options from '../utils/options';
-import Client from './client';
+import AlgoStack from '../index.js';
+import Filters from '../utils/filters.js';
+import Options from '../utils/options.js';
+import Client from './client.js';
 
 
 

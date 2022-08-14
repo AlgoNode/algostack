@@ -1,8 +1,8 @@
-import AlgoStack from '../index';
-import Options from '../utils/options';
-import Storage from '../utils/storage';
-import MyAlgo from '../connectors/MyAlgo';
-import Pera from '../connectors/Pera';
+import AlgoStack from '../index.js';
+import Options from '../utils/options.js';
+import Storage from '../utils/storage.js';
+import MyAlgo from '../connectors/MyAlgo.js';
+import Pera from '../connectors/Pera.js';
 
 
 export type ClientModule = typeof Client;

@@ -1,7 +1,7 @@
 import axios from 'axios';
-import AlgoStack from '../index';
-import Filters from '../utils/filters';
-import Options from '../utils/options';
+import AlgoStack from '../index.js';
+import Filters from '../utils/filters.js';
+import Options from '../utils/options.js';
 
 export type QueryModule = typeof Query;
 export type LookupMethods = Query['lookup'];

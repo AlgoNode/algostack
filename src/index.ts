@@ -1,13 +1,13 @@
-import polyfills from './helpers/polyfills';
-import Options, { OptionsProps } from './utils/options';
-import Filters from './utils/filters';
-import Storage from './utils/storage';
-import type Query from './modules/query';
-import type Client from './modules/client';
-import type Txns from './modules/txns';
-import type { QueryModule, LookupMethods, SearchMethods } from './modules/query';
-import type { ClientModule } from './modules/client';
-import type { TxnsModule } from './modules/txns';
+import polyfills from './helpers/polyfills.js';
+import Options, { OptionsProps } from './utils/options.js';
+import Filters from './utils/filters.js';
+import Storage from './utils/storage.js';
+import type Query from './modules/query.js';
+import type Client from './modules/client.js';
+import type Txns from './modules/txns.js';
+import type { QueryModule, LookupMethods, SearchMethods } from './modules/query.js';
+import type { ClientModule } from './modules/client.js';
+import type { TxnsModule } from './modules/txns.js';
 
 export interface PlugableModules {
   Query?: QueryModule,

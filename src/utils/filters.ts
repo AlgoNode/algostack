@@ -1,8 +1,8 @@
 import camelcaseKeys from 'camelcase-keys';
 import snakecaseKeys from 'snakecase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
-import AlgoStack from '../index';
-import Options, { Cases } from './options';
+import AlgoStack from '../index.js';
+import Options, { Cases } from './options.js';
 
 
 //

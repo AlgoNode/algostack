@@ -3,7 +3,7 @@ import algosdk, { Transaction } from 'algosdk';
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "algorand-walletconnect-qrcode-modal";
 import { formatJsonRpcRequest } from "@json-rpc-tools/utils";
-import BaseConnector from './Base';
+import BaseConnector from './Base.js';
 
 export default class Pera extends BaseConnector {
   protected connector?: WalletConnect;

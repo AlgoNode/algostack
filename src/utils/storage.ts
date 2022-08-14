@@ -1,5 +1,5 @@
-import AlgoStack from "../index";
-import Options from "./options";
+import AlgoStack from "../index.js";
+import Options from "./options.js";
 
 //
 // Storage class
