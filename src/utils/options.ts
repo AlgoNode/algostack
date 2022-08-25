@@ -21,8 +21,14 @@ export interface OptionsProps {
   persistConnection?: boolean,
   storageNamespace?: string,
 
-  // Enhance lookup responses with basic infos
-  enhanceLookups?: boolean,
+  // Enhance queries with more scope specific data
+  enableAddons?: boolean,
+  addons?: {
+    asset?:  {
+      assetType?: boolean,
+      nfd?: boolean,
+    }
+  }
 }
 
 
@@ -31,6 +37,10 @@ export interface OptionsProps {
  * ==================================================
  */
 export default class Options {
+  constructor (userOptions?: OptionsProps) {
+    Object.assign(this, userOptions);
+  }
+  
   public indexerUrl = 'https://mainnet-idx.algonode.cloud';
   public apiUrl = 'https://mainnet-api.algonode.cloud';
   public apiToken = undefined;
@@ -41,10 +51,16 @@ export default class Options {
   public persistConnection = true;
   public storageNamespace = 'algostack';
   
-  public enhanceLookups = true;
-
-  constructor (userOptions?: OptionsProps) {
-    Object.assign(this, userOptions);
+  public enableAddons = true;
+  public addons = {
+    asset: {
+      assetType: true,
+      nfd: false,
+    },
+    assets: {
+      assetType: true,
+    }
   }
+
 }
 

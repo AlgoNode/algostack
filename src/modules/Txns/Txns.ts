@@ -2,7 +2,7 @@
 import algosdk, { Transaction, TransactionLike } from 'algosdk';
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
-import Client from '../client/index.js';
+import Client from '../Client/index.js';
 
 
 /**

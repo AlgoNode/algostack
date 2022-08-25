@@ -2,21 +2,22 @@ import polyfills from './helpers/polyfills.js';
 import Options, { OptionsProps } from './utils/options.js';
 import Convert from './utils/convert.js';
 import Storage from './utils/storage.js';
-import type Query from './modules/query/index.js';
-import type { QueryModule, LookupMethods, SearchMethods } from './modules/query/index.js';
-import type Client from './modules/client/index.js';
-import type { ClientModule } from './modules/client/index.js';
-import type Txns from './modules/txns/index.js';
-import type { TxnsModule } from './modules/txns/index.js';
+import type Addons from './modules/Addons/index.js';
+import type Client from './modules/Client/index.js';
+import type Txns from './modules/Txns/index.js';
+import type Query from './modules/Query/index.js';
+import type { LookupMethods, SearchMethods } from './modules/Query/index.js';
 
 export interface PlugableModules {
-  Query?: QueryModule,
-  Client?: ClientModule,
-  Txns?: TxnsModule,
+  Client?: typeof Client,
+  Txns?: typeof Txns,
+  Query?: typeof Query,
+  Addons?: typeof Addons,
 } 
 
+// Add polyfills
+polyfills();
 
-polyfills;
 export default class AlgoStack {
   // Utils
   public options: Options;
@@ -27,6 +28,7 @@ export default class AlgoStack {
   public client?: Client;
   public txns?: Txns;
   public query?: Query;
+  public addons?: Addons;
   
   // Methods
   public lookup?: LookupMethods;
@@ -36,6 +38,7 @@ export default class AlgoStack {
     this.options = new Options(userOptions);
     this.convert = new Convert(this);
     this.storage = new Storage(this);
+    if (modules.Addons) this.addons = new modules.Addons(this);
     if (modules.Client) this.client = new modules.Client(this);
     if (modules.Txns) this.txns = new modules.Txns(this);
     if (modules.Query) {

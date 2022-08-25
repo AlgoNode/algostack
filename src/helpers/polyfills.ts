@@ -1,9 +1,8 @@
 import { Buffer } from 'buffer';
 
-if (typeof window !== 'undefined') {
-  (window as any).global = window;
+export default function polyfills() {
+  if (typeof window !== 'undefined') {
+    (window as any).global = window;
+  }
+  global.Buffer = global.Buffer || Buffer;
 }
-
-global.Buffer = global.Buffer || Buffer;
-
-export default {}

@@ -2,7 +2,8 @@ import axios from 'axios';
 import AlgoStack from '../../index.js';
 import Convert from '../../utils/convert.js';
 import Options from '../../utils/options.js';
-import type { QueryParams } from './types.js';
+import type Addons from '../Addons/index.js';
+import type { QueryParams, IndexerResponse } from './types.js';
 
 //
 // QUERY class
@@ -10,9 +11,11 @@ import type { QueryParams } from './types.js';
 export default class Query {
   protected options: Options;
   protected convert: Convert;
+  protected addons?: Addons; 
   constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
     this.convert = forwarded.convert;
+    this.addons = forwarded.addons;
   }
 
  
@@ -24,11 +27,11 @@ export default class Query {
     if (loop) delete params.limit; 
 
     const convertedParams = this.convert.fromUserCase(params); 
-    const data: Object  = await this.fetchIndexer(endpoint, convertedParams);
+    let data: IndexerResponse = await this.fetchIndexer(endpoint, convertedParams);
     
     if (loop) {
       while (data['next-token']) {
-        const nextData: Object = await this.fetchIndexer(
+        const nextData: IndexerResponse = await this.fetchIndexer(
           endpoint, 
           { ...convertedParams, next: data['next-token']}
         );
@@ -43,9 +46,16 @@ export default class Query {
       }
     }
 
-    let filteredData = this.convert.toUserCase(data); 
-    console.log(filteredData);
-    return filteredData;
+    // Apply filters
+    data = this.convert.toUserCase(data); 
+    
+    // Apply addons if necessary
+    if (this.addons && this.options.enableAddons) {
+      await this.addons.applyOn(data);
+    }
+    
+    // console.log(data);
+    return data;
   }
 
   

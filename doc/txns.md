@@ -5,8 +5,8 @@ First, make sure you add the `Client` and `Txns` modules when initializing `Algo
 
 ```js
 import AlgoStack from 'algostack';
-import Client from 'algostack/client';
-import Txns from 'algostack/txns';
+import Client from 'algostack/Client';
+import Txns from 'algostack/Txns';
 
 const algostack = new AlgoStack({}, { Client, Txns });
 ```
@@ -36,8 +36,8 @@ The simplest implementation goes like this.
 
 ```js
 import AlgoStack from 'algostack';
-import Client from 'algostack/client';
-import Txns from 'algostack/txns';
+import Client from 'algostack/Client';
+import Txns from 'algostack/Txns';
 const algostack = new AlgoStack({}, { Client, Txns });;
 
 async function sendTxn() {
@@ -65,8 +65,8 @@ sendBtn.addEventListener('click', sendTxn);
 
 ```js
 import AlgoStack from 'algostack';
-import Client from 'algostack/client';
-import Txns from 'algostack/txns';
+import Client from 'algostack/Client';
+import Txns from 'algostack/Txns';
 const algostack = new AlgoStack({}, { Client, Txns });;
 
 async function sendGroup() {
