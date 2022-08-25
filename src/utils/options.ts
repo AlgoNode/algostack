@@ -26,7 +26,10 @@ export interface OptionsProps {
   addons?: {
     asset?:  {
       assetType?: boolean,
-      nfd?: boolean,
+      arcs?: boolean,
+    },
+    assets: {
+      assetType?: boolean,
     }
   }
 }
@@ -55,7 +58,7 @@ export default class Options {
   public addons = {
     asset: {
       assetType: true,
-      nfd: false,
+      arcs: true,
     },
     assets: {
       assetType: true,

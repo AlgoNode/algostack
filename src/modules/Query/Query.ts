@@ -46,14 +46,17 @@ export default class Query {
       }
     }
 
-    // Apply filters
-    data = this.convert.toUserCase(data); 
+    // convert to camelcase for standarized addons
+    data = this.convert.convertCase(data, 'camelcase'); 
     
     // Apply addons if necessary
     if (this.addons && this.options.enableAddons) {
       await this.addons.applyOn(data);
     }
     
+    if (this.options.convertCase !== 'camelcase') {
+      data = this.convert.toUserCase(data); 
+    }
     // console.log(data);
     return data;
   }
