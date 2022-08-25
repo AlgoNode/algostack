@@ -1,16 +1,14 @@
-import AlgoStack from '../index.js';
-import Options from '../utils/options.js';
-import Storage from '../utils/storage.js';
-import MyAlgo from '../connectors/MyAlgo.js';
-import Pera from '../connectors/Pera.js';
+import AlgoStack from '../../index.js';
+import Options from '../../utils/options.js';
+import Storage from '../../utils/storage.js';
+import MyAlgo from '../../connectors/MyAlgo.js';
+import Pera from '../../connectors/Pera.js';
+import { ConnectorStrings } from './types.js';
 
-
-export type ClientModule = typeof Client;
-export type ConnectorStrings = 'MYALGO' | 'PERA' | 'MNEMONIC';
-
-//
-// Client class
-// ----------------------------------------------
+/**
+ * Client class
+ * ==================================================
+ */
 export default class Client {
   protected options: Options;
   protected storage: Storage;

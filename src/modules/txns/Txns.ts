@@ -1,27 +1,22 @@
 // import Buffer from 'buffer';
-import algosdk, { SignedTransaction, Transaction, TransactionLike } from 'algosdk';
-import AlgoStack from '../index.js';
-import Filters from '../utils/filters.js';
-import Options from '../utils/options.js';
-import Client from './client.js';
+import algosdk, { Transaction, TransactionLike } from 'algosdk';
+import AlgoStack from '../../index.js';
+import Options from '../../utils/options.js';
+import Client from '../client/index.js';
 
 
-
-export type TxnsModule = typeof Txns;
-
-//
-// TXNS class
-// ----------------------------------------------
+/**
+ * Txns class
+ * ==================================================
+ */
 export default class Txns {
   protected options: Options;
-  protected filters: Filters;
   protected client: Client;
   public algosdk;
   public algod;
 
   constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
-    this.filters = forwarded.filters;
     this.client = forwarded.client || new Client(forwarded);
     this.algod = new algosdk.Algodv2(
       this.options.apiToken || '', 

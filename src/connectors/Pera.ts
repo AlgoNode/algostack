@@ -6,7 +6,7 @@ import { formatJsonRpcRequest } from "@json-rpc-tools/utils";
 import BaseConnector from './Base.js';
 
 export default class Pera extends BaseConnector {
-  protected connector?: WalletConnect;
+  protected connector?: WalletConnect = undefined;
   constructor() {
     super();
     if (typeof window === 'undefined') return;

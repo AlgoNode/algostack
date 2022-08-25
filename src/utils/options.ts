@@ -1,9 +1,10 @@
 export type Modes = 'MAINNET' | 'TESTNET' | 'BETANET';
 export type Cases = 'kebabcase' | 'snakecase' | 'camelcase' | 'none';
 
-//
-// All options available in AlgoStack
-// ----------------------------------------------
+/**
+ * All options available in AlgoStack
+ * ==================================================
+ */
 export interface OptionsProps {
   // Indexer and Node urls used to interact with the blockchain
   indexerUrl?: string,
@@ -19,20 +20,28 @@ export interface OptionsProps {
   // Only available in browsers
   persistConnection?: boolean,
   storageNamespace?: string,
+
+  // Enhance lookup responses with basic infos
+  enhanceLookups?: boolean,
 }
 
 
-//
-// Options class
-// ----------------------------------------------
+/**
+ * Options Class
+ * ==================================================
+ */
 export default class Options {
   public indexerUrl = 'https://mainnet-idx.algonode.cloud';
   public apiUrl = 'https://mainnet-api.algonode.cloud';
   public apiToken = undefined;
   public apiPort = undefined;
+
   public convertCase = 'none';
-  public storageNamespace = 'algostack';
+  
   public persistConnection = true;
+  public storageNamespace = 'algostack';
+  
+  public enhanceLookups = true;
 
   constructor (userOptions?: OptionsProps) {
     Object.assign(this, userOptions);

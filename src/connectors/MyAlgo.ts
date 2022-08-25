@@ -3,7 +3,7 @@ import algosdk, { Transaction } from 'algosdk';
 import BaseConnector from './Base.js';
 
 export default class MyAlgo extends BaseConnector {
-  protected connector?: MyAlgoConnect;
+  protected connector?: MyAlgoConnect = undefined;
   constructor() {
     super();
     if (typeof window === 'undefined') return;

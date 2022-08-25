@@ -2,35 +2,20 @@
   "name": "algostack",
   "version": "0.0.3",
   "description": "",
-  "main": "./dist/cjs/index.js",
+  "type": "module",
+  "main": "./dist/esm/index.js",
   "module": "./dist/esm/index.js",
   "exports": {
-    ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
-    },
-    "./client": {
-      "import": "./dist/esm/modules/client.js",
-      "require": "./dist/cjs/modules/client.js"
-    },
-    "./txns": {
-      "import": "./dist/esm/modules/txns.js",
-      "require": "./dist/cjs/modules/txns.js"
-    },
-    "./query": {
-      "import": "./dist/esm/modules/query.js",
-      "require": "./dist/cjs/modules/query.js"
-    },
+    ".": "./dist/esm/index.js",
+    "./*": "./dist/esm/modules/*/index.js",
     "./package.json": "./package.json"
   },
   "files": [
     "/dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
-    "dev": "tsc -p tsconfig.json -w",
-    "dev-esm": "npm run dev",
-    "dev-cjs": "tsc -p tsconfig-cjs.json -w"
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json -w"
   },
   "author": "",
   "license": "MIT",
