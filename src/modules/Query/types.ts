@@ -8,4 +8,4 @@ export interface QueryParams {
   [key: string]: string|number|boolean|undefined,
 }
 
-export type IndexerResponse = Record<string, any>;
+export type Payload = Record<string, any>;

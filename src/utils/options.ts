@@ -1,3 +1,4 @@
+import merge from 'lodash/merge.js';
 export type Modes = 'MAINNET' | 'TESTNET' | 'BETANET';
 export type Cases = 'kebabcase' | 'snakecase' | 'camelcase' | 'none';
 
@@ -21,15 +22,21 @@ export interface OptionsProps {
   persistConnection?: boolean,
   storageNamespace?: string,
 
+  // NFD api Url
+  nfdApiUrl?: string,
+
   // Enhance queries with more scope specific data
   enableAddons?: boolean,
   addons?: {
     asset?:  {
-      assetType?: boolean,
+      category?: boolean,
       arcs?: boolean,
+      nfds?: boolean,
     },
-    assets: {
-      assetType?: boolean,
+    assets?: {
+      category?: boolean,
+      arcs?: boolean,
+      nfds?: boolean,
     }
   }
 }
@@ -40,10 +47,6 @@ export interface OptionsProps {
  * ==================================================
  */
 export default class Options {
-  constructor (userOptions?: OptionsProps) {
-    Object.assign(this, userOptions);
-  }
-  
   public indexerUrl = 'https://mainnet-idx.algonode.cloud';
   public apiUrl = 'https://mainnet-api.algonode.cloud';
   public apiToken = undefined;
@@ -53,17 +56,26 @@ export default class Options {
   
   public persistConnection = true;
   public storageNamespace = 'algostack';
+
+  public NFDApiUrl = 'https://api.nf.domains';
   
   public enableAddons = true;
   public addons = {
     asset: {
-      assetType: true,
+      category: true,
       arcs: true,
+      nfds: false,
     },
     assets: {
-      assetType: true,
+      category: true,
+      arcs: false,
+      nfds: false,
     }
   }
 
+
+  constructor (userOptions?: OptionsProps) {
+    merge(this, userOptions);
+  }
 }
 

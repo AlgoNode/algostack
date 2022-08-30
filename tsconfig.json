@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
+    "experimentalDecorators": true,
     "outDir": "./dist/esm",
     "target": "ES2015",
     "module": "ESNext",
     "lib": ["ESNext", "DOM"],
     "typeRoots": [ "./node_modules/@types" ],
+    "noImplicitAny": false,
     "declaration": true,
     "strict": true,
     "importHelpers": true,
@@ -12,7 +14,6 @@
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "noImplicitAny": false
   },
   "include": ["./src/**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]

@@ -1,6 +1,6 @@
 
 
-export enum AssetType {
+export enum AssetCategory {
   NFT = 'nft',
   TOKEN = 'token',
 }

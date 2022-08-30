@@ -3,7 +3,7 @@ import AlgoStack from '../../index.js';
 import Convert from '../../utils/convert.js';
 import Options from '../../utils/options.js';
 import type Addons from '../Addons/index.js';
-import type { QueryParams, IndexerResponse } from './types.js';
+import type { QueryParams, Payload } from './types.js';
 
 //
 // QUERY class
@@ -27,11 +27,11 @@ export default class Query {
     if (loop) delete params.limit; 
 
     const convertedParams = this.convert.fromUserCase(params); 
-    let data: IndexerResponse = await this.fetchIndexer(endpoint, convertedParams);
+    let data: Payload = await this.fetchIndexer(endpoint, convertedParams);
     
     if (loop) {
       while (data['next-token']) {
-        const nextData: IndexerResponse = await this.fetchIndexer(
+        const nextData: Payload = await this.fetchIndexer(
           endpoint, 
           { ...convertedParams, next: data['next-token']}
         );
@@ -57,7 +57,7 @@ export default class Query {
     if (this.options.convertCase !== 'camelcase') {
       data = this.convert.toUserCase(data); 
     }
-    // console.log(data);
+
     return data;
   }
 
