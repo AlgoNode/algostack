@@ -8,8 +8,8 @@ export default class Arcs extends BaseRunner {
   }
   async run() {
     if (!this.data.params) return;
-    const arcs:Arc[] = [];
     const url = this.data.params.url;
+    const arcs:Arc[] = [];
     if (!Boolean(url)) return;
     // ARC 3
     if ( /(#arc3|@arc3)$/.test(url) ) {
@@ -19,7 +19,7 @@ export default class Arcs extends BaseRunner {
     if ( url.startsWith('template-ipfs://') ) {
       arcs.push(Arc.ARC19);
     }
-    // ARC 3
+    // ARC 69 (not 100% valid...)
     if ( /(#i|#v|#a|#p|#h)$/.test(url) ) {
       arcs.push(Arc.ARC69);
     }

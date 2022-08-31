@@ -1,39 +1,46 @@
 import axios from 'axios';
 import AlgoStack from '../../index.js';
 import Convert from '../../utils/convert.js';
+import Encoder from '../../utils/encoder.js';
 import Options from '../../utils/options.js';
 import type Addons from '../Addons/index.js';
 import type { QueryParams, Payload } from './types.js';
 
-//
-// QUERY class
-// ----------------------------------------------
+/**
+ * Query class
+ * ==================================================
+ */
 export default class Query {
   protected options: Options;
   protected convert: Convert;
+  protected encoder: Encoder;
   protected addons?: Addons; 
   constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
     this.convert = forwarded.convert;
+    this.encoder = forwarded.encoder;
     this.addons = forwarded.addons;
   }
 
  
-  //
-  // Query wrapper
-  // ----------------------------------------------
+  /**
+   * Query wrapper
+   * ==================================================
+   */
   private async indexerQuery(endpoint: string, params: QueryParams = {}) {
     const loop:boolean = params.limit === -1;
     if (loop) delete params.limit; 
 
     const convertedParams = this.convert.fromUserCase(params); 
-    let data: Payload = await this.fetchIndexer(endpoint, convertedParams);
+    const encodedParams = this.encodeParams(convertedParams);
+
+    let data: Payload = await this.fetchIndexer(endpoint, encodedParams);
     
     if (loop) {
       while (data['next-token']) {
         const nextData: Payload = await this.fetchIndexer(
           endpoint, 
-          { ...convertedParams, next: data['next-token']}
+          { ...encodedParams, next: data['next-token']}
         );
         delete data['next-token'];
         // merge arrays, including possible new 'next-token'
@@ -61,10 +68,23 @@ export default class Query {
     return data;
   }
 
-  
-  //
-  // Fetch data
-  // ----------------------------------------------
+  /**
+   * Encode params
+   * ==================================================
+   */
+  private encodeParams(params: QueryParams) {
+    if (typeof params['note-prefix'] === 'string') {
+      params['note-prefix'] = this.encoder.utfToBase64(params['note-prefix']);
+    }
+    return params;
+  }
+
+
+
+  /**
+   * Fetch data
+   * ==================================================
+   */
   private async fetchIndexer(endpoint: string, params: QueryParams = {}) {
     try {
       const stringifiedParams = this.convert.objectValuesToString(params);
@@ -78,9 +98,10 @@ export default class Query {
   }
 
 
-  //
-  // Lookup methods
-  // ----------------------------------------------
+  /**
+   * Lookup methods
+   * ==================================================
+   */
   // accounts
   private async account(accountId: string, params: QueryParams = {}) {
     return await this.indexerQuery(`/v2/accounts/${accountId}`, params);
@@ -110,7 +131,6 @@ export default class Query {
   private async transaction(id: string, params: QueryParams = {}) {
     return await this.indexerQuery(`/v2/transactions/${id}`, params);
   }
-
   // Wrap everything together
   public lookup = {
     account: this.account.bind(this),
@@ -124,9 +144,10 @@ export default class Query {
   }
 
 
-  //
-  // Search
-  // ---------------------------------------------
+  /**
+   * Search
+   * ==================================================
+   */
   private async accounts(params: QueryParams = {}) {
     return await this.indexerQuery(`/v2/accounts`, params);
   }

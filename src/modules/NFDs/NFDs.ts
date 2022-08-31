@@ -3,9 +3,10 @@ import uniq from 'lodash/uniq.js';
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
 
-//
-// NFDs class
-// ----------------------------------------------
+/**
+ * NFDs module
+ * ==================================================
+ */
 export default class NFDs {
   protected options: Options;
 
@@ -14,15 +15,34 @@ export default class NFDs {
   }
   
   /**
+   * Get NFD
+   * ==================================================
+   */
+  async getNFDs (address: string) {
+    try {
+      const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?address=${address}`)
+      if (!response.data || !response.data.length) return undefined;
+      return response.data
+        .filter(nfd => nfd.depositAccount === address)
+        .map(nfd => nfd.name);
+    }
+    catch (e) {
+      return undefined;
+    }
+  }
+
+  
+  /**
    * Map each prop of an object { key: address } 
    * with their relative domains
    * ==================================================
    */
-  async map (addressMap: Record<string, string>) {
+  async map (addressMap: Record<string, string|undefined>) {
     const mappedAddresses = {};
     const mappedNFDs = {};
     Object.entries(addressMap)
       .forEach(([key, addr]) => {
+        if (!addr) return;
         if (!mappedAddresses[addr]) mappedAddresses[addr] = [];
         mappedAddresses[addr].push(key);
         mappedNFDs[key] = undefined;

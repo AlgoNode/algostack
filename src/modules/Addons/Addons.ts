@@ -1,17 +1,20 @@
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
-import type NFDs from '../../modules/NFDs/index.js';
+import type NFDs from '../NFDs/index.js';
 import type { Payload } from '../Query/index.js';
 import runners from './runners/index.js';
+import Encoder from '../../utils/encoder.js';
 
 //
 // QUERY ADDONS class
 // ----------------------------------------------
 export default class Addons {
   protected options: Options;
+  public encoder: Encoder;
   public nfds?: NFDs;
   constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
+    this.encoder = forwarded.encoder;
     this.nfds = forwarded.nfds;
   }
 

@@ -37,7 +37,13 @@ export interface OptionsProps {
       category?: boolean,
       arcs?: boolean,
       nfds?: boolean,
-    }
+    },
+    transaction?: {
+      note?: boolean,
+    },
+    transactions?: {
+      note?: boolean,
+    },
   }
 }
 
@@ -70,6 +76,12 @@ export default class Options {
       category: true,
       arcs: false,
       nfds: false,
+    },
+    transaction: {
+      note: true,
+    },
+    transactions: {
+      note: true,
     }
   }
 
