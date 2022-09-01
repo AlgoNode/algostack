@@ -20,9 +20,9 @@ export default class Arcs extends BaseRunner {
       arcs.push(Arc.ARC19);
     }
     // ARC 69 (not 100% valid...)
-    if ( /(#i|#v|#a|#p|#h)$/.test(url) ) {
-      arcs.push(Arc.ARC69);
-    }
+    // if ( /(#i|#v|#a|#p|#h)$/.test(url) ) {
+    //   arcs.push(Arc.ARC69);
+    // }
     this.save(arcs);
   }
 }

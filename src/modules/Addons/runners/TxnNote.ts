@@ -9,10 +9,7 @@ export default class TxnNote extends BaseRunner {
   async run(forwarded: Addons) {
     if (!forwarded.encoder) return;
     if (!this.data.note) return;
-    const note = this.data.note;
-    // const note = forwarded.encoder.decodeNote(this.data.note);
-    console.log(note)
-
+    const note = forwarded.encoder.decodeNote(this.data.note);
     this.save(note);
   }
 }
