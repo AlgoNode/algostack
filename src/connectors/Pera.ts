@@ -1,71 +1,67 @@
 
 import algosdk, { Transaction } from 'algosdk';
-import WalletConnect from "@walletconnect/client";
-import QRCodeModal from "algorand-walletconnect-qrcode-modal";
-import { formatJsonRpcRequest } from "@json-rpc-tools/utils";
+import { PeraWalletConnect } from "@perawallet/connect";
+import { SignerTransaction } from "@perawallet/connect/dist/util/model/peraWalletModels";
+import { formatJsonRpcRequest } from '@json-rpc-tools/utils';
 import BaseConnector from './Base.js';
 
 export default class Pera extends BaseConnector {
-  protected connector?: WalletConnect = undefined;
+  protected connector?: PeraWalletConnect = undefined;
+  
   constructor() {
     super();
     if (typeof window === 'undefined') return;
-    this.connector = new WalletConnect({
-      bridge: "https://bridge.walletconnect.org",
-      qrcodeModal: QRCodeModal,
-    });
+    this.connector = new PeraWalletConnect();
+    const persistedWC = JSON.parse(localStorage.getItem('walletconnect') || '{}');
+    if (persistedWC.connected) {
+      this.connector.reconnectSession();
+    }
   }
 
   //
   // Connect account
   // ----------------------------------------------
-  public connect = (): Promise<string[]|false> => {
-    return new Promise(async (resolve) => {
-      if (!this.connector) {
-        resolve(false);
-        return;
-      }
-      try {
-        if (this.connector.connected) {
-          this.connector.killSession();
-        }
-
-        await this.connector.createSession();
-
-        this.connector.on("connect", (error, payload) => {
-          if (error) throw error;
-          const addresses = payload.params[0].accounts;
-          resolve(addresses);
-        });
-        this.connector.on("session_update", (error, payload) => {
-          if (error)  throw error;
-          const addresses = payload.params[0].accounts;
-          resolve(addresses);
-        });
-        this.connector.on("disconnect", (error, payload) => {
-          if (error)  throw error;
-        });
-      } 
-      catch (err) {
-        console.error(err);
-        resolve(false);
-      }
-    });
+  public async connect (): Promise<string[]|false> {
+    if (!this.connector) return false;
+    
+    // connect
+    try {
+      const addresses = await this.connector.connect();
+      console.log('connect')
+      return addresses;
+    } 
+    catch (err) {
+      console.error(err);
+  
+    }
   }
+
+  //
+  // Connect account
+  // ----------------------------------------------
+  public async reconnect (): Promise<string[]|false> {
+    if (!this.connector) return false;
+    try {
+      const addresses = await this.connector.reconnectSession();;
+      return addresses;
+    } 
+    catch (err) {
+      console.error(err);
+  
+    }
+  }
+
+
+
 
   //
   // Sign transaction(s)
   // ----------------------------------------------
   public async sign(txns: Transaction[]): Promise<Uint8Array[]|false> { 
     if (!this.connector) return false;
-    const encoded = txns.map(txn => ({
-      txn: Buffer
-        .from(algosdk.encodeUnsignedTransaction(txn))
-        .toString("base64"),
-    }));
-    const request = formatJsonRpcRequest("algo_signTxn", [encoded]);
+    const peraTxns = txns.map(txn => ({ txn })) ; // <------ HERE !
     try {
-      const result = await this.connector.sendCustomRequest(request);
+      const result = await this.connector.signTransaction([peraTxns]);
       const signedBytes = result.map(arr => Uint8Array.from(arr));
       return signedBytes;
     } catch(err) {
@@ -79,6 +75,6 @@ export default class Pera extends BaseConnector {
   // ----------------------------------------------
   disconnect() {
     if (!this.connector) return;
-    this.connector.killSession();
+    this.connector.disconnect();
   }
 }

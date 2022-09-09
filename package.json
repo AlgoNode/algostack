@@ -21,11 +21,10 @@
   "license": "MIT",
   "dependencies": {
     "@json-rpc-tools/utils": "^1.7.6",
+    "@perawallet/connect": "^0.2.2",
     "@randlabs/myalgo-connect": "^1.2.0",
     "@types/lodash": "^4.14.165",
     "@types/node": "^18.7.14",
-    "@walletconnect/client": "^1.7.8",
-    "algorand-walletconnect-qrcode-modal": "^1.7.4",
     "algosdk": "^1.19.1",
     "axios": "^0.19.1",
     "buffer": "^6.0.3",

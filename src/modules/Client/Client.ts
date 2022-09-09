@@ -107,6 +107,7 @@ export default class Client {
   private optionallyLoadPersisted() {
     if (!this.options.persistConnection) return;
     const persisted = this.storage.get('client');
+    console.log(persisted)
     if (!persisted || !persisted.connected) return;
     if (persisted.connected === 'MYALGO') this.useMyAlgo();
     if (persisted.connected === 'PERA') this.usePera();

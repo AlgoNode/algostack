@@ -10,7 +10,7 @@
     "importHelpers": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": false,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
   },
