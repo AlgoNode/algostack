@@ -2,7 +2,7 @@
 import { decodeObj} from 'algosdk';
 import omitBy from 'lodash/omitBy.js';
 import isNil from 'lodash/isNil.js';
-import { NoteEncoding, NoteProps } from '../modules/Addons';
+import { NoteEncoding, NoteProps } from '../modules/Addons/index.js';
 
 
 

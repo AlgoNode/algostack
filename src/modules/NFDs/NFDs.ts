@@ -20,7 +20,7 @@ export default class NFDs {
    */
   async getNFDs (address: string) {
     try {
-      const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?address=${address}`)
+      const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?address=${address}&limit=1`)
       if (!response.data || !response.data.length) return undefined;
       return response.data
         .filter(nfd => nfd.depositAccount === address)
@@ -54,7 +54,7 @@ export default class NFDs {
     const queryStr = uniqueAddresses.map(addr => `address=${addr}`).join('&');
     
     try {
-      const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?${queryStr}`)
+      const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?${queryStr}&limit=1`);
       if (!response.data || !response.data.length) return {};
       response.data.forEach((nfd: Record<string, any>) => {
         if (!nfd.depositAccount || !mappedAddresses[nfd.depositAccount]) return;
