@@ -8,4 +8,5 @@ export interface QueryParams {
   [key: string]: string|number|boolean|undefined,
 }
 
+
 export type Payload = Record<string, any>;

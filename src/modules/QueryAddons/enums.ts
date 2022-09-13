@@ -1,5 +1,17 @@
 
 /**
+ * Available addons
+ * ==================================================
+ */
+export enum Addon {
+  NFDS = 'nfds',
+  ICONS = 'icons',
+  DECODENOTES = 'decodeNotes',
+  CATEGORY = 'category',
+  ARCS = 'arcs',
+}
+
+/**
  * Asset categories
  * ==================================================
  */

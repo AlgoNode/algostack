@@ -21,13 +21,13 @@ export default class NFDs {
   async getNFDs (address: string) {
     try {
       const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?address=${address}&limit=1`)
-      if (!response.data || !response.data.length) return undefined;
+      if (!response.data || !response.data.length) return [];
       return response.data
         .filter(nfd => nfd.depositAccount === address)
         .map(nfd => nfd.name);
     }
     catch (e) {
-      return undefined;
+      return [];
     }
   }
 

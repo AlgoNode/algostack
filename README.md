@@ -57,9 +57,6 @@ interface OptionsProps {
   apiPort?: number,
   apiToken?: string,
   
-  // The case to use for variables names. 
-  // They'll be automatically converted when interacting with the blockchain.
-  convertCase?: 'kebabcase' | 'snakecase' | 'camelcase' | 'none', // default: 'none'
 
   // Persist wallet connections, even after refreshing
   // Only available in browsers
