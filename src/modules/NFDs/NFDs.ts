@@ -2,6 +2,7 @@ import axios from 'axios';
 import uniq from 'lodash/uniq.js';
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
+import type Cache from '../Cache/index.js';
 
 /**
  * NFDs module
@@ -9,9 +10,11 @@ import Options from '../../utils/options.js';
  */
 export default class NFDs {
   protected options: Options;
+  protected cache?: Cache;
 
   constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
+    this.cache = forwarded.cache;
   }
   
   /**
@@ -19,16 +22,28 @@ export default class NFDs {
    * ==================================================
    */
   async getNFDs (address: string) {
+    
+    if (this.cache) {
+      const cached = await this.cache.find('nfds', { address });
+      if (cached?.nfds) return cached.nfds;
+    }
+
+    let results = [];
     try {
       const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?address=${address}&limit=1`)
-      if (!response.data || !response.data.length) return [];
-      return response.data
-        .filter(nfd => nfd.depositAccount === address)
-        .map(nfd => nfd.name);
+      if (response?.data?.length) results = response.data
+    } catch {}
+
+    const nfds = results
+      .filter(nfd => nfd.depositAccount === address)
+      .map(nfd => nfd.name);
+
+    if (this.cache) {
+      await this.cache.save('nfds', results, { address, nfds });
     }
-    catch (e) {
-      return [];
-    }
+
+    return nfds;
+  
   }
 
   

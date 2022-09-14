@@ -5,11 +5,14 @@ import type QueryAddons from './modules/QueryAddons/index.js';
 import type Client from './modules/Client/index.js';
 import type Txns from './modules/Txns/index.js';
 import type NFDs from './modules/NFDs/index.js';
+import type Cache from './modules/Cache/index.js';
 import type Query from './modules/Query/index.js';
 import type { LookupMethods, SearchMethods } from './modules/Query/index.js';
-export * from './helpers/encoding.js';
 
+export * from './helpers/encoding.js';
+export type { OptionsProps } from './utils/options.js';
 export interface PlugableModules {
+  Cache?: typeof Cache,
   Client?: typeof Client,
   Txns?: typeof Txns,
   Query?: typeof Query,
@@ -31,6 +34,7 @@ export default class AlgoStack {
   public query?: Query;
   public queryAddons?: QueryAddons;
   public nfds?: NFDs;
+  public cache?: Cache;
   
   // Methods
   public lookup?: LookupMethods;
@@ -40,14 +44,19 @@ export default class AlgoStack {
     this.options = new Options(userOptions);
     this.storage = new Storage(this);
 
-    if (modules.QueryAddons) this.queryAddons = new modules.QueryAddons(this);
+    // Add modules
+    if (modules.Cache) this.cache = new modules.Cache(this);
     if (modules.Client) this.client = new modules.Client(this);
     if (modules.Txns) this.txns = new modules.Txns(this);
+    if (modules.NFDs) this.nfds = new modules.NFDs(this);
+    if (modules.QueryAddons) this.queryAddons = new modules.QueryAddons(this);
     if (modules.Query) {
       this.query = new modules.Query(this);
       this.lookup = this.query.lookup;
       this.search = this.query.search;
     } 
-    if (modules.NFDs) this.nfds = new modules.NFDs(this);
+
+    // Init
+    if (this.cache) this.cache.init(this);
   }
 }

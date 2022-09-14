@@ -1,6 +1,6 @@
 import merge from 'lodash/merge.js';
 export type Modes = 'MAINNET' | 'TESTNET' | 'BETANET';
-export type Cases = 'kebabcase' | 'snakecase' | 'camelcase' | 'none';
+export type DurationString = string;
 
 /**
  * All options available in AlgoStack
@@ -20,6 +20,12 @@ export interface OptionsProps {
 
   // NFD api Url
   nfdApiUrl?: string,
+
+  // Cache expiration
+  cacheExpiration?: {
+    default: DurationString,
+    [k:string]: DurationString,
+  } 
 }
 
 
@@ -27,7 +33,7 @@ export interface OptionsProps {
  * Options Class
  * ==================================================
  */
-export default class Options {
+export default class Options implements OptionsProps {
   public indexerUrl = 'https://mainnet-idx.algonode.cloud';
   public apiUrl = 'https://mainnet-api.algonode.cloud';
   public apiToken = undefined;
@@ -37,6 +43,15 @@ export default class Options {
   public storageNamespace = 'algostack';
 
   public NFDApiUrl = 'https://api.nf.domains';
+
+  public cacheExpiration = {
+    default: '1h',
+    asset: '1m',
+    assets: '10s',
+    block: '1w',
+    transaction: '1w',
+    nfds: '1m',
+  }
   
 
   constructor (userOptions?: OptionsProps) {

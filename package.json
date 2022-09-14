@@ -29,9 +29,10 @@
     "axios": "^0.19.1",
     "buffer": "^6.0.3",
     "camelcase-keys": "^7.0.2",
+    "dexie": "^3.2.2",
     "kebabcase-keys": "^1.0.0",
     "lodash": "^4.17.19",
-    "snakecase-keys": "^5.4.2"
+		"object-hash": "^3.0.0"
   },
   "devDependencies": {
     "tslib": "^2.4.0",
