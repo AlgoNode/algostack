@@ -1,6 +1,6 @@
 import BaseRunner from './_BaseAddon.js';
 import { Payload } from '../../Query/index.js';
-import { decodeNote } from '../../../helpers/encoding.js';
+import { decodeBase64 } from '../../../helpers/encoding.js';
 
 export default class DecodeNotes extends BaseRunner {
   constructor (data: Payload) {
@@ -17,7 +17,7 @@ export default class DecodeNotes extends BaseRunner {
   
   async transaction(txn: Payload) {
     if (!txn.note) return;
-    const note = decodeNote(txn.note);
+    const note = decodeBase64(txn.note);
     this.save(txn, note);
   }
 }

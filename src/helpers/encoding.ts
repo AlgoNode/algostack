@@ -25,24 +25,37 @@ export function b64ToUtf8 (str: string) {
  * ==================================================
  */
 export function decodeBase64(str: string) {
+  const buffer = Buffer.from(str, 'base64');
+  const decoded = buffer.toString('utf8');
+
   const result = {
     encoding: Encoding.B64,
     original: str,
     decoded: str,
   };
-  const encodings = [
-    Encoding.UTF8,
-    // Encoding.HEX,
-  ];
-  for(let i=0; i<encodings.length; i++) {
-    const decoded = Buffer.from(str, 'base64').toString(encodings[i] as BufferEncoding);
-    const latinOnly = !/[\W]/.test(decoded);
-    if (latinOnly) {
-      result.encoding = encodings[i];
-      result.decoded = decoded;
-      break;
-    }
+
+  // MsgPack
+  if (decoded.startsWith('�')) {
+    try {
+      result.encoding = Encoding.MSGPACK,
+      result.decoded = decodeObj(buffer) as string;
+    } catch {}
   }
+  
+  // JSON
+  else if (decoded.startsWith('{')) {
+    try {
+      result.encoding = Encoding.JSON,
+      result.decoded = JSON.parse(decoded) as string;
+    } catch {}
+  }
+
+  // UTF8 - Latin char only
+  else if (!/[^\x00-\x7F]+/.test(decoded)) {
+    result.encoding = Encoding.UTF8,
+    result.decoded = decoded;
+  }
+
   return result;
 }
 
@@ -61,51 +74,6 @@ export function objectValuesToString(params: object) {
 }
 
 
-
-
-/**
- * Decode transaction note
- * ==================================================
- */
-export function decodeNote(str: string): NoteProps {
-  if (!str) return {
-    encoding: Encoding.NONE,
-    content: str,
-  };
-  const buffer = Buffer.from(str, 'base64');
-  const utf8 = buffer.toString('utf8');
-  let result: NoteProps = {
-    encoding: Encoding.NONE,
-    content: utf8,
-  };
-  // MSGPack
-  if (utf8.startsWith('�')) {
-    try {
-      result = {
-        encoding: Encoding.MSGPACK,
-        content: decodeObj(buffer),
-      }
-    } catch {}
-    return result;
-  }
-
-  // JSON
-  if (utf8.startsWith('{')) {
-    try {
-      result = {
-        encoding: Encoding.JSON,
-        content: JSON.parse(utf8),
-      }
-    } catch {}
-    return result;
-  }
-
-  // Plain text
-  return {
-    encoding: Encoding.TEXT,
-    content: utf8,
-  }
-}
 
 
 /**
