@@ -1,6 +1,6 @@
-import { NoteEncoding } from './index.js';
+import { Encoding } from './index.js';
 
 export interface NoteProps {
-  encoding: NoteEncoding,
+  encoding: Encoding,
   content: any,
 }

@@ -4,7 +4,7 @@ import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
 import { Addon } from '../QueryAddons/index.js';
-import { utfToBase64, objectValuesToString } from '../../helpers/encoding.js';
+import { utf8ToB64, objectValuesToString } from '../../helpers/encoding.js';
 import type Cache from '../Cache/index.js';
 import type QueryAddons from '../QueryAddons/index.js';
 import type { QueryParams, Payload } from './types.js';
@@ -89,7 +89,7 @@ export default class Query {
    */
   private encodeParams(params: QueryParams) {
     if (typeof params.notePrefix === 'string') {
-      params.notePrefix = utfToBase64(params.notePrefix);
+      params.notePrefix = utf8ToB64(params.notePrefix);
     }
     return params;
   }

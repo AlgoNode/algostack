@@ -3,16 +3,47 @@ import omitBy from 'lodash/omitBy.js';
 import isNil from 'lodash/isNil.js';
 import { decodeObj} from 'algosdk';
 import { NoteProps } from '../modules/QueryAddons/types.js';
-import { NoteEncoding } from '../modules/QueryAddons/enums.js';
+import { Encoding } from '../modules/QueryAddons/enums.js';
 
 export { decodeAddress } from 'algosdk';
 
 /**
- * encode UTF string to base64
+ * Convert between UTF8 and base64
  * ==================================================
  */
-export function utfToBase64 (str: string) {
+export function utf8ToB64 (str: string) {
   return Buffer.from(str).toString('base64');
+}
+export function b64ToUtf8 (str: string) {
+  return Buffer.from(str, 'base64').toString();
+}
+
+
+/**
+ * Decode base 64
+ * Check for encoding returning latin chars
+ * ==================================================
+ */
+export function decodeBase64(str: string) {
+  const result = {
+    encoding: Encoding.B64,
+    original: str,
+    decoded: str,
+  };
+  const encodings = [
+    Encoding.UTF8,
+    // Encoding.HEX,
+  ];
+  for(let i=0; i<encodings.length; i++) {
+    const decoded = Buffer.from(str, 'base64').toString(encodings[i] as BufferEncoding);
+    const latinOnly = !/[\W]/.test(decoded);
+    if (latinOnly) {
+      result.encoding = encodings[i];
+      result.decoded = decoded;
+      break;
+    }
+  }
+  return result;
 }
 
 
@@ -38,20 +69,20 @@ export function objectValuesToString(params: object) {
  */
 export function decodeNote(str: string): NoteProps {
   if (!str) return {
-    encoding: NoteEncoding.NONE,
+    encoding: Encoding.NONE,
     content: str,
   };
   const buffer = Buffer.from(str, 'base64');
   const utf8 = buffer.toString('utf8');
   let result: NoteProps = {
-    encoding: NoteEncoding.NONE,
+    encoding: Encoding.NONE,
     content: utf8,
   };
   // MSGPack
   if (utf8.startsWith('�')) {
     try {
       result = {
-        encoding: NoteEncoding.MSGPACK,
+        encoding: Encoding.MSGPACK,
         content: decodeObj(buffer),
       }
     } catch {}
@@ -62,7 +93,7 @@ export function decodeNote(str: string): NoteProps {
   if (utf8.startsWith('{')) {
     try {
       result = {
-        encoding: NoteEncoding.JSON,
+        encoding: Encoding.JSON,
         content: JSON.parse(utf8),
       }
     } catch {}
@@ -71,7 +102,7 @@ export function decodeNote(str: string): NoteProps {
 
   // Plain text
   return {
-    encoding: NoteEncoding.TEXT,
+    encoding: Encoding.TEXT,
     content: utf8,
   }
 }

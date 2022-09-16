@@ -35,9 +35,13 @@ export enum Arc {
  * Note encoding
  * ==================================================
  */
-export enum NoteEncoding {
+export enum Encoding {
   NONE = 'none',
   TEXT = 'text',
   JSON = 'json',
   MSGPACK = 'msgpack',
+  B64 = 'base64',
+  B32 = 'base32',
+  HEX = 'hex',
+  UTF8 = 'utf8',
 }

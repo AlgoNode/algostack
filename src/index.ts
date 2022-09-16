@@ -8,9 +8,9 @@ import type NFDs from './modules/NFDs/index.js';
 import type Cache from './modules/Cache/index.js';
 import type Query from './modules/Query/index.js';
 import type { LookupMethods, SearchMethods } from './modules/Query/index.js';
-
-export * from './helpers/encoding.js';
+import * as encodingHelpers from './helpers/encoding.js';
 export type { OptionsProps } from './utils/options.js';
+
 export interface PlugableModules {
   Cache?: typeof Cache,
   Client?: typeof Client,
@@ -27,6 +27,9 @@ export default class AlgoStack {
   // Utils
   public options: Options;
   public storage: Storage;
+  public helpers: Record<string, any> = {
+    ...encodingHelpers,
+  };
   
   // Modules
   public client?: Client;
