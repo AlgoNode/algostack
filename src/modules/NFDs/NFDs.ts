@@ -3,6 +3,7 @@ import uniq from 'lodash/uniq.js';
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
 import type Cache from '../Cache/index.js';
+import { AddressesList, AddressesMap, AddressString } from './types.js';
 
 /**
  * NFDs module
@@ -11,10 +12,12 @@ import type Cache from '../Cache/index.js';
 export default class NFDs {
   protected options: Options;
   protected cache?: Cache;
+  protected fetching: Record<AddressString, ((PromiseLike) => void)[]>;
 
   constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
     this.cache = forwarded.cache;
+    this.fetching = {};
   }
   
   /**
@@ -22,27 +25,44 @@ export default class NFDs {
    * ==================================================
    */
   async getNFDs (address: string) {
-    
-    if (this.cache) {
-      const cached = await this.cache.find('nfds', { address });
-      if (cached?.nfds) return cached.nfds;
-    }
+    return new Promise(async resolve => {
+      // get cache
+      if (this.cache) {
+        const cached = await this.cache.find('nfds', { address });
+        if (cached?.nfds) return resolve(cached.nfds);
+      }
+  
+      // check if a task is currently fetching this address
+      if (this.fetching[address]) {
+        this.fetching[address].push(resolve);
+        return;
+      }
 
-    let results = [];
-    try {
-      const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?address=${address}&limit=1`)
-      if (response?.data?.length) results = response.data
-    } catch {}
+      // get results
+      let results = [];
+      this.fetching[address] = [];  
+      try {
+        const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?address=${address}&limit=1`)
+        if (response?.data?.length) results = response.data
+      } catch {}
+      const nfds = results
+        .filter(nfd => nfd.depositAccount === address)
+        .map(nfd => nfd.name);
+      
+      // trigger current stack
+      if (this.fetching[address]?.length) {
+        this.fetching[address].forEach(resolve => resolve(nfds));
+        delete this.fetching[address];
+      }
+  
+      // save cache
+      if (this.cache) {
+        await this.cache.save('nfds', results, { address, nfds });
+      }
 
-    const nfds = results
-      .filter(nfd => nfd.depositAccount === address)
-      .map(nfd => nfd.name);
-
-    if (this.cache) {
-      await this.cache.save('nfds', results, { address, nfds });
-    }
-
-    return nfds;
+      // resolve 
+      resolve(nfds);
+    })
   
   }
 
