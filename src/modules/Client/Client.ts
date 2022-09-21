@@ -3,6 +3,7 @@ import Options from '../../utils/options.js';
 import Storage from '../../utils/storage.js';
 import MyAlgo from '../../connectors/MyAlgo.js';
 import Pera from '../../connectors/Pera.js';
+import Mnemonic from '../../connectors/Mnemonic.js';
 import { ConnectorStrings } from './types.js';
 
 /**
@@ -12,7 +13,7 @@ import { ConnectorStrings } from './types.js';
 export default class Client {
   protected options: Options;
   protected storage: Storage;
-  private _connector?: MyAlgo | Pera | undefined = undefined; 
+  private _connector?: MyAlgo | Pera | Mnemonic | undefined = undefined; 
   private _connected?: ConnectorStrings = undefined;
   private _addresses: string[] = [];
 
@@ -35,6 +36,15 @@ export default class Client {
     return this._addresses;
   }
 
+
+  //
+  // Mnemonic
+  // ----------------------------------------------
+  public connectMnemonic(mnemonic: string = '') {
+    this._connected = 'MNEMONIC'; 
+    this._connector = new Mnemonic(mnemonic);
+    return this._connector.ready;
+  }
 
   //
   // MYALGO

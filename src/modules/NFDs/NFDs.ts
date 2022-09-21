@@ -3,7 +3,7 @@ import uniq from 'lodash/uniq.js';
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
 import type Cache from '../Cache/index.js';
-import { AddressesList, AddressesMap, AddressString } from './types.js';
+import { AddressString } from './types.js';
 
 /**
  * NFDs module

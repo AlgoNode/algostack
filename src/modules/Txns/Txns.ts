@@ -28,7 +28,8 @@ export default class Txns {
   //
   // Single Transaction
   // ----------------------------------------------
-  async sendTxn(params: TransactionLike) {
+  async sendTxn(params: Record<string, any>) {
+    
     try {
       const baseParams = await this.getTxnParams();
       const txn = new algosdk.Transaction({
@@ -50,7 +51,7 @@ export default class Txns {
   //
   // Grouped Transactions
   // ----------------------------------------------
-  async sendGroupedTxns(paramsGroup: TransactionLike[]) {
+  async sendGroupedTxns(paramsGroup: Record<string, any>[]) {
     try {
       const baseParams = await this.getTxnParams();
       let group: Transaction[] = [];

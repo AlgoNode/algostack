@@ -39,7 +39,6 @@ import Query from 'algostack/Query';
 
 const algostack = new AlgoStack(
   {
-    convertCase: 'camelcase',
     apiUrl: 'https://testnet-api.algonode.cloud',
     indexerUrl: 'https://testnet-idx.algonode.cloud', 
   }, 
