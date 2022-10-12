@@ -5,7 +5,7 @@
  */
 export enum Addon {
   NFDS = 'nfds',
-  ICONS = 'icons',
+  ICON = 'icon',
   DECODENOTES = 'decodeNotes',
   CATEGORY = 'category',
   ARCS = 'arcs',

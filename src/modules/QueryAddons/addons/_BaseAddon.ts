@@ -1,7 +1,7 @@
 import { Payload } from '../../Query/index.js';
 
 
-export default abstract class BaseRunner {
+export default abstract class BaseAddon {
   public data: Payload;
   public scopes: string[];
   public key: string;
