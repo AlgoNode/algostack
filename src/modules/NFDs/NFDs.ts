@@ -24,7 +24,7 @@ export default class NFDs {
    * Get NFD
    * ==================================================
    */
-  async getNFDs (address: string) {
+  async getNFDs (address: string): Promise<string[]> {
     return new Promise(async resolve => {
       // get cache
       if (this.cache) {
@@ -102,6 +102,51 @@ export default class NFDs {
     catch (e) {
       return mappedNFDs;
     }
+  }
+
+
+  /**
+   * Get Address
+   * ==================================================
+   */
+  async getAddress (nfds: string): Promise<string|undefined> {
+    return new Promise(async resolve => {
+      // get cache
+      if (this.cache) {
+        const cached = await this.cache.find('nfds', { nfds });
+        if (cached?.address) return resolve(cached.address);
+      }
+  
+      // check if a task is currently fetching this address
+      if (this.fetching[nfds]) {
+        this.fetching[nfds].push(resolve);
+        return;
+      }
+
+      // get results
+      let results = [];
+      this.fetching[nfds] = [];  
+      try {
+        const response = await axios.get(`${this.options.NFDApiUrl}/nfd/${nfds}`)
+        if (response?.data) results = [response.data]
+      } catch {}
+
+      const address = results[0]?.depositAccount;
+      // trigger current stack
+      if (this.fetching[nfds]?.length) {
+        this.fetching[nfds].forEach(resolve => resolve(address));
+        delete this.fetching[nfds];
+      }
+  
+      // save cache
+      if (this.cache && address) {
+        await this.cache.save('nfds', results, { address, nfds });
+      }
+
+      // resolve 
+      resolve(address);
+    })
+  
   }
 
 }

@@ -3,7 +3,6 @@ import objHash from 'object-hash';
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
 import { durationStringToMs } from '../../helpers/format.js';
-import { QueryParams } from '../Query/types.js';
 import { CacheEntry } from './types.js';
 
 /**
@@ -78,7 +77,7 @@ export default class Cache {
       return results;
     }
     catch(e) {
-      console.log(store, e)
+      // console.log(store, e)
       return;
     };
   }
@@ -99,7 +98,7 @@ export default class Cache {
       await this.db[store].put(entry);
     }
     catch(e) {
-      console.log(store, e)
+      console.error(store, e)
     }
   }
 
@@ -114,7 +113,7 @@ export default class Cache {
     Object.entries(result)
       .forEach(([key, value]) => {
         if (typeof value === 'object' && !Array.isArray(value)) result[key] = objHash(value)
-        if (value === null) delete result[key]; 
+        if (value === null || value === undefined) delete result[key]; 
       });
     return result;
   }

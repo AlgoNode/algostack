@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { pRateLimit } from 'p-ratelimit';
 import camelcaseKeys from 'camelcase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
@@ -17,10 +18,15 @@ export default class Query {
   protected options: Options;
   protected queryAddons?: QueryAddons;
   protected cache?: Cache; 
+  protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
   constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
     this.cache = forwarded.cache;
     this.queryAddons = forwarded.queryAddons;
+    this.rateLimit = pRateLimit({
+      interval: 1000,
+      rate: 50, 
+    });
   }
 
  
@@ -30,7 +36,6 @@ export default class Query {
    */
   private async indexerQuery(store: string, id: string|number|null, endpoint: string, params: QueryParams = {}, addons?: Addon[]) {
     let data: Payload;
-
     // get cached data
     if (this.cache) {
       const cached = await this.cache.find(store, { id, params });
@@ -50,6 +55,7 @@ export default class Query {
 
     data = await this.fetchIndexer(url, kebabcaseParams);
     
+    // Loop
     if (loop) {
       while (data['next-token']) {
         const nextData: Payload = await this.fetchIndexer(
@@ -71,7 +77,7 @@ export default class Query {
     data = camelcaseKeys(data, { deep: true }); 
     
     // cache result
-    if (this.cache) {
+    if (this.cache && !data.error) {
       await this.cache.save(store, data, { id, params });
     }
 
@@ -104,7 +110,9 @@ export default class Query {
     try {
       const stringifiedParams = objectValuesToString(params);
       const queryString: string = new URLSearchParams(stringifiedParams).toString();  
-      const response = await axios.get(`${this.options.indexerUrl}${endpoint}?${queryString}`);
+      const response = await this.rateLimit(
+        () => axios.get(`${this.options.indexerUrl}${endpoint}?${queryString}`)
+      );
       return response.data;
     }
     catch (err: any) {
