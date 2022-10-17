@@ -46,11 +46,12 @@ export default class Options implements OptionsProps {
 
   public cacheExpiration = {
     default: '1h',
-    asset: '1h',
+    asset: '1w',
     assets: '10s',
     block: '1w',
     transaction: '1w',
-    nfds: '1h',
+    nfds: '6h',
+    icon: '1d',
   }
   
 

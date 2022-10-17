@@ -1,9 +1,11 @@
 import axios from 'axios';
 import uniq from 'lodash/uniq.js';
+import throttle from 'lodash/throttle.js';
+import chunk from 'lodash/chunk.js';
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
 import type Cache from '../Cache/index.js';
-import { AddressString } from './types.js';
+import { AddressString, NFDQueryCallback, NFDQuery } from './types.js';
 
 /**
  * NFDs module
@@ -12,7 +14,7 @@ import { AddressString } from './types.js';
 export default class NFDs {
   protected options: Options;
   protected cache?: Cache;
-  protected fetching: Record<AddressString, ((PromiseLike) => void)[]>;
+  protected fetching: Record<AddressString, NFDQueryCallback[]>;
 
   constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
@@ -33,38 +35,51 @@ export default class NFDs {
       }
   
       // check if a task is currently fetching this address
-      if (this.fetching[address]) {
-        this.fetching[address].push(resolve);
-        return;
-      }
+      if (!this.fetching[address]) this.fetching[address] = [];  
+      this.fetching[address].push(resolve);
 
-      // get results
-      let results = [];
-      this.fetching[address] = [];  
-      try {
-        const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?address=${address}&limit=1`)
-        if (response?.data?.length) results = response.data
-      } catch {}
-      const nfds = results
-        .filter(nfd => nfd.depositAccount === address)
-        .map(nfd => nfd.name);
-      
-      // trigger current stack
-      if (this.fetching[address]?.length) {
-        this.fetching[address].forEach(resolve => resolve(nfds));
-        delete this.fetching[address];
-      }
-  
-      // save cache
-      if (this.cache) {
-        await this.cache.save('nfds', results, { address, nfds });
-      }
-
-      // resolve 
-      resolve(nfds);
+      // trigger throttled fetch
+      this.batchFetchNFDs();
     })
   
   }
+
+
+  /**
+  * Fetch address batch
+  * ==================================================
+  */
+  private batchFetchNFDs = throttle( async () => {
+    const fetching: AddressString[] = Object.keys(this.fetching)
+    const batches = chunk(fetching, 20);
+    // console.log(batches);
+    
+    batches.forEach( async addresses => {
+      let results = []; 
+      const addressesQueryString = `address=${addresses.join('&address=')}`;
+      // get results
+      try {
+        const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?${addressesQueryString}`);
+        if (response?.data?.length) results = response.data
+      } catch {}
+
+      // loop each address in batch to map it with results
+      addresses.forEach( async address => {
+        const nfds = results
+        .filter(nfd => nfd.depositAccount === address)
+        .map(nfd => nfd.name);
+        // trigger current stack
+        if (this.fetching[address]?.length) {
+          this.fetching[address].forEach(resolve => resolve(nfds));
+          delete this.fetching[address];
+        }
+        // save cache
+        if (this.cache) {
+          await this.cache.save('nfds', results, { address, nfds });
+        }
+      });
+    });  
+  }, 100);
 
   
   /**
