@@ -27,7 +27,6 @@ export default class Pera extends BaseConnector {
     // connect
     try {
       const addresses = await this.connector.connect();
-      console.log('connect')
       return addresses;
     } 
     catch (err) {

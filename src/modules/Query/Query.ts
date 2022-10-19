@@ -36,8 +36,9 @@ export default class Query {
    */
   private async indexerQuery(store: string, id: string|number|null, endpoint: string, params: QueryParams = {}, addons?: Addon[]) {
     let data: Payload;
+
     // get cached data
-    if (this.cache) {
+    if (this.cache && !params.refreshCache) {
       const cached = await this.cache.find(store, { id, params });
       if (cached) {
         data = cached.data
@@ -45,11 +46,11 @@ export default class Query {
         return data;
       }
     }
-
-
+    
     const url = id ? endpoint.replace(':id', String(id)) : endpoint;
     const loop:boolean = params.limit === -1;
     if (loop) delete params.limit; 
+    if (params.refreshCache !== undefined) delete params.refreshCache;
     const encodedParams = this.encodeParams(params);
     const kebabcaseParams = kebabcaseKeys(encodedParams, { deep: true }); 
 

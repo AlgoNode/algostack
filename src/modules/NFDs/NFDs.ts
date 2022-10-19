@@ -52,7 +52,6 @@ export default class NFDs {
   private batchFetchNFDs = throttle( async () => {
     const fetching: AddressString[] = Object.keys(this.fetching)
     const batches = chunk(fetching, 20);
-    // console.log(batches);
     
     batches.forEach( async addresses => {
       let results = []; 
