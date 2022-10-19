@@ -5,7 +5,7 @@ First, make sure you add the `Client` module when initializing `AlgoStack`. You 
 
 ```js
 import AlgoStack from 'algostack';
-import Client from 'algostack/Client';
+import Client from 'algostack/client';
 
 const algostack = new AlgoStack({}, { Client });
 
@@ -43,7 +43,7 @@ The simplest implementation goes like this.
 
 ```js
 import AlgoStack from 'algostack';
-import Client from 'algostack/Client';
+import Client from 'algostack/client';
 const algostack = new AlgoStack({}, { Client });
 
 // attach connect methods to ui elements
@@ -69,7 +69,7 @@ Connect methods are `async` functions, so you can wait for them to resolve befor
 
 ```js
 import AlgoStack from 'algostack';
-import Client from 'algostack/Client';
+import Client from 'algostack/client';
 const algostack = new AlgoStack({}, { Client });
 
 let connected = undefined;

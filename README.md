@@ -33,9 +33,9 @@ Example:
 
 ```js
 import AlgoStack from 'algostack';
-import Client from 'algostack/Client';
-import Txns from 'algostack/Txns';
-import Query from 'algostack/Query';
+import Client from 'algostack/client';
+import Txns from 'algostack/txns';
+import Query from 'algostack/query';
 
 const algostack = new AlgoStack(
   {

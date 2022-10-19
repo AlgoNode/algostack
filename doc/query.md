@@ -7,7 +7,7 @@ First, make sure you add the `Query` module when initializing `AlgoStack`.
 
 ```js
 import AlgoStack from 'algostack';
-import Query from 'algostack/Query';
+import Query from 'algostack/query';
 
 const algostack = new AlgoStack({}, { Query });
 
@@ -50,7 +50,7 @@ Here's a quick example on how to fetch data from the blockchain.
 
 ```js
 import AlgoStack from 'algostack';
-import Query from 'algostack/Query';
+import Query from 'algostack/query';
 
 // Set the case to 'camelcase', because we like it better that way
 const algostack = new AlgoStack({
@@ -90,7 +90,7 @@ If for some reason you need to fetch all results for a lookup call, usually yuo 
 
 ```js
 import AlgoStack from 'algostack';
-import Query from 'algostack/Query';
+import Query from 'algostack/query';
 
 const algostack = new AlgoStack({
   convertCase: 'camelCase',
