@@ -4,10 +4,10 @@ import camelcaseKeys from 'camelcase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
-import { Addon } from '../QueryAddons/index.js';
+import { Addon } from '../addons/index.js';
 import { utf8ToB64, objectValuesToString } from '../../helpers/encoding.js';
-import type Cache from '../Cache/index.js';
-import type QueryAddons from '../QueryAddons/index.js';
+import type Cache from '../cache/index.js';
+import type Addons from '../addons/index.js';
 import type { QueryParams, Payload } from './types.js';
 
 /**
@@ -16,13 +16,13 @@ import type { QueryParams, Payload } from './types.js';
  */
 export default class Query {
   protected options: Options;
-  protected queryAddons?: QueryAddons;
+  protected addons?: Addons;
   protected cache?: Cache; 
   protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
   constructor(forwarded: AlgoStack) {
     this.options = forwarded.options;
     this.cache = forwarded.cache;
-    this.queryAddons = forwarded.queryAddons;
+    this.addons = forwarded.addons;
     this.rateLimit = pRateLimit({
       interval: 1000,
       rate: 50, 
@@ -36,20 +36,21 @@ export default class Query {
    */
   private async indexerQuery(store: string, id: string|number|null, endpoint: string, params: QueryParams = {}, addons?: Addon[]) {
     let data: Payload;
+
     // get cached data
-    if (this.cache) {
+    if (this.cache && !params.refreshCache) {
       const cached = await this.cache.find(store, { id, params });
       if (cached) {
         data = cached.data
-        if (addons) await this.queryAddons.apply(data, addons);
+        if (addons) await this.addons.apply(data, addons);
         return data;
       }
     }
-
-
+    
     const url = id ? endpoint.replace(':id', String(id)) : endpoint;
     const loop:boolean = params.limit === -1;
     if (loop) delete params.limit; 
+    if (params.refreshCache !== undefined) delete params.refreshCache;
     const encodedParams = this.encodeParams(params);
     const kebabcaseParams = kebabcaseKeys(encodedParams, { deep: true }); 
 
@@ -83,7 +84,7 @@ export default class Query {
 
     // Apply addons if necessary
     if (addons) {
-      await this.queryAddons.apply(data, addons);
+      await this.addons.apply(data, addons);
     }
     
     return data;

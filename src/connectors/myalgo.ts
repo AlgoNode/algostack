@@ -1,6 +1,6 @@
 import MyAlgoConnect from '@randlabs/myalgo-connect';
 import algosdk, { Transaction } from 'algosdk';
-import BaseConnector from './Base.js';
+import BaseConnector from './base.js';
 
 export default class MyAlgo extends BaseConnector {
   protected connector?: MyAlgoConnect = undefined;

@@ -1,9 +1,9 @@
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
-import type NFDs from '../NFDs/index.js';
-import type Cache from '../Cache/index.js';
-import type { Payload } from '../Query/index.js';
-import addonsClasses from './addons/index.js';
+import type NFDs from '../nfds/index.js';
+import type Cache from '../cache/index.js';
+import type { Payload } from '../query/index.js';
+import allAddons from './classes/index.js';
 import { Addon } from './enums.js';
 
 //
@@ -25,10 +25,10 @@ export default class Addons {
    * Check for addons
    * ==================================================
    */
-  public async apply(data: Payload, addons: Addon[]) {
-    for (let i=0; i<addons.length; i++) {
-      if (!addonsClasses[addons[i]]) continue;
-      const addon = new addonsClasses[addons[i]](data, this);
+  public async apply(data: Payload, requestedAddons: Addon[]) {
+    for (let i=0; i<requestedAddons.length; i++) {
+      if (!allAddons[requestedAddons[i]]) continue;
+      const addon = new allAddons[requestedAddons[i]](data, this);
       await addon.run();
     }
     return data;

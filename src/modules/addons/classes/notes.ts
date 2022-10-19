@@ -1,5 +1,5 @@
-import BaseRunner from './_BaseAddon.js';
-import { Payload } from '../../Query/index.js';
+import BaseRunner from './_base.js';
+import { Payload } from '../../query/index.js';
 import { decodeBase64 } from '../../../helpers/encoding.js';
 
 export default class DecodeNotes extends BaseRunner {

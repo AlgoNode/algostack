@@ -1,5 +1,5 @@
-import BaseRunner from './_BaseAddon.js';
-import { Payload } from '../../Query/index.js';
+import BaseRunner from './_base.js';
+import { Payload } from '../../query/index.js';
 
 export default class AssetNFDs extends BaseRunner { 
   constructor (data: Payload) {

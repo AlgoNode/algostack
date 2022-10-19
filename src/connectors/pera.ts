@@ -3,7 +3,7 @@ import algosdk, { Transaction } from 'algosdk';
 import { PeraWalletConnect } from "@perawallet/connect";
 import { SignerTransaction } from "@perawallet/connect/dist/util/model/peraWalletModels";
 import { formatJsonRpcRequest } from '@json-rpc-tools/utils';
-import BaseConnector from './Base.js';
+import BaseConnector from './base.js';
 
 export default class Pera extends BaseConnector {
   protected connector?: PeraWalletConnect = undefined;

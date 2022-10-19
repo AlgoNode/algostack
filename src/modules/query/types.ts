@@ -1,4 +1,4 @@
-import type Query from './Query.js';
+import type Query from './query.js';
 
 export type LookupMethods = Query['lookup'];
 export type SearchMethods = Query['search'];

@@ -4,7 +4,7 @@ import throttle from 'lodash/throttle.js';
 import chunk from 'lodash/chunk.js';
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
-import type Cache from '../Cache/index.js';
+import type Cache from '../cache/index.js';
 import { AddressString, NFDQueryCallback, NFDQuery } from './types.js';
 
 /**

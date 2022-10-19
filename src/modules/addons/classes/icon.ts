@@ -1,7 +1,7 @@
-import type Cache from '../../Cache/index.js';
-import type Addons from '../QueryAddons.js';
-import BaseRunner from './_BaseAddon.js';
-import { Payload } from '../../Query/index.js';
+import type Cache from '../../cache/index.js';
+import type Addons from '../addons.js';
+import BaseRunner from './_base.js';
+import { Payload } from '../../query/index.js';
 import { getFileContent, getFileType } from '../../../helpers/files.js';
 
 export default class Icon extends BaseRunner {

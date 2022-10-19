@@ -1,9 +1,9 @@
 import AlgoStack from '../../index.js';
 import Options from '../../utils/options.js';
 import Storage from '../../utils/storage.js';
-import MyAlgo from '../../connectors/MyAlgo.js';
-import Pera from '../../connectors/Pera.js';
-import Mnemonic from '../../connectors/Mnemonic.js';
+import MyAlgo from '../../connectors/myalgo.js';
+import Pera from '../../connectors/pera.js';
+import Mnemonic from '../../connectors/mnemonic.js';
 import { ConnectorStrings } from './types.js';
 
 /**

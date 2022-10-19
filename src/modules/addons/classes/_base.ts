@@ -1,4 +1,4 @@
-import { Payload } from '../../Query/index.js';
+import { Payload } from '../../query/index.js';
 
 
 export default abstract class BaseAddon {

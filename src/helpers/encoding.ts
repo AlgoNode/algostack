@@ -2,8 +2,8 @@
 import omitBy from 'lodash/omitBy.js';
 import isNil from 'lodash/isNil.js';
 import { decodeObj} from 'algosdk';
-import { NoteProps } from '../modules/QueryAddons/types.js';
-import { Encoding } from '../modules/QueryAddons/enums.js';
+import { NoteProps } from '../modules/addons/types.js';
+import { Encoding } from '../modules/addons/enums.js';
 
 export { decodeAddress } from 'algosdk';
 

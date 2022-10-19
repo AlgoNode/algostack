@@ -1,5 +1,5 @@
 import algosdk, { Transaction, Account } from 'algosdk';
-import BaseConnector from './Base.js';
+import BaseConnector from './base.js';
 
 export default class MyAlgo extends BaseConnector {
   protected connector?: any = {};

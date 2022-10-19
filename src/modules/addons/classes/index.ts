@@ -1,9 +1,9 @@
 import { Addon } from '../enums.js';
-import Category from './Category.js';
-import Arcs from './Arcs.js';
-import Nfds from './Nfds.js';
-import Icon from './Icon.js';
-import DecodeNotes from './Notes.js';
+import Category from './category.js';
+import Arcs from './arcs.js';
+import Nfds from './nfds.js';
+import Icon from './icon.js';
+import DecodeNotes from './notes.js';
 
 export default {
   [Addon.CATEGORY]: Category,

@@ -46,7 +46,7 @@ export default class Cache {
       };
     }
     // Query Addons
-    if (forwarded.queryAddons) {
+    if (forwarded.addons) {
       stores = { ...stores, icon: '&id' }
     }
     // NFDs
