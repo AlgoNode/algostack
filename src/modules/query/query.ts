@@ -34,11 +34,11 @@ export default class Query {
    * Query wrapper
    * ==================================================
    */
-  private async indexerQuery(store: string, id: string|number|null, endpoint: string, params: QueryParams = {}, addons?: Addon[]) {
+  private async indexerQuery(store: string|null, id: string|number|null, endpoint: string, params: QueryParams = {}, addons?: Addon[]) {
     let data: Payload;
 
     // get cached data
-    if (this.cache && !params.refreshCache) {
+    if (this.cache && store && !params.refreshCache) {
       const cached = await this.cache.find(store, { id, params });
       if (cached) {
         data = cached.data
@@ -51,17 +51,21 @@ export default class Query {
     const loop:boolean = params.limit === -1;
     if (loop) delete params.limit; 
     if (params.refreshCache !== undefined) delete params.refreshCache;
-    const encodedParams = this.encodeParams(params);
+
+    const cleanParams = this.cleanParams(params)
+    const encodedParams = this.encodeParams(cleanParams);
     const kebabcaseParams = kebabcaseKeys(encodedParams, { deep: true }); 
 
     data = await this.fetchIndexer(url, kebabcaseParams);
     
+    
     // Loop
     if (loop) {
+      console.log(data)
       while (data['next-token']) {
         const nextData: Payload = await this.fetchIndexer(
           url, 
-          { ...encodedParams, next: data['next-token']}
+          { ...kebabcaseParams, next: data['next-token']}
         );
         delete data['next-token'];
         // merge arrays, including possible new 'next-token'
@@ -78,7 +82,7 @@ export default class Query {
     data = camelcaseKeys(data, { deep: true }); 
     
     // cache result
-    if (this.cache && !data.error) {
+    if (this.cache && store && !data.error) {
       await this.cache.save(store, data, { id, params });
     }
 
@@ -89,6 +93,19 @@ export default class Query {
     
     return data;
   }
+
+
+  /**
+   * Clean params
+   * ==================================================
+   */
+   private cleanParams(params: QueryParams) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined) delete params[key];
+    });
+    return params;
+  }
+
 
   /**
    * Encode params
@@ -109,6 +126,12 @@ export default class Query {
    */
   private async fetchIndexer(endpoint: string, params: QueryParams = {}) {
     try {
+      if (endpoint.indexOf(':id') > -1) {
+        return { error: { 
+          message: 'Endpoint is invalid',
+          url: endpoint
+        } } 
+      }
       const stringifiedParams = objectValuesToString(params);
       const queryString: string = new URLSearchParams(stringifiedParams).toString();  
       const response = await this.rateLimit(
@@ -191,6 +214,15 @@ export default class Query {
     applications: this.applications.bind(this),
     assets: this.assets.bind(this),
     transactions: this.transactions.bind(this),
+  }
+
+
+  /**
+  * Custom
+  * ==================================================
+  */
+  public async custom(endpoint: string, params: QueryParams = {}, addons?: Addon[]) {
+    return await this.indexerQuery(null , null, endpoint, params, addons);
   }
 
 }

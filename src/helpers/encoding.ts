@@ -1,8 +1,5 @@
 // import { Buffer } from 'buffer/index.js';
-import omitBy from 'lodash/omitBy.js';
-import isNil from 'lodash/isNil.js';
 import { decodeObj} from 'algosdk';
-import { NoteProps } from '../modules/addons/types.js';
 import { Encoding } from '../modules/addons/enums.js';
 
 export { decodeAddress } from 'algosdk';
@@ -46,7 +43,7 @@ export function decodeBase64(str: string) {
   else if (decoded.startsWith('{')) {
     try {
       result.encoding = Encoding.JSON,
-      result.decoded = JSON.parse(decoded) as string;
+      result.decoded = JSON.parse(decoded);
     } catch {}
   }
 

@@ -79,7 +79,7 @@ export default class NFDs {
         }
       });
     });  
-  }, 100);
+  }, 200);
 
   
   /**
