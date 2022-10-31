@@ -1,7 +1,6 @@
 // import { Buffer } from 'buffer/index.js';
 import { decodeObj} from 'algosdk';
 import { Encoding } from '../modules/addons/enums.js';
-
 export { decodeAddress } from 'algosdk';
 
 /**
