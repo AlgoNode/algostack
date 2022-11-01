@@ -1,13 +1,18 @@
 {
   "name": "algostack",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "",
   "type": "module",
   "main": "./dist/esm/index.js",
   "module": "./dist/esm/index.js",
   "exports": {
     ".": "./dist/esm/index.js",
-    "./*": "./dist/esm/modules/*/index.js",
+    "./addons": "./dist/esm/modules/addons/index.js",
+    "./cache": "./dist/esm/modules/cache/index.js",
+    "./client": "./dist/esm/modules/client/index.js",
+    "./nfds": "./dist/esm/modules/nfds/index.js",
+    "./query": "./dist/esm/modules/query/index.js",
+    "./txns": "./dist/esm/modules/txns/index.js",
     "./package.json": "./package.json"
   },
   "files": [
@@ -25,7 +30,7 @@
     "@randlabs/myalgo-connect": "^1.2.0",
     "@types/lodash": "^4.14.165",
     "@types/node": "^18.7.14",
-    "algosdk": "^1.21.0",
+    "algosdk": "^1.22.0",
     "axios": "^0.19.1",
     "buffer": "^6.0.3",
     "camelcase-keys": "^7.0.2",
