@@ -58,10 +58,8 @@ export default class Query {
 
     data = await this.fetchIndexer(url, kebabcaseParams);
     
-    
     // Loop
     if (loop) {
-      console.log(data)
       while (data['next-token']) {
         const nextData: Payload = await this.fetchIndexer(
           url, 

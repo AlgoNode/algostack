@@ -26,7 +26,6 @@ export default class Addons {
    * ==================================================
    */
   public async apply(data: Payload, requestedAddons: Addon[]) {
-    console.log('running addons')
     for (let i=0; i<requestedAddons.length; i++) {
       if (!allAddons[requestedAddons[i]]) continue;
       const addon = new allAddons[requestedAddons[i]](data, this);
