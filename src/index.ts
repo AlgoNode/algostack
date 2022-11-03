@@ -48,7 +48,7 @@ export default class AlgoStack {
     this.storage = new Storage(this);
 
     // Add modules
-    if (modules.Cache) this.cache = new modules.Cache(this);
+    if (modules.Cache && typeof window !== 'undefined') this.cache = new modules.Cache(this);
     if (modules.Client) this.client = new modules.Client(this);
     if (modules.Txns) this.txns = new modules.Txns(this);
     if (modules.NFDs) this.nfds = new modules.NFDs(this);
