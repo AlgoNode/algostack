@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 /**
  * Get file type for a remote URL
  * abort request as soon as headers are in
@@ -5,21 +7,14 @@
  * ==================================================
  */
  export function getFileContent(url: string): Promise<string|undefined> {
-  return new Promise(resolve => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.onload = () => {
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          return resolve(xhr.responseText);
-        } 
-        return resolve(undefined);
-      }
-    };
-    xhr.onerror = (e) => {
-      return resolve(undefined);
-    };
-    xhr.send();
+  return new Promise(async resolve => {
+    try {
+      const response = await axios.get(url);
+      resolve(response.data);
+    } 
+    catch (e) {
+      resolve(undefined);
+    }
   })
 }
 
@@ -31,18 +26,14 @@
  * ==================================================
  */
  export function getFileType(url: string): Promise<string> {
-  return new Promise(resolve => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.onreadystatechange = function() {
-      // Wait for header to become available.
-      const contentType = xhr.getResponseHeader('Content-Type');
-      if (contentType) {
-        // Stop downloading, the headers are all we need.
-        xhr.abort();
-        resolve(contentType);
-      }
-    };
-    xhr.send();
-  })
+  return new Promise(async resolve => {
+    try {
+      const head = await axios.head(url);
+      const contentType = head.headers['content-type']; 
+      resolve(contentType);
+    } 
+    catch (e) {
+      resolve(undefined);
+    }
+  });
 }
