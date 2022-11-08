@@ -1,4 +1,3 @@
-import merge from 'lodash/merge.js';
 export type Modes = 'MAINNET' | 'TESTNET' | 'BETANET';
 export type DurationString = string;
 
@@ -12,14 +11,15 @@ export interface OptionsProps {
   apiUrl?: string,
   apiPort?: number,
   apiToken?: string,
+  // NFD api Url
+  nfdApiUrl?: string,
+  // IPFS
+  ipfsGatewayUrl?: string,
 
   // Persist wallet connections, even after refreshing
   // Only available in browsers
   persistConnection?: boolean,
   storageNamespace?: string,
-
-  // NFD api Url
-  nfdApiUrl?: string,
 
   // Cache expiration
   cacheExpiration?: {
@@ -30,21 +30,21 @@ export interface OptionsProps {
 
 
 /**
- * Options Class
+ * default optionts
  * ==================================================
  */
-export default class Options implements OptionsProps {
-  public indexerUrl = 'https://mainnet-idx.algonode.cloud';
-  public apiUrl = 'https://mainnet-api.algonode.cloud';
-  public apiToken = undefined;
-  public apiPort = undefined;
+const options: OptionsProps = {
+  indexerUrl: 'https://mainnet-idx.algonode.cloud',
+  apiUrl: 'https://mainnet-api.algonode.cloud',
+  apiToken: undefined,
+  apiPort: undefined,
+  nfdApiUrl: 'https://api.nf.domains',
+  ipfsGatewayUrl: 'https://ipfs.algonode.xyz/ipfs',
 
-  public persistConnection = true;
-  public storageNamespace = 'algostack';
+  persistConnection: true,
+  storageNamespace: 'algostack',
 
-  public NFDApiUrl = 'https://api.nf.domains';
-
-  public cacheExpiration = {
+  cacheExpiration: {
     default: '1h',
     asset: '1w',
     assetBalances: '3h',
@@ -54,11 +54,9 @@ export default class Options implements OptionsProps {
     transaction: '1w',
     nfds: '6h',
     icon: '1d',
-  }
-  
-
-  constructor (userOptions?: OptionsProps) {
-    merge(this, userOptions);
+    medias: '1d',
   }
 }
+
+export default options;
 

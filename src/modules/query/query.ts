@@ -3,7 +3,7 @@ import { pRateLimit } from 'p-ratelimit';
 import camelcaseKeys from 'camelcase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
-import Options from '../../utils/options.js';
+import options from '../../utils/options.js';
 import { Addon } from '../addons/index.js';
 import { utf8ToB64, objectValuesToString } from '../../helpers/encoding.js';
 import type Cache from '../cache/index.js';
@@ -15,12 +15,10 @@ import type { QueryParams, Payload } from './types.js';
  * ==================================================
  */
 export default class Query {
-  protected options: Options;
   protected addons?: Addons;
   protected cache?: Cache; 
   protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
   constructor(forwarded: AlgoStack) {
-    this.options = forwarded.options;
     this.cache = forwarded.cache;
     this.addons = forwarded.addons;
     this.rateLimit = pRateLimit({
@@ -133,7 +131,7 @@ export default class Query {
       const stringifiedParams = objectValuesToString(params);
       const queryString: string = new URLSearchParams(stringifiedParams).toString();  
       const response = await this.rateLimit(
-        () => axios.get(`${this.options.indexerUrl}${endpoint}?${queryString}`)
+        () => axios.get(`${options.indexerUrl}${endpoint}?${queryString}`)
       );
       return response.data;
     }

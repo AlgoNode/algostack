@@ -1,7 +1,7 @@
 // import Buffer from 'buffer';
 import algosdk, { Transaction, TransactionLike } from 'algosdk';
 import AlgoStack from '../../index.js';
-import Options from '../../utils/options.js';
+import options from '../../utils/options.js';
 import Client from '../client/index.js';
 
 
@@ -10,18 +10,16 @@ import Client from '../client/index.js';
  * ==================================================
  */
 export default class Txns {
-  protected options: Options;
   protected client: Client;
   public algosdk;
   public algod;
 
   constructor(forwarded: AlgoStack) {
-    this.options = forwarded.options;
     this.client = forwarded.client || new Client(forwarded);
     this.algod = new algosdk.Algodv2(
-      this.options.apiToken || '', 
-      this.options.apiUrl, 
-      this.options.apiPort || ''
+      options.apiToken || '', 
+      options.apiUrl, 
+      options.apiPort || ''
     );
   }
 

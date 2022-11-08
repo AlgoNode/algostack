@@ -1,7 +1,7 @@
 import Dexie from 'dexie';
 import objHash from 'object-hash';
 import AlgoStack from '../../index.js';
-import Options from '../../utils/options.js';
+import options from '../../utils/options.js';
 import { durationStringToMs } from '../../helpers/format.js';
 import { CacheEntry } from './types.js';
 
@@ -10,13 +10,11 @@ import { CacheEntry } from './types.js';
  * ==================================================
  */
 export default class Cache {
-  protected options: Options;
   protected db: Dexie;
   protected v: number = 1;
 
   constructor(forwarded: AlgoStack) {
-    this.options = forwarded.options;
-    this.db = new Dexie(this.options.storageNamespace);
+    this.db = new Dexie(options.storageNamespace);
   }
 
   /**
@@ -52,6 +50,10 @@ export default class Cache {
     // NFDs
     if (forwarded.nfds) {
       stores = { ...stores, nfds: '&address, *nfds' };
+    }
+    // Medias
+    if (forwarded.medias) {
+      stores = { ...stores, medias: '&id' };
     }
     
     // Init
@@ -125,8 +127,8 @@ export default class Cache {
    * ==================================================
    */
    private getExpiration(store: string) {
-    const expirationStr = this.options.cacheExpiration[store] 
-      || this.options.cacheExpiration.default;
+    const expirationStr = options.cacheExpiration[store] 
+      || options.cacheExpiration.default;
     return durationStringToMs(expirationStr);
   }
 

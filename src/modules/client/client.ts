@@ -1,5 +1,5 @@
 import AlgoStack from '../../index.js';
-import Options from '../../utils/options.js';
+import options from '../../utils/options.js';
 import Storage from '../../utils/storage.js';
 import MyAlgo from '../../connectors/myalgo.js';
 import Pera from '../../connectors/pera.js';
@@ -11,14 +11,12 @@ import { ConnectorStrings } from './types.js';
  * ==================================================
  */
 export default class Client {
-  protected options: Options;
   protected storage: Storage;
   private _connector?: MyAlgo | Pera | Mnemonic | undefined = undefined; 
   private _connected?: ConnectorStrings = undefined;
   private _addresses: string[] = [];
 
   constructor(forwarded: AlgoStack) {
-    this.options = forwarded.options;
     this.storage = forwarded.storage;
     this.optionallyLoadPersisted();
   }
@@ -108,14 +106,14 @@ export default class Client {
   // Persist connection
   // ----------------------------------------------
   private optionallyPersist() {
-    if (!this.options.persistConnection) return;
+    if (!options.persistConnection) return;
     this.storage.set('client', {
       connected: this._connected,
       addresses: this._addresses,
     });
   }
   private optionallyLoadPersisted() {
-    if (!this.options.persistConnection) return;
+    if (!options.persistConnection) return;
     const persisted = this.storage.get('client');
     if (!persisted || !persisted.connected) return;
     if (persisted.connected === 'MYALGO') this.useMyAlgo();

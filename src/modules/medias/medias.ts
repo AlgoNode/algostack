@@ -1,0 +1,85 @@
+import { getIpfsFromAddress } from '../../helpers/files.js';
+import { MediaType } from './enums.js';
+import AlgoStack from '../../index.js';
+import type Cache from '../cache/index.js';
+import File from './file.js'
+
+/**
+ * Media module
+ * ==================================================
+ */
+export default class Medias {
+  protected cache?: Cache;
+
+  constructor(forwarded: AlgoStack) {
+    this.cache = forwarded.cache;
+  }
+ 
+
+  /**
+  * Get all medias for an asset
+  * uses the params object of an asset
+  * ==================================================
+  */
+  public async getAssetMedias(id: number, params: Record<string, any>) {
+    return new Promise(async resolve => {
+      const files: File[] = [];
+      if (!id || !params.url) return resolve(files);
+
+      // get cache
+      if (this.cache) {
+        const cached = await this.cache.find('medias', { id });
+        if (cached?.data) return resolve(cached.data);
+      }
+
+      // get medias
+      let url = params.url as string;
+      if (String(params.url).startsWith('template-ipfs://')) {
+        const arc19Url = getIpfsFromAddress(url, params);
+        if (arc19Url) url = arc19Url;
+      }
+
+      const assetUrl = await new File(url).check();
+      files.push(assetUrl);
+      
+      // media is json file (metadata)
+      if (assetUrl.type === MediaType.JSON) {
+        const arc3Files = await this.getArc3(assetUrl.content as Record<string, any>);
+        files.push(...arc3Files);
+      }
+
+      // save cache
+      if (this.cache) {
+        await this.cache.save('medias', files, { id });
+      }
+
+      resolve(files);
+    });
+  }
+
+
+
+  /**
+  * ARC3
+  * ==================================================
+  */
+  private async getArc3(data: Record<string, any>) {
+    let arc3Files: File[] = [];
+    // check for image
+    if (data.image) {
+      const image = await new File(data.image).check();
+      if (image.type === MediaType.IMAGE) {
+        arc3Files.push(image);
+      }
+    }
+    // check for video {
+    if (data.animation_url) {
+      const animation = await new File(data.animation_url).check();
+      arc3Files.push(animation);
+    }
+    return arc3Files;
+  }
+  
+
+}
+

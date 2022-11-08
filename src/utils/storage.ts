@@ -1,16 +1,14 @@
 import AlgoStack from "../index.js";
-import Options from "./options.js";
+import options from "./options.js";
 
 //
 // Storage class
 // ----------------------------------------------
 export default class Storage {
-  protected options: Options;
   public available: boolean = true;
   public data: Object = {}
 
   constructor(forwarded: AlgoStack) {
-    this.options = forwarded.options;
     this.available = typeof localStorage !== 'undefined';
     if (!this.available) return;
     this.preload();
@@ -22,7 +20,7 @@ export default class Storage {
   // ----------------------------------------------
   preload() {
     if (!this.available) return false;
-    const raw: string = localStorage.getItem(this.options.storageNamespace) || '{}';
+    const raw: string = localStorage.getItem(options.storageNamespace) || '{}';
     this.data = JSON.parse(raw);
   }
   
@@ -40,7 +38,7 @@ export default class Storage {
   set(key: string, value: any) {
     if (!this.available) return false;
     this.data[key] = value;
-    localStorage.setItem(this.options.storageNamespace, JSON.stringify(this.data));
+    localStorage.setItem(options.storageNamespace, JSON.stringify(this.data));
   }
 }
 

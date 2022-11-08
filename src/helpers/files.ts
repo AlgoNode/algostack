@@ -1,4 +1,10 @@
 import axios from 'axios';
+import { decodeAddress } from 'algosdk';
+import { CID } from 'multiformats/cid';
+import * as mfsha2 from 'multiformats/hashes/sha2';
+import * as digest from 'multiformats/hashes/digest';
+import type { CIDVersion } from 'multiformats/types/src/cid';
+import options from '../utils/options.js';
 
 /**
  * Get file type for a remote URL
@@ -36,4 +42,50 @@ import axios from 'axios';
       resolve(undefined);
     }
   });
+}
+
+
+
+/**
+ * Get an IPFS gateway url for a specific cid
+ * ==================================================
+ */
+
+ export function getIpfsUrl(cid: string) {
+  return `${options.ipfsGatewayUrl}/${cid}`;
+}
+
+/**
+ * Extract the IPFS cid from an ipfs URL
+ * ==================================================
+ */
+ export function getIpfsCid(url: string) {
+	if (!url.startsWith('ipfs://')) return;
+  const match = url.match(/^(?:ipfs:\/\/)([a-zA-z0-9\/\.\-]+)/);
+  return match?.[1];
+}
+
+
+
+/**
+ * Get IPFD cid from an address
+ * Ex: template-ipfs://{ipfscid:1:raw:reserve:sha2-256}
+ * ==================================================
+ */
+
+export function getIpfsFromAddress(url: string, params: Record<string, string| number>) {  
+  const matches = url.match(/^template-ipfs:\/\/\{ipfscid:([0-9]+):([a-z\-]+):([a-z]+):([a-z0-9\-]+)}(.+)?$/);
+  if (!matches) return;
+  const [, cidVersion, multicodec, field, , ext] = matches;
+  
+  if (!params[field]) return;
+  const address = params[field];
+  let cidCodecCode = 0x55;
+  if (multicodec === 'dag-pb') cidCodecCode = 0x70;
+  const addr = decodeAddress(address as string)
+  const mhdigest = digest.create(mfsha2.sha256.code, addr.publicKey)
+  const cid = CID.create(parseInt(cidVersion) as CIDVersion, cidCodecCode, mhdigest)
+  const ipfscid = cid.toString();
+  return `ipfs://${ipfscid}${ext || ''}`
+
 }

@@ -3,7 +3,7 @@ import uniq from 'lodash/uniq.js';
 import throttle from 'lodash/throttle.js';
 import chunk from 'lodash/chunk.js';
 import AlgoStack from '../../index.js';
-import Options from '../../utils/options.js';
+import options from '../../utils/options.js';
 import type Cache from '../cache/index.js';
 import { AddressString, NFDQueryCallback, NFDQuery } from './types.js';
 
@@ -12,12 +12,10 @@ import { AddressString, NFDQueryCallback, NFDQuery } from './types.js';
  * ==================================================
  */
 export default class NFDs {
-  protected options: Options;
   protected cache?: Cache;
   protected fetching: Record<AddressString, NFDQueryCallback[]>;
 
   constructor(forwarded: AlgoStack) {
-    this.options = forwarded.options;
     this.cache = forwarded.cache;
     this.fetching = {};
   }
@@ -59,7 +57,7 @@ export default class NFDs {
       const addressesQueryString = `address=${addresses.join('&address=')}`;
       // get results
       try {
-        const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?${addressesQueryString}`);
+        const response = await axios.get(`${options.nfdApiUrl}/nfd/address?${addressesQueryString}`);
         if (response?.data?.length) results = response.data
       } catch {}
 
@@ -104,7 +102,7 @@ export default class NFDs {
     const queryStr = uniqueAddresses.map(addr => `address=${addr}`).join('&');
     
     try {
-      const response = await axios.get(`${this.options.NFDApiUrl}/nfd/address?${queryStr}&limit=1`);
+      const response = await axios.get(`${options.nfdApiUrl}/nfd/address?${queryStr}&limit=1`);
       if (!response.data || !response.data.length) return {};
       response.data.forEach((nfd: Record<string, any>) => {
         if (!nfd.depositAccount || !mappedAddresses[nfd.depositAccount]) return;
@@ -142,7 +140,7 @@ export default class NFDs {
       let results = [];
       this.fetching[nfds] = [];  
       try {
-        const response = await axios.get(`${this.options.NFDApiUrl}/nfd/${nfds}`)
+        const response = await axios.get(`${options.nfdApiUrl}/nfd/${nfds}`)
         if (response?.data) results = [response.data]
       } catch {}
 

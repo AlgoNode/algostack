@@ -1,5 +1,4 @@
 import AlgoStack from '../../index.js';
-import Options from '../../utils/options.js';
 import type NFDs from '../nfds/index.js';
 import type Cache from '../cache/index.js';
 import type { Payload } from '../query/index.js';
@@ -10,11 +9,9 @@ import { Addon } from './enums.js';
 // QUERY ADDONS class
 // ----------------------------------------------
 export default class Addons {
-  protected options: Options;
   public nfds?: NFDs;
   public cache?: Cache;
   constructor(forwarded: AlgoStack) {
-    this.options = forwarded.options;
     this.nfds = forwarded.nfds;
     this.cache = forwarded.cache;
   }

@@ -13,6 +13,7 @@
     "./nfds": "./dist/esm/modules/nfds/index.js",
     "./query": "./dist/esm/modules/query/index.js",
     "./txns": "./dist/esm/modules/txns/index.js",
+    "./medias": "./dist/esm/modules/medias/index.js",
     "./package.json": "./package.json"
   },
   "files": [
@@ -37,6 +38,7 @@
     "dexie": "^3.2.2",
     "kebabcase-keys": "^1.0.0",
     "lodash": "^4.17.19",
+    "multiformats": "^9.8.1",
     "object-hash": "^3.0.0",
     "p-ratelimit": "^1.0.1"
   },
