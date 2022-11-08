@@ -1,5 +1,6 @@
 import { getIpfsFromAddress } from '../../helpers/files.js';
 import { MediaType } from './enums.js';
+import { pRateLimit } from 'p-ratelimit';
 import AlgoStack from '../../index.js';
 import type Cache from '../cache/index.js';
 import File from './file.js'
@@ -11,9 +12,13 @@ import { AssetFiles } from './types.js';
  */
 export default class Medias {
   protected cache?: Cache;
-
+  protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
   constructor(forwarded: AlgoStack) {
     this.cache = forwarded.cache;
+    this.rateLimit = pRateLimit({
+      interval: 1000,
+      rate: 50, 
+    });
   }
  
 
@@ -43,8 +48,7 @@ export default class Medias {
         const arc19Url = getIpfsFromAddress(url, params);
         if (arc19Url) url = arc19Url;
       }
-
-      const assetUrl = await new File(url).check();
+      const assetUrl = await this.rateLimit( () => new File(url).check() );
       
       // media is json file (metadata)
       if (assetUrl.type === MediaType.JSON) {
@@ -75,14 +79,16 @@ export default class Medias {
     let arc3Files: File[] = [];
     // check for image
     if (data.image) {
-      const image = await new File(data.image).check();
+      // const image = await new File(data.image).check();
+      const image = await this.rateLimit( () => new File(data.image).check() );
       if (image.type === MediaType.IMAGE) {
         arc3Files.push(image);
       }
     }
     // check for video {
     if (data.animation_url) {
-      const animation = await new File(data.animation_url).check();
+      // const animation = await new File(data.animation_url).check();
+      const animation = await this.rateLimit( () => new File(data.animation_url).check() );
       arc3Files.push(animation);
     }
     return arc3Files;
