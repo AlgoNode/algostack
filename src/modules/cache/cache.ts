@@ -11,9 +11,9 @@ import { CacheEntry } from './types.js';
  */
 export default class Cache {
   protected db: Dexie;
-  protected v: number = 1;
+  protected v: number = 2;
 
-  constructor(forwarded: AlgoStack) {
+  constructor() {
     this.db = new Dexie(options.storageNamespace);
   }
 

@@ -60,8 +60,7 @@ import options from '../utils/options.js';
  * ==================================================
  */
  export function getIpfsCid(url: string) {
-	if (!url.startsWith('ipfs://')) return;
-  const match = url.match(/^(?:ipfs:\/\/)([a-zA-z0-9\/\.\-]+)/);
+  const match = url.match(/^(?:ipfs:\/\/|(?:(?:http:\/\/|https:\/\/)\S*(?:ipfs\/)))([a-zA-z0-9\/\.\-]+)/);
   return match?.[1];
 }
 

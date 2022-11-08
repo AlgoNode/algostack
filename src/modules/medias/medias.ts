@@ -3,6 +3,7 @@ import { MediaType } from './enums.js';
 import AlgoStack from '../../index.js';
 import type Cache from '../cache/index.js';
 import File from './file.js'
+import { AssetFiles } from './types.js';
 
 /**
  * Media module
@@ -21,9 +22,13 @@ export default class Medias {
   * uses the params object of an asset
   * ==================================================
   */
-  public async getAssetMedias(id: number, params: Record<string, any>) {
+  public async getAssetFiles(id: number, params: Record<string, any>): Promise<AssetFiles> {
     return new Promise(async resolve => {
-      const files: File[] = [];
+      
+      const files: AssetFiles =  {
+        metadata: undefined,
+        medias: [],
+      };
       if (!id || !params.url) return resolve(files);
 
       // get cache
@@ -40,12 +45,15 @@ export default class Medias {
       }
 
       const assetUrl = await new File(url).check();
-      files.push(assetUrl);
       
       // media is json file (metadata)
       if (assetUrl.type === MediaType.JSON) {
+        files.metadata = assetUrl;
         const arc3Files = await this.getArc3(assetUrl.content as Record<string, any>);
-        files.push(...arc3Files);
+        files.medias.push(...arc3Files);
+      }
+      else {
+        files.medias.push(assetUrl);
       }
 
       // save cache
