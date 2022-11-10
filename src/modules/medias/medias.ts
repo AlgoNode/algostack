@@ -17,7 +17,7 @@ export default class Medias {
     this.cache = forwarded.cache;
     this.rateLimit = pRateLimit({
       interval: 1000,
-      rate: 50, 
+      rate: 100, 
     });
   }
  
@@ -49,7 +49,6 @@ export default class Medias {
         if (arc19Url) url = arc19Url;
       }
       const assetUrl = await this.rateLimit( () => new File(url).check() );
-      
       // media is json file (metadata)
       if (assetUrl.type === MediaType.JSON) {
         files.metadata = assetUrl;
