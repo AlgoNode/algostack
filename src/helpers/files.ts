@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { decodeAddress } from 'algosdk';
 import { CID } from 'multiformats/cid';
 import * as mfsha2 from 'multiformats/hashes/sha2';
@@ -34,7 +34,7 @@ import options from '../utils/options.js';
  export function getFileType(url: string): Promise<string> {
   return new Promise(async resolve => {
     try {
-      const head = await axios.head(url);
+      const head = await axios.head(url, { maxRedirects: 0 });
       const contentType = head.headers['content-type']; 
       resolve(contentType);
     } 
@@ -90,5 +90,32 @@ export function getIpfsFromAddress(url: string, params: Record<string, string| n
   const cid = CID.create(parseInt(cidVersion) as CIDVersion, cidCodecCode, mhdigest)
   const ipfscid = cid.toString();
   return `ipfs://${ipfscid}${ext || ''}`
+}
 
+
+/**
+* Get URL redirects for shortend urls (ex: bit.ly)
+* ==================================================
+*/
+export async function getRedirectedURL (url: string) {
+  const shortners = [
+    'bit.ly',
+    'tinyurl.com',
+    'rebrand.ly',
+  ]
+  const shortnersRegex = new RegExp(`^(?:http:\/\/|https:\/\/)?(?:${shortners.join('|')})\/`);
+  const isShortened = shortnersRegex.test(url);
+  if (!isShortened) return url;
+  if (!/^(?:http:\/\/|https:\/\/)/.test(url)) url = `https://${url}`;
+
+  try {
+    const head = await axios.head(url);      
+    // console.log(head)
+    if (head?.request?.responseURL?.length) return head?.request.responseURL;
+    return url;
+  } 
+  catch (e) {
+    // console.log(e)
+    return url;
+  }
 }

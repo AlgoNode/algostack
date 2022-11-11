@@ -29,7 +29,6 @@ export default class Medias {
   */
   public async getAssetFiles(id: number, params: Record<string, any>): Promise<AssetFiles> {
     return new Promise(async resolve => {
-      
       const files: AssetFiles =  {
         metadata: undefined,
         medias: [],
@@ -37,7 +36,7 @@ export default class Medias {
       if (!id || !params.url) return resolve(files);
 
       // get cache
-      if (this.cache) {
+      if (false && this.cache) {
         const cached = await this.cache.find('medias', { id });
         if (cached?.data) return resolve(cached.data);
       }

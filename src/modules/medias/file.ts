@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { MediaType } from './enums.js';
-import { getFileType, getIpfsCid, getIpfsUrl } from '../../helpers/files.js';
+import { getFileType, getIpfsCid, getIpfsUrl, getRedirectedURL } from '../../helpers/files.js';
 
 /**
  * File class
@@ -8,8 +8,8 @@ import { getFileType, getIpfsCid, getIpfsUrl } from '../../helpers/files.js';
  */
 export default class File {
   public originalUrl: string;
-  public cid?: string;
   public url: string;
+  public cid?: string;
   public type?: MediaType;
   public mime?: string;
   public thumbnail?: string;
@@ -21,15 +21,18 @@ export default class File {
    */
   constructor (url: string, ) {
     this.originalUrl = url;
-    this.cid = getIpfsCid(url);
-    this.url = this.cid ? getIpfsUrl(this.cid) : url; 
+    this.url = url;
   }
-  
+
+
   /**
    * load data from URL
    * ==================================================
    */
   public async check () {
+    this.url = await getRedirectedURL(this.url);
+    this.cid = getIpfsCid(this.url);
+    this.url = this.cid ? getIpfsUrl(this.cid) : this.url; 
     this.mime = await getFileType(this.url);
     await this.setType();
     return this;
