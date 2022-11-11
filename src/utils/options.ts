@@ -6,6 +6,7 @@ export type DurationString = string;
  * ==================================================
  */
 export interface OptionsProps {
+  version?: number,
   // Indexer and Node urls used to interact with the blockchain
   indexerUrl?: string,
   apiUrl?: string,
@@ -34,6 +35,7 @@ export interface OptionsProps {
  * ==================================================
  */
 const options: OptionsProps = {
+  version: 1,
   indexerUrl: 'https://mainnet-idx.algonode.cloud',
   apiUrl: 'https://mainnet-api.algonode.cloud',
   apiToken: undefined,

@@ -11,10 +11,11 @@ import { CacheEntry } from './types.js';
  */
 export default class Cache {
   protected db: Dexie;
-  protected v: number = 2;
+  protected v: number;
 
   constructor() {
     this.db = new Dexie(options.storageNamespace);
+    this.v = options.version || 1;
   }
 
   /**
