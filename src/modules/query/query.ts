@@ -34,7 +34,8 @@ export default class Query {
    */
   private async indexerQuery(store: string|null, id: string|number|null, endpoint: string, params: QueryParams = {}, addons?: Addon[]) {
     let data: Payload;
-
+    params = { ...params }; 
+     
     // get cached data
     if (this.cache && store && !params.refreshCache) {
       const cached = await this.cache.find(store, { id, params });

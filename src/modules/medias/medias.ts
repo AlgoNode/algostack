@@ -36,7 +36,7 @@ export default class Medias {
       if (!id || !params.url) return resolve(files);
 
       // get cache
-      if (false && this.cache) {
+      if (this.cache) {
         const cached = await this.cache.find('medias', { id });
         if (cached?.data) return resolve(cached.data);
       }
