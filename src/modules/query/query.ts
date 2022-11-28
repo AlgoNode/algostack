@@ -153,6 +153,9 @@ export default class Query {
   private async accountTransactions(accountId: string, params: QueryParams = {}, addons?: Addon[]) {
     return await this.indexerQuery('accountTransactions', accountId, `/v2/accounts/:id/transactions`, params, addons);
   }
+  private async accountAssets(accountId: string, params: QueryParams = {}, addons?: Addon[]) {
+    return await this.indexerQuery('accountAssets', accountId, `/v2/accounts/:id/assets`, params, addons);
+  }
   // app
   private async application(appId: number, params: QueryParams = {}, addons?: Addon[]) {
     return await this.indexerQuery('application', appId, `/v2/applications/:id`, params, addons);
@@ -179,6 +182,7 @@ export default class Query {
   public lookup = {
     account: this.account.bind(this),
     accountTransactions: this.accountTransactions.bind(this),
+    accountAssets: this.accountAssets.bind(this),
     application: this.application.bind(this),
     asset: this.asset.bind(this),
     assetBalances: this.assetBalances.bind(this),

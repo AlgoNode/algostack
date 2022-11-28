@@ -31,6 +31,7 @@ export default class Cache {
         // lookups
         account: '&id, [id+params]',
         accountTransactions: '&id, [id+params]',
+        accountAssets: '&id, [id+params]',
         application: '&id, [id+params]',
         asset: '&id, [id+params]',
         assetBalances: '&id, [id+params]',
