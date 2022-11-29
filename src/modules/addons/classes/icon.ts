@@ -47,10 +47,11 @@ export default class Icon extends BaseRunner {
 
     // Get SVG icon
     // Save as base64
-    const iconSvg = await getFileContent(iconUrl);
-    if (iconSvg) {
-      const svgStr = Buffer.from(iconSvg).toString('base64');
-      icon = `data:image/svg+xml;base64,${svgStr}`
+    const svgContent = await getFileContent(iconUrl);
+    if (svgContent) {
+      const safeSvg = this.fixSvg(svgContent);
+      const b64content = Buffer.from(safeSvg).toString('base64');
+      icon = `data:image/svg+xml;base64,${b64content}`
     } 
     
     // cache result
@@ -86,5 +87,16 @@ export default class Icon extends BaseRunner {
     }
     return list;
   }
+
+
+  /**
+  * Fix SVG files
+  * ==================================================
+  */
+  fixSvg (svg: string) {
+    svg = svg.replace(/(?<=id=|fill=)(['|"][^'^"]+)(:)([^'^"]+['|"])/gm, "$1-$3");
+    return svg;
+  }
+
 
 }
