@@ -39,7 +39,6 @@ import options from '../utils/options.js';
       resolve(contentType);
     } 
     catch (e) {
-      console.log(e)
       resolve(undefined);
     }
   });
