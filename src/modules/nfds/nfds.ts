@@ -24,20 +24,21 @@ export default class NFDs {
    * Get NFD
    * ==================================================
    */
-  async getNFDs (address: string): Promise<string[]> {
+ 
+  
+  async getNFDs <T extends boolean|undefined>(address: string, full?: T): Promise<T extends true ? Record<string,any>[] : string[] > {
     return new Promise(async resolve => {
       // get cache
       if (this.cache) {
         const cached = await this.cache.find('nfds', { address });
-        if (cached?.nfds) return resolve(cached.nfds);
+        if (cached) return resolve(full ? cached.data : cached.nfds);
       }
-  
       // check if a task is currently fetching this address
       if (!this.fetching[address]) this.fetching[address] = [];  
       this.fetching[address].push(resolve);
 
       // trigger throttled fetch
-      this.batchFetchNFDs();
+      this.batchFetchNFDs(full);
     })
   
   }
@@ -47,33 +48,33 @@ export default class NFDs {
   * Fetch address batch
   * ==================================================
   */
-  private batchFetchNFDs = throttle( async () => {
+  private batchFetchNFDs = throttle( async (full: boolean = false) => {
     const fetching: AddressString[] = Object.keys(this.fetching)
     const batches = chunk(fetching, 20);
-    // console.log(batches);
-    
     batches.forEach( async addresses => {
-      let results = []; 
+      let results: Record<string, Record<string,any>[]> = {}; 
       const addressesQueryString = `address=${addresses.join('&address=')}`;
-      // get results
       try {
-        const response = await axios.get(`${options.nfdApiUrl}/nfd/address?${addressesQueryString}`);
-        if (response?.data?.length) results = response.data
-      } catch {}
+        const response = await axios.get(`${options.nfdApiUrl}/nfd/v2/address?${addressesQueryString}`, { 
+          params: { view: 'thumbnail' }
+        });
+        if (response?.data) results = response.data
+      } 
+      catch {}
 
       // loop each address in batch to map it with results
       addresses.forEach( async address => {
-        const nfds = results
-        .filter(nfd => nfd.depositAccount === address)
-        .map(nfd => nfd.name);
+        const result = results[address] || [];
+        const verified = result.filter(nfd => nfd.depositAccount === address) 
+        const nfds = verified.map(nfd => nfd.name);
         // trigger current stack
         if (this.fetching[address]?.length) {
-          this.fetching[address].forEach(resolve => resolve(nfds));
+          this.fetching[address].forEach(resolve => resolve(full ? verified : nfds));
           delete this.fetching[address];
         }
         // save cache
         if (this.cache) {
-          await this.cache.save('nfds', results, { address, nfds });
+          await this.cache.save('nfds', verified, { address, nfds });
         }
       });
     });  

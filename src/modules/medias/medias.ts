@@ -29,7 +29,7 @@ export default class Medias {
   */
   public async getAssetFiles(id: number, params: Record<string, any>): Promise<AssetFiles> {
     return new Promise(async resolve => {
-      const files: AssetFiles =  {
+      let files: AssetFiles =  {
         metadata: undefined,
         medias: [],
       };
@@ -47,17 +47,8 @@ export default class Medias {
         const arc19Url = getIpfsFromAddress(url, params);
         if (arc19Url) url = arc19Url;
       }
-      const assetUrl = await this.rateLimit( () => new File(url).check() );
-      // media is json file (metadata)
-      if (assetUrl.type === MediaType.JSON) {
-        files.metadata = assetUrl;
-        const arc3Files = await this.getArc3(assetUrl.content as Record<string, any>);
-        files.medias.push(...arc3Files);
-      }
-      else {
-        files.medias.push(assetUrl);
-      }
-
+      files = await this.getMedias(url);
+      
       // save cache
       if (this.cache) {
         await this.cache.save('medias', files, { id });
@@ -91,7 +82,31 @@ export default class Medias {
     }
     return arc3Files;
   }
-  
+
+
+
+  /**
+  * Get media
+  * ==================================================
+  */
+  public async getMedias(url: string) {
+    const files: AssetFiles =  {
+      metadata: undefined,
+      medias: [],
+    };
+    const file = await this.rateLimit( () => new File(url).check() );
+    // media is json file (metadata)
+    if (file.type === MediaType.JSON) {
+      files.metadata = file;
+      const arc3Files = await this.getArc3(file.content as Record<string, any>);
+      files.medias.push(...arc3Files);
+    }
+    else {
+      files.medias.push(file);
+    }
+
+    return files;
+  }
 
 }
 
