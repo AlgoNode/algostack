@@ -29,15 +29,15 @@ export default class Cache {
       stores = { 
         ...stores, 
         // lookups
-        account: '&id, [id+params]',
-        accountTransactions: '&id, [id+params]',
-        accountAssets: '&id, [id+params]',
-        application: '&id, [id+params]',
-        asset: '&id, [id+params]',
-        assetBalances: '&id, [id+params]',
-        assetTransactions: '&id, [id+params]',
-        block: '&id, [id+params]',
-        txn: '&id, [id+params]',
+        account: '&params',
+        accountTransactions: '&params',
+        accountAssets: '&params',
+        application: '&params',
+        asset: '&params',
+        assetBalances: '&params',
+        assetTransactions: '&params',
+        block: '&params',
+        txn: '&params',
         // search
         applications: '&params',
         accounts: '&params',
@@ -56,6 +56,17 @@ export default class Cache {
     // Medias
     if (forwarded.medias) {
       stores = { ...stores, medias: '&id' };
+    }
+
+    if (options?.customCaches?.length) {
+      const customStores: Record<string, string> = {} 
+      options.customCaches.forEach(storeName => {
+        customStores[storeName] = '&params';
+      });
+      stores = {
+        ...customStores,
+        ...stores,
+      }
     }
     
     // Init

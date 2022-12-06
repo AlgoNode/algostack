@@ -29,16 +29,19 @@ export default class Query {
 
  
   /**
-   * Query wrapper
-   * ==================================================
-   */
-  private async indexerQuery(store: string|null, id: string|number|null, endpoint: string, params: QueryParams = {}, addons?: Addon[]) {
+  * Query wrapper
+  * ==================================================
+  */
+  private async indexerQuery(
+    endpoint: string, 
+    store: string|null, 
+    queryParams: QueryParams = {}, 
+    addons?: Addon[]
+  ) {
     let data: Payload;
-    params = { ...params }; 
-     
     // get cached data
-    if (this.cache && store && !params.refreshCache) {
-      const cached = await this.cache.find(store, { id, params });
+    if (this.cache && store && !queryParams.refreshCache && !queryParams.noCache) {
+      const cached = await this.cache.find(store, { params: queryParams });
       if (cached) {
         data = cached.data
         if (addons) await this.addons.apply(data, addons);
@@ -46,21 +49,23 @@ export default class Query {
       }
     }
     
-    const url = id ? endpoint.replace(':id', String(id)) : endpoint;
+    let { params, url } = this.mergeUrlAndParams(endpoint, queryParams);
+    
     const loop:boolean = params.limit === -1;
     if (loop) delete params.limit; 
     if (params.refreshCache !== undefined) delete params.refreshCache;
+    if (params.noCache !== undefined) delete params.noCache;
+
 
     const cleanParams = this.cleanParams(params)
     const encodedParams = this.encodeParams(cleanParams);
     const kebabcaseParams = kebabcaseKeys(encodedParams, { deep: true }); 
 
-    data = await this.fetchIndexer(url, kebabcaseParams);
-    
+    data = await this.fetch(`${options.indexerUrl}${url}`, kebabcaseParams);
     // Loop
     if (loop) {
       while (data['next-token']) {
-        const nextData: Payload = await this.fetchIndexer(
+        const nextData: Payload = await this.fetch(
           url, 
           { ...kebabcaseParams, next: data['next-token']}
         );
@@ -79,23 +84,40 @@ export default class Query {
     data = camelcaseKeys(data, { deep: true }); 
     
     // cache result
-    if (this.cache && store && !data.error) {
-      await this.cache.save(store, data, { id, params });
+    if (this.cache && store && !queryParams.noCache && !data.error) {
+      await this.cache.save(store, data, { params: queryParams });
     }
 
     // Apply addons if necessary
-    if (addons) {
-      await this.addons.apply(data, addons);
-    }
-    
+    if (addons) await this.addons.apply(data, addons);
+  
     return data;
   }
 
 
+
+
+
   /**
-   * Clean params
-   * ==================================================
-   */
+  * 
+  * ==================================================
+  */
+  private mergeUrlAndParams(url: string, params: Record<string, any>) {
+    params = {...params};
+    Object.entries(params)
+      .forEach(([key,value]) => {
+        if (url.indexOf('/:'+ key) > -1) {
+          url = url.replace(':'+ key, value);
+          delete params[key];
+        }
+      });
+    return  { url, params };
+  } 
+
+  /**
+  * Clean params
+  * ==================================================
+  */
    private cleanParams(params: QueryParams) {
     Object.entries(params).forEach(([key, value]) => {
       if (value === undefined) delete params[key];
@@ -103,11 +125,10 @@ export default class Query {
     return params;
   }
 
-
   /**
-   * Encode params
-   * ==================================================
-   */
+  * Encode params
+  * ==================================================
+  */
   private encodeParams(params: QueryParams) {
     if (typeof params.notePrefix === 'string') {
       params.notePrefix = utf8ToB64(params.notePrefix);
@@ -115,13 +136,11 @@ export default class Query {
     return params;
   }
 
-
-
   /**
-   * Fetch data
-   * ==================================================
-   */
-  private async fetchIndexer(endpoint: string, params: QueryParams = {}) {
+  * Fetch data
+  * ==================================================
+  */
+  private async fetch(endpoint: string, params: QueryParams = {}) {
     try {
       if (endpoint.indexOf(':id') > -1) {
         return { error: { 
@@ -132,7 +151,7 @@ export default class Query {
       const stringifiedParams = objectValuesToString(params);
       const queryString: string = new URLSearchParams(stringifiedParams).toString();  
       const response = await this.rateLimit(
-        () => axios.get(`${options.indexerUrl}${endpoint}?${queryString}`)
+        () => axios.get(`${endpoint}?${queryString}`)
       );
       return response.data;
     }
@@ -142,41 +161,51 @@ export default class Query {
   }
 
 
+
   /**
-   * Lookup methods
-   * ==================================================
-   */
+  * Health
+  * ==================================================
+  */
+  public async health() {
+    return this.fetch(`${options.indexerUrl}/health`);
+  }
+
+
+  /**
+  * Lookup methods
+  * ==================================================
+  */
   // accounts
   private async account(accountId: string, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('account', accountId, `/v2/accounts/:id`, params, addons);
+    return await this.indexerQuery( `/v2/accounts/:id`, 'account', { ...params, id: accountId }, addons);
   }
   private async accountTransactions(accountId: string, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('accountTransactions', accountId, `/v2/accounts/:id/transactions`, params, addons);
+    return await this.indexerQuery( `/v2/accounts/:id/transactions`, 'accountTransactions', { ...params, id: accountId }, addons);
   }
   private async accountAssets(accountId: string, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('accountAssets', accountId, `/v2/accounts/:id/assets`, params, addons);
+    return await this.indexerQuery( `/v2/accounts/:id/assets`, 'accountAssets', { ...params, id: accountId }, addons);
   }
   // app
   private async application(appId: number, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('application', appId, `/v2/applications/:id`, params, addons);
+    return await this.indexerQuery( `/v2/applications/:id`, 'application', { ...params, id: appId }, addons);
   }
   // asset
   private async asset(assetId: number, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('asset', assetId, `/v2/assets/:id`, params, addons);
+    return await this.indexerQuery( `/v2/assets/:id`, 'asset', { ...params, id: assetId }, addons);
   }
   private async assetBalances(assetId: number, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('assetBalances', assetId, `/v2/assets/:id/balances`, params, addons);
+    return await this.indexerQuery( `/v2/assets/:id/balances`, 'assetBalances', { ...params, id: assetId }, addons);
   }
   private async assetTransactions(assetId: number, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('assetTransactions', assetId, `/v2/assets/:id/transactions`, params, addons);
+    return await this.indexerQuery( `/v2/assets/:id/transactions`, 'assetTransactions', { ...params, id: assetId }, addons);
   }
   // block
   private async block(round: number, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('block', round, `/v2/blocks/:id`, params, addons);
+    return await this.indexerQuery( `/v2/blocks/:id`, 'block', { ...params, id: round }, addons);
   }
   // transaction
   private async transaction(id: string, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('txn', id, `/v2/transactions/:id`, params, addons);
+    return await this.indexerQuery( `/v2/transactions/:id`, 'txn', { ...params, id: id }, addons);
   }
   // Wrap everything together
   public lookup = {
@@ -193,20 +222,20 @@ export default class Query {
 
 
   /**
-   * Search
-   * ==================================================
-   */
+  * Search
+  * ==================================================
+  */
   private async accounts(params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('accounts', null, `/v2/accounts`, params, addons);
+    return await this.indexerQuery( `/v2/accounts`, 'accounts', params, addons);
   }
   private async applications(params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('applications', null, `/v2/applications`, params, addons);
+    return await this.indexerQuery( `/v2/applications`, 'applications', params, addons);
   }
   private async assets(params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('assets', null, `/v2/assets`, params, addons);
+    return await this.indexerQuery( `/v2/assets`, 'assets', params, addons);
   }
   private async transactions(params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery('txns', null, `/v2/transactions`, params, addons);
+    return await this.indexerQuery( `/v2/transactions`, 'txns', params, addons);
   }
 
   // Wrap everything together
@@ -219,12 +248,42 @@ export default class Query {
 
 
   /**
-  * Custom
+  * Custom queries
   * ==================================================
   */
-  public async custom(endpoint: string, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery(null , null, endpoint, params, addons);
+  public async custom(
+    endpoint: string, 
+    store: string|null, 
+    queryParams: QueryParams = {}
+  ) {
+    let data: Payload;
+    
+    // get cached data
+    if (this.cache && store && !queryParams.refreshCache && !queryParams.noCache) {
+      const cached = await this.cache.find(store, { params: queryParams });
+      if (cached) {
+        data = cached.data
+        return data;
+      }
+    }
+    
+    let { params, url } = this.mergeUrlAndParams(endpoint, queryParams);
+    if (params.refreshCache !== undefined) delete params.refreshCache;
+    if (params.noCache !== undefined) delete params.noCache;
+
+    // const kebabcaseParams = kebabcaseKeys(params, { deep: true }); 
+    data = await this.fetch(url, params);
+    // data = camelcaseKeys(data, { deep: true }); 
+    
+    // cache result
+    if (this.cache && store && !queryParams.noCache && !data.error) {
+      await this.cache.save(store, data, { params: queryParams });
+    }
+  
+    return data;
   }
+
+
 
 }
 

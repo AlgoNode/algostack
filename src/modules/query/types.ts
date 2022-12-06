@@ -5,6 +5,8 @@ export type SearchMethods = Query['search'];
 
 export interface QueryParams {
   limit?: number,
+  noCache?: boolean,
+  refreshCache?: boolean,
   [key: string]: string|number|boolean|undefined,
 }
 

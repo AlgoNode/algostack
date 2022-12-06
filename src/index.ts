@@ -10,7 +10,6 @@ import type Cache from './modules/cache/index.js';
 import type Query from './modules/query/index.js';
 import type Medias from './modules/medias/index.js';
 import type { LookupMethods, SearchMethods } from './modules/query/index.js';
-import * as encodingHelpers from './helpers/encoding.js';
 
 export type { OptionsProps } from './utils/options.js';
 export interface PlugableModules {
@@ -29,10 +28,7 @@ polyfills();
 export default class AlgoStack {
   // Utils
   public storage: Storage;
-  public helpers: Record<string, any> = {
-    ...encodingHelpers,
-  };
-  
+
   // Modules
   public client?: Client;
   public txns?: Txns;

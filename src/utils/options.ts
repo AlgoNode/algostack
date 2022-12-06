@@ -22,11 +22,21 @@ export interface OptionsProps {
   persistConnection?: boolean,
   storageNamespace?: string,
 
-  // Cache expiration
+  // Custom Cache Stores
+  // For custom query endpoints, 
+  // ...or anything else you want to cache using the cache module
+  // cache will be indexed using the params object
+  customCaches?: string[],
+
+  // Cache expiration 
+  // Format: 1w, 1d, 1h, 1m, 1s, 1ms 
+  // Works with custom stores too!
   cacheExpiration?: {
-    default: DurationString,
+    default?: DurationString,
     [k:string]: DurationString,
-  } 
+  },
+
+  
 }
 
 
@@ -35,7 +45,7 @@ export interface OptionsProps {
  * ==================================================
  */
 const options: OptionsProps = {
-  version: 1,
+  version: 1.12,
   indexerUrl: 'https://mainnet-idx.algonode.cloud',
   apiUrl: 'https://mainnet-api.algonode.cloud',
   apiToken: undefined,
@@ -46,6 +56,7 @@ const options: OptionsProps = {
   persistConnection: true,
   storageNamespace: 'algostack',
 
+  customCaches: undefined,
   cacheExpiration: {
     default: '1h',
     asset: '1w',
@@ -57,7 +68,9 @@ const options: OptionsProps = {
     nfds: '6h',
     icon: '1d',
     medias: '1d',
-  }
+  },
+
+  
 }
 
 export default options;
