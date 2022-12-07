@@ -60,7 +60,7 @@ const options: OptionsProps = {
   cacheExpiration: {
     default: '1h',
     asset: '1w',
-    assetBalances: '3h',
+    assetBalances: '2s',
     assetTransactions: '2s',
     assets: '10s',
     block: '1w',

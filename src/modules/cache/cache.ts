@@ -77,11 +77,14 @@ export default class Cache {
    * Find an entry based on its ID and the query
    * ==================================================
    */
-  public async find(store: string, query: CacheEntry) {
-    if (!this.db[store]) return console.error(`Store not found (${store})`);  
+  public async find(store: string, query: CacheEntry): Promise<Record<string,any>|undefined> {
+    if (!this.db[store]) {
+      console.error(`Store not found (${store})`);  
+      return; 
+    }
     query = this.filterCacheEntry(query);
     try {
-      const results = await this.db[store].get(query)
+      const results = await this.db[store].get(query) as Record<string, any>;
       if (!results) return;
       const expiration = this.getExpiration(store);
       const isExpired = results.timestamp + expiration < Date.now();
