@@ -35,10 +35,10 @@ export default class NFDs {
       }
       // check if a task is currently fetching this address
       if (!this.fetching[address]) this.fetching[address] = [];  
-      this.fetching[address].push(resolve);
+      this.fetching[address].push({ full, resolve });
 
       // trigger throttled fetch
-      this.batchFetchNFDs(full);
+      this.batchFetchNFDs();
     })
   
   }
@@ -48,7 +48,7 @@ export default class NFDs {
   * Fetch address batch
   * ==================================================
   */
-  private batchFetchNFDs = throttle( async (full: boolean = false) => {
+  private batchFetchNFDs = throttle( async () => {
     const fetching: AddressString[] = Object.keys(this.fetching)
     const batches = chunk(fetching, 20);
     batches.forEach( async addresses => {
@@ -66,15 +66,30 @@ export default class NFDs {
       addresses.forEach( async address => {
         const result = results[address] || [];
         const verified = result.filter(nfd => nfd.depositAccount === address) 
-        const nfds = verified.map(nfd => nfd.name);
+        // sort by avatar
+        verified.sort((a, b) => { 
+          let aW = 0; 
+          let bW = 0; 
+          if (a.properties?.verified?.avatar) aW = 2;
+          else if (a.properties?.userDefined?.avatar) aW = 1;
+          if (b.properties?.verified?.avatar) bW = 2;
+          else if (b.properties?.userDefined?.avatar) bW = 1;
+          return bW - aW;
+        });
+        // add avatars
+        verified.forEach(nfd => {
+          nfd.avatar = nfd.properties?.verified?.avatar || nfd.properties?.userDefined?.avatar || undefined;
+        });
+        // map domains only
+        const domains = verified.map(nfd => nfd.name);
         // trigger current stack
         if (this.fetching[address]?.length) {
-          this.fetching[address].forEach(resolve => resolve(full ? verified : nfds));
+          this.fetching[address].forEach(({full, resolve}) => resolve(full ? verified : domains));
           delete this.fetching[address];
         }
         // save cache
         if (this.cache) {
-          await this.cache.save('nfds', verified, { address, nfds });
+          await this.cache.save('nfds', verified, { address, nfds: domains });
         }
       });
     });  
@@ -133,7 +148,7 @@ export default class NFDs {
   
       // check if a task is currently fetching this address
       if (this.fetching[nfds]) {
-        this.fetching[nfds].push(resolve);
+        this.fetching[nfds].push({ resolve, full: false });
         return;
       }
 
@@ -148,7 +163,7 @@ export default class NFDs {
       const address = results[0]?.depositAccount;
       // trigger current stack
       if (this.fetching[nfds]?.length) {
-        this.fetching[nfds].forEach(resolve => resolve(address));
+        this.fetching[nfds].forEach(({ resolve }) => resolve(address));
         delete this.fetching[nfds];
       }
   
