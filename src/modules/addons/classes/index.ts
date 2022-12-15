@@ -4,6 +4,7 @@ import Arcs from './arcs.js';
 import Nfds from './nfds.js';
 import Icon from './icon.js';
 import DecodeNotes from './notes.js';
+import AppId from './appId.js';
 
 export default {
   [Addon.CATEGORY]: Category,
@@ -11,4 +12,5 @@ export default {
   [Addon.NFDS]: Nfds,
   [Addon.ICON]: Icon,
   [Addon.DECODENOTES]: DecodeNotes,
+  [Addon.APPID]: AppId,
 }

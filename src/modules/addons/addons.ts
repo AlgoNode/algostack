@@ -1,6 +1,7 @@
 import AlgoStack from '../../index.js';
 import type NFDs from '../nfds/index.js';
 import type Cache from '../cache/index.js';
+import type Query from '../query/index.js';
 import type { Payload } from '../query/index.js';
 import allAddons from './classes/index.js';
 import { Addon } from './enums.js';
@@ -11,11 +12,14 @@ import { Addon } from './enums.js';
 export default class Addons {
   public nfds?: NFDs;
   public cache?: Cache;
-  constructor(forwarded: AlgoStack) {
+  public query?: Query;
+
+
+  init(forwarded: AlgoStack) {
     this.nfds = forwarded.nfds;
     this.cache = forwarded.cache;
+    this.query = forwarded.query;
   }
-
 
 
   /**

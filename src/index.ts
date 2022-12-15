@@ -48,18 +48,20 @@ export default class AlgoStack {
 
     // Add modules
     if (modules.Cache && typeof window !== 'undefined') this.cache = new modules.Cache();
+    if (modules.NFDs) this.nfds = new modules.NFDs(this);
     if (modules.Client) this.client = new modules.Client(this);
     if (modules.Txns) this.txns = new modules.Txns(this);
-    if (modules.Addons) this.addons = new modules.Addons(this);
-    if (modules.NFDs) this.nfds = new modules.NFDs(this);
     if (modules.Medias) this.medias = new modules.Medias(this);
+    if (modules.Addons) this.addons = new modules.Addons();
     if (modules.Query) {
       this.query = new modules.Query(this);
       this.lookup = this.query.lookup;
       this.search = this.query.search;
     } 
 
-    // Init
+    // Delayed init when all modules are added
     if (this.cache) this.cache.init(this);
+    if (this.addons) this.addons.init(this);
+
   }
 }

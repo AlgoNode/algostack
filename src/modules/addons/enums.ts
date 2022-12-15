@@ -9,6 +9,7 @@ export enum Addon {
   DECODENOTES = 'decodeNotes',
   CATEGORY = 'category',
   ARCS = 'arcs',
+  APPID = 'appId',
 }
 
 /**
