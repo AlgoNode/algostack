@@ -14,6 +14,7 @@
     "./query": "./dist/esm/modules/query/index.js",
     "./txns": "./dist/esm/modules/txns/index.js",
     "./medias": "./dist/esm/modules/medias/index.js",
+    "./helpers/*": "./dist/esm/helpers/*.js",
     "./package.json": "./package.json"
   },
   "files": [

@@ -207,6 +207,7 @@ export default class Query {
   private async transaction(id: string, params: QueryParams = {}, addons?: Addon[]) {
     return await this.indexerQuery( `/v2/transactions/:id`, 'txn', { ...params, id: id }, addons);
   }
+
   // Wrap everything together
   public lookup = {
     account: this.account.bind(this),
@@ -245,6 +246,15 @@ export default class Query {
     assets: this.assets.bind(this),
     transactions: this.transactions.bind(this),
   }
+
+
+
+  /**
+  * Node queries (Algod API)
+  * ==================================================
+  */
+ private async 
+
 
 
   /**

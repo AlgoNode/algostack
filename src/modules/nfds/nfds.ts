@@ -6,11 +6,12 @@ import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
 import type Cache from '../cache/index.js';
 import { AddressString, NFDQueryCallback, NFDQuery } from './types.js';
+import { isAddress } from '../../helpers/strings.js';
 
 /**
- * NFDs module
- * ==================================================
- */
+* NFDs module
+* ==================================================
+*/
 export default class NFDs {
   protected cache?: Cache;
   protected fetching: Record<AddressString, NFDQueryCallback[]>;
@@ -21,13 +22,12 @@ export default class NFDs {
   }
   
   /**
-   * Get NFD
-   * ==================================================
-   */
- 
-  
+  * Get NFD
+  * ==================================================
+  */
   async getNFDs <T extends boolean|undefined>(address: string, full?: T): Promise<T extends true ? Record<string,any>[] : string[] > {
     return new Promise(async resolve => {
+      if (!isAddress(address)) return resolve([]);
       // get cache
       if (this.cache) {
         const cached = await this.cache.find('nfds', { address });
@@ -60,26 +60,13 @@ export default class NFDs {
         });
         if (response?.data) results = response.data
       } 
-      catch {}
+      catch (e) {
+        console.log(e)
+      }
 
       // loop each address in batch to map it with results
       addresses.forEach( async address => {
-        const result = results[address] || [];
-        const verified = result.filter(nfd => nfd.depositAccount === address) 
-        // sort by avatar
-        verified.sort((a, b) => { 
-          let aW = 0; 
-          let bW = 0; 
-          if (a.properties?.verified?.avatar) aW = 2;
-          else if (a.properties?.userDefined?.avatar) aW = 1;
-          if (b.properties?.verified?.avatar) bW = 2;
-          else if (b.properties?.userDefined?.avatar) bW = 1;
-          return bW - aW;
-        });
-        // add avatars
-        verified.forEach(nfd => {
-          nfd.avatar = nfd.properties?.verified?.avatar || nfd.properties?.userDefined?.avatar || undefined;
-        });
+        const verified = this.prepareResults(results[address] || [], address)
         // map domains only
         const domains = verified.map(nfd => nfd.name);
         // trigger current stack
@@ -95,88 +82,125 @@ export default class NFDs {
     });  
   }, 200);
 
-  
-  /**
-   * Map each prop of an object { key: address } 
-   * with their relative domains
-   * ==================================================
-   */
-  async map (addressMap: Record<string, string|undefined>) {
-    const mappedAddresses = {};
-    const mappedNFDs = {};
-    Object.entries(addressMap)
-      .forEach(([key, addr]) => {
-        if (!addr) return;
-        if (!mappedAddresses[addr]) mappedAddresses[addr] = [];
-        mappedAddresses[addr].push(key);
-        mappedNFDs[key] = undefined;
-      });
-
-    const addressArr = Object.values(addressMap)
-      .filter(address => address !== 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ');
-    const uniqueAddresses = uniq(addressArr);
-    const queryStr = uniqueAddresses.map(addr => `address=${addr}`).join('&');
-    
-    try {
-      const response = await axios.get(`${options.nfdApiUrl}/nfd/address?${queryStr}&limit=1`);
-      if (!response.data || !response.data.length) return {};
-      response.data.forEach((nfd: Record<string, any>) => {
-        if (!nfd.depositAccount || !mappedAddresses[nfd.depositAccount]) return;
-        mappedAddresses[nfd.depositAccount].forEach((addr: string) => {
-          mappedNFDs[addr] = nfd.name;
-        });   
-      });
-      return mappedNFDs;
-    }
-    catch (e) {
-      return mappedNFDs;
-    }
-  }
 
 
   /**
-   * Get Address
-   * ==================================================
-   */
-  async getAddress (nfds: string): Promise<string|undefined> {
+  * Get Address
+  * ==================================================
+  */
+  async getAddress (domain: string): Promise<string|undefined> {
     return new Promise(async resolve => {
       // get cache
       if (this.cache) {
-        const cached = await this.cache.find('nfds', { nfds });
+        const cached = await this.cache.find('nfds', { nfds: domain });
         if (cached?.address) return resolve(cached.address);
       }
   
       // check if a task is currently fetching this address
-      if (this.fetching[nfds]) {
-        this.fetching[nfds].push({ resolve, full: false });
+      if (this.fetching[domain]) {
+        this.fetching[domain].push({ resolve, full: false });
+        console.log('already fetching', domain, this.fetching);
         return;
       }
 
       // get results
       let results = [];
-      this.fetching[nfds] = [];  
+      this.fetching[domain] = [];  
       try {
-        const response = await axios.get(`${options.nfdApiUrl}/nfd/${nfds}`)
+        const response = await axios.get(`${options.nfdApiUrl}/nfd/${domain}`);
         if (response?.data) results = [response.data]
-      } catch {}
-
+      } catch (e) {
+        console.log('Error fetching address for ', domain, e)
+      }
+      
       const address = results[0]?.depositAccount;
+
       // trigger current stack
-      if (this.fetching[nfds]?.length) {
-        this.fetching[nfds].forEach(({ resolve }) => resolve(address));
-        delete this.fetching[nfds];
+      if (this.fetching[domain]) {
+        this.fetching[domain].forEach(({ resolve }) => resolve(address));
+        delete this.fetching[domain];
       }
   
       // save cache
       if (this.cache && address) {
-        await this.cache.save('nfds', results, { address, nfds });
+        await this.cache.save('nfds', results, { address, nfds: domain });
       }
 
       // resolve 
       resolve(address);
     })
-  
   }
+
+
+  /**
+  * Search
+  * ==================================================
+  */
+  async search(prompt: string): Promise<Record<string, any>[]> {
+    // get cache
+    if (false && this.cache) {
+      const cached = await this.cache.find('nfdSearch', { prompt });
+      if (cached) return cached.data;
+    }
+
+    let results = [];
+    try {
+      const { data } = await axios.get(`${options.nfdApiUrl}/nfd`, {
+        params: { 
+          substring: prompt, 
+          view: 'thumbnail',
+        }
+      })
+      if (data.length) {
+        results = this.prepareResults(
+          data.filter(nfd => nfd.state !== 'forSale')
+        );
+      }
+    } 
+    catch {}
+
+    // save cache
+    if (this.cache) {
+      await this.cache.save('nfdSearch', results, { prompt });
+    }
+
+
+    return results;
+  }
+
+
+  /**
+  * Helpers
+  * ==================================================
+  */
+  private prepareResults(nfds: Record<string, any>[], address?: string) {
+    if (address) {
+      nfds = nfds.filter(nfd => (
+        nfd.depositAccount === address
+        || nfd.caAlgo.includes(address)
+      ));
+    }
+    // sort by avatar
+    nfds.sort((a, b) => { 
+      let aW = 0; 
+      let bW = 0;
+      if (address && address === a.depositAccount) aW = 3; 
+      else if (a.properties?.verified?.avatar) aW = 2;
+      else if (a.properties?.userDefined?.avatar) aW = 1;
+      if (address && address === b.depositAccount) bW = 3; 
+      else if (b.properties?.verified?.avatar) bW = 2;
+      else if (b.properties?.userDefined?.avatar) bW = 1;
+      return bW - aW;
+    });
+    // add avatars
+    nfds.forEach(nfd => {
+      console.log(nfd)
+      nfd.avatar = nfd.properties?.verified?.avatar || nfd.properties?.userDefined?.avatar || undefined;
+    });
+    return nfds;
+  }
+  
+
 
 }
 

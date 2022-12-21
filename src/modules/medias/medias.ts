@@ -27,12 +27,13 @@ export default class Medias {
   * uses the params object of an asset
   * ==================================================
   */
-  public async getAssetFiles(id: number, params: Record<string, any>): Promise<AssetFiles> {
+  public async getAssetFiles(id: number, assetProps: Record<string, any>): Promise<AssetFiles> {
     return new Promise(async resolve => {
       let files: AssetFiles =  {
         metadata: undefined,
         medias: [],
       };
+      const params = assetProps?.params; 
       if (!id || !params.url) return resolve(files);
 
       // get cache

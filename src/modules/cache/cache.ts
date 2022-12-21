@@ -51,7 +51,11 @@ export default class Cache {
     }
     // NFDs
     if (forwarded.nfds) {
-      stores = { ...stores, nfds: '&address, *nfds' };
+      stores = { 
+        ...stores, 
+        nfds: '&address, *nfds',
+        nfdSearch: '&prompt', 
+      };
     }
     // Medias
     if (forwarded.medias) {
