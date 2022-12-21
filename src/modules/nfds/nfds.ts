@@ -59,10 +59,7 @@ export default class NFDs {
           params: { view: 'thumbnail' }
         });
         if (response?.data) results = response.data
-      } 
-      catch (e) {
-        console.log(e)
-      }
+      } catch {}
 
       // loop each address in batch to map it with results
       addresses.forEach( async address => {
@@ -99,7 +96,6 @@ export default class NFDs {
       // check if a task is currently fetching this address
       if (this.fetching[domain]) {
         this.fetching[domain].push({ resolve, full: false });
-        console.log('already fetching', domain, this.fetching);
         return;
       }
 
@@ -109,9 +105,7 @@ export default class NFDs {
       try {
         const response = await axios.get(`${options.nfdApiUrl}/nfd/${domain}`);
         if (response?.data) results = [response.data]
-      } catch (e) {
-        console.log('Error fetching address for ', domain, e)
-      }
+      } catch {}
       
       const address = results[0]?.depositAccount;
 
@@ -156,8 +150,7 @@ export default class NFDs {
           data.filter(nfd => nfd.state !== 'forSale')
         );
       }
-    } 
-    catch {}
+    } catch {}
 
     // save cache
     if (this.cache) {
@@ -188,13 +181,11 @@ export default class NFDs {
       else if (a.properties?.verified?.avatar) aW = 2;
       else if (a.properties?.userDefined?.avatar) aW = 1;
       if (address && address === b.depositAccount) bW = 3; 
-      else if (b.properties?.verified?.avatar) bW = 2;
       else if (b.properties?.userDefined?.avatar) bW = 1;
       return bW - aW;
     });
     // add avatars
     nfds.forEach(nfd => {
-      console.log(nfd)
       nfd.avatar = nfd.properties?.verified?.avatar || nfd.properties?.userDefined?.avatar || undefined;
     });
     return nfds;
