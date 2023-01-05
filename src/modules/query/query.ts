@@ -140,18 +140,25 @@ export default class Query {
   * Fetch data
   * ==================================================
   */
-  private async fetch(endpoint: string, params: QueryParams = {}) {
+  private async fetch(url: string, params: QueryParams = {}) {
     try {
-      if (endpoint.indexOf(':id') > -1) {
+      if (url.indexOf(':id') > -1) {
         return { error: { 
-          message: 'Endpoint is invalid',
-          url: endpoint
+          url,
+          message: 'Url is invalid',
         } } 
       }
-      const stringifiedParams = objectValuesToString(params);
-      const queryString: string = new URLSearchParams(stringifiedParams).toString();  
+      const method: string = params.method 
+        ? String(params.method).toUpperCase()
+        : 'GET';
+      if (params.method) delete params.method;
       const response = await this.rateLimit(
-        () => axios.get(`${endpoint}?${queryString}`)
+        () => axios({
+            url,
+            method,
+            params: method === 'GET' ? params : undefined, 
+            data: method !== 'GET' ? params : undefined,
+          })
       );
       return response.data;
     }
@@ -253,7 +260,7 @@ export default class Query {
   * Node queries (Algod API)
   * ==================================================
   */
- private async 
+//  private async 
 
 
 
@@ -262,7 +269,7 @@ export default class Query {
   * ==================================================
   */
   public async custom(
-    endpoint: string, 
+    apiUrl: string, 
     store: string|null, 
     queryParams: QueryParams = {}
   ) {
@@ -277,7 +284,7 @@ export default class Query {
       }
     }
     
-    let { params, url } = this.mergeUrlAndParams(endpoint, queryParams);
+    let { params, url } = this.mergeUrlAndParams(apiUrl, queryParams);
     if (params.refreshCache !== undefined) delete params.refreshCache;
     if (params.noCache !== undefined) delete params.noCache;
 

@@ -1,8 +1,6 @@
 
-import algosdk, { Transaction } from 'algosdk';
+import { Transaction } from 'algosdk';
 import { PeraWalletConnect } from "@perawallet/connect";
-import { SignerTransaction } from "@perawallet/connect/dist/util/model/peraWalletModels";
-import { formatJsonRpcRequest } from '@json-rpc-tools/utils';
 import BaseConnector from './base.js';
 
 export default class Pera extends BaseConnector {
@@ -21,32 +19,30 @@ export default class Pera extends BaseConnector {
   //
   // Connect account
   // ----------------------------------------------
-  public async connect (): Promise<string[]|false> {
-    if (!this.connector) return false;
+  public async connect (): Promise<string[]|undefined> {
+    if (!this.connector) return undefined;
     
     // connect
     try {
       const addresses = await this.connector.connect();
-      console.log('connect')
       return addresses;
     } 
-    catch (err) {
-      console.error(err);
-  
+    catch {
+      return undefined
     }
   }
 
   //
   // Connect account
   // ----------------------------------------------
-  public async reconnect (): Promise<string[]|false> {
-    if (!this.connector) return false;
+  public async reconnect (): Promise<string[]|undefined> {
+    if (!this.connector) return undefined;
     try {
       const addresses = await this.connector.reconnectSession();;
       return addresses;
     } 
-    catch (err) {
-      console.error(err);
+    catch {
+      return undefined;
   
     }
   }
@@ -57,16 +53,15 @@ export default class Pera extends BaseConnector {
   //
   // Sign transaction(s)
   // ----------------------------------------------
-  public async sign(txns: Transaction[]): Promise<Uint8Array[]|false> { 
-    if (!this.connector) return false;
+  public async sign(txns: Transaction[]): Promise<Uint8Array[]|undefined> { 
+    if (!this.connector) return undefined;
     const peraTxns = txns.map(txn => ({ txn })) ; // <------ HERE !
     try {
       const result = await this.connector.signTransaction([peraTxns]);
       const signedBytes = result.map(arr => Uint8Array.from(arr));
       return signedBytes;
-    } catch(err) {
-      console.log(err);
-      return false;
+    } catch {
+      return undefined;
     }
   };
 

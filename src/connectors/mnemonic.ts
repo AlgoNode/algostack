@@ -8,7 +8,7 @@ export default class MyAlgo extends BaseConnector {
   constructor(mnemonic?: string) {
     super();
     if (!mnemonic) {
-      this.ready = false;
+      this.ready = undefined;
       return; 
     } 
     // Warn if used on the client side
@@ -21,7 +21,7 @@ export default class MyAlgo extends BaseConnector {
       this.account = algosdk.mnemonicToSecretKey(mnemonic);
       this.ready = true;
     } catch (e) {
-      this.ready = false;
+      this.ready = undefined;
     }
   }
 
@@ -29,14 +29,14 @@ export default class MyAlgo extends BaseConnector {
   //
   // Sign transaction(s)
   // ----------------------------------------------
-  public async sign(txns: Transaction[]): Promise<Uint8Array[]|false> { 
-    if (!this.connector) return false;
+  public async sign(txns: Transaction[]): Promise<Uint8Array[]|undefined> { 
+    if (!this.connector) return undefined;
     try {
       const signedTxns = txns.map(txn => txn.signTxn(this.account.sk));
       return signedTxns;
     } catch(err) {
       console.log(err);
-      return false;
+      return undefined;
     }
   };
 }

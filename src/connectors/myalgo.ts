@@ -13,32 +13,30 @@ export default class MyAlgo extends BaseConnector {
   //
   // Connect account
   // ----------------------------------------------
-  async connect(): Promise<string[]|false> {
-    if (!this.connector) return false;
+  async connect(): Promise<string[]|undefined> {
+    if (!this.connector) return undefined;
     try {
       const accounts = await this.connector.connect({shouldSelectOneAccount: true});
       const addresses = accounts.map(account => account.address);
       return addresses;
     } 
-    catch (err) {
-      console.error(err);
-      return false;
+    catch {
+      return undefined;
     }
   }
 
   //
   // Sign transaction(s)
   // ----------------------------------------------
-  public async sign(txns: Transaction[]): Promise<Uint8Array[]|false> { 
-    if (!this.connector) return false;
+  public async sign(txns: Transaction[]): Promise<Uint8Array[]|undefined> { 
+    if (!this.connector) return undefined;
     try {
       const txnsBytes = txns.map(txn => txn.toByte());
       const result = await this.connector.signTransaction(txnsBytes);
       const signedBytes = result.map(signed => signed.blob);
       return signedBytes;
-    } catch(err) {
-      console.log(err);
-      return false;
+    } catch {
+      return undefined;
     }
   };
 }

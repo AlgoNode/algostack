@@ -8,11 +8,10 @@ export default class Storage {
   public available: boolean = true;
   public data: Object = {}
 
-  constructor(forwarded: AlgoStack) {
+  constructor() {
     this.available = typeof localStorage !== 'undefined';
     if (!this.available) return;
     this.preload();
-
   }
 
   //

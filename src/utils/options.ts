@@ -66,7 +66,7 @@ const options: OptionsProps = {
     block: '1w',
     transaction: '1w',
     nfds: '1h',
-    nfdSearch: '5m',
+    nfdSearch: '1m',
     icon: '1d',
     medias: '1d',
   },

@@ -44,7 +44,7 @@ export default class AlgoStack {
 
   constructor (userOptions?: OptionsProps, modules: PlugableModules = {}) {
     merge(options, userOptions);
-    this.storage = new Storage(this);
+    this.storage = new Storage();
 
     // Add modules
     if (modules.Cache && typeof window !== 'undefined') this.cache = new modules.Cache();

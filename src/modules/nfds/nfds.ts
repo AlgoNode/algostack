@@ -60,7 +60,6 @@ export default class NFDs {
         });
         if (response?.data) results = response.data
       } catch {}
-
       // loop each address in batch to map it with results
       addresses.forEach( async address => {
         const verified = this.prepareResults(results[address] || [], address)
@@ -132,7 +131,7 @@ export default class NFDs {
   */
   async search(prompt: string): Promise<Record<string, any>[]> {
     // get cache
-    if (false && this.cache) {
+    if (this.cache) {
       const cached = await this.cache.find('nfdSearch', { prompt });
       if (cached) return cached.data;
     }

@@ -76,7 +76,7 @@ export default class Client {
   // Connect
   // ----------------------------------------------
   private async connect() {
-    if (!this._connector) return false;
+    if (!this._connector) return undefined;
     const addresses = await this._connector.connect();
     if (addresses) {
       this._addresses = addresses;
@@ -85,7 +85,7 @@ export default class Client {
     }
     else {
       this.disconnect();
-      return false;
+      return undefined;
     }
   }
 
