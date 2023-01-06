@@ -21,8 +21,28 @@ export default class NFDs {
     this.fetching = {};
   }
   
+
   /**
-  * Get NFD
+  * Get a single NFD data
+  * ==================================================
+  */
+  async getNFD (nfd: string): Promise<Record<string,any>|undefined> {
+    if (!nfd) return undefined;
+    try {
+      const { data } = await axios.get(`${options.nfdApiUrl}/nfd/${nfd.toLocaleLowerCase()}`, { 
+        params: { view: 'brief' }
+      });
+      if (!data) return undefined;
+      const result = this.prepareResults([data]);
+      return result[0];
+    } catch {
+      return undefined
+    } 
+  }
+
+
+  /**
+  * Get NFDs for a given address (batched lookup)
   * ==================================================
   */
   async getNFDs <T extends boolean|undefined>(address: string, full?: T): Promise<T extends true ? Record<string,any>[] : string[] > {
@@ -40,7 +60,6 @@ export default class NFDs {
       // trigger throttled fetch
       this.batchFetchNFDs();
     })
-  
   }
 
 
