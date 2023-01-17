@@ -1,5 +1,6 @@
 // import Buffer from 'buffer';
 import algosdk, { Transaction, TransactionLike } from 'algosdk';
+import camelcaseKeys from 'camelcase-keys';
 import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
 import Client from '../client/index.js';
@@ -26,7 +27,7 @@ export default class Txns {
   //
   // Single Transaction
   // ----------------------------------------------
-  async sendTxn(params: Record<string, any>) {
+  async sendTxn(params: Record<string, any>): Promise<Record<string,any>|undefined> {
     
     try {
       const baseParams = await this.getTxnParams();
@@ -39,7 +40,7 @@ export default class Txns {
       const response = await this.submitTxn(signedTxn);
       if (!response.txId) return;
       const confirmation = await this.wait(response.txId);
-      return confirmation;
+      return camelcaseKeys(confirmation, { deep: true });
     }
     catch (error) {
       console.dir(error);
@@ -49,7 +50,7 @@ export default class Txns {
   //
   // Grouped Transactions
   // ----------------------------------------------
-  async sendGroupedTxns(paramsGroup: Record<string, any>[]) {
+  async sendGroupedTxns(paramsGroup: Record<string, any>[]): Promise<Record<string,any>|undefined>  {
     try {
       const baseParams = await this.getTxnParams();
       let group: Transaction[] = [];
@@ -68,7 +69,8 @@ export default class Txns {
       const response = await this.submitTxn(signedTxns);
       if (!response.txId) return;
       const confirmation = await this.wait(response.txId);
-      return confirmation;
+      return camelcaseKeys(confirmation, { deep: true });
+
     }
     catch (error) {
       console.dir(error);
@@ -78,7 +80,7 @@ export default class Txns {
   //
   // Sequenced transactions
   // ----------------------------------------------
-  async sendSequencedTxns(paramsSequence: TransactionLike[]) {
+  async sendSequencedTxns(paramsSequence: TransactionLike[]): Promise<Record<string,any>[]|undefined>  {
     try {
       const baseParams = await this.getTxnParams();
       let sequence: Transaction[] = [];
@@ -97,7 +99,9 @@ export default class Txns {
         const response = await this.submitTxn(signedTxns[i]);
         if (!response.txId) return;
         const confirmation = await this.wait(response.txId);
-        confirmations.push(confirmation)
+        confirmations.push(
+          camelcaseKeys(confirmation, { deep: true })
+        );
       }
       return confirmations;
     }

@@ -1,9 +1,9 @@
-import axios, { AxiosResponse } from 'axios';
-import { decodeAddress } from 'algosdk';
+import type { CIDVersion } from 'multiformats/types/src/cid';
+import axios from 'axios';
+import { decodeAddress, encodeAddress } from 'algosdk';
 import { CID } from 'multiformats/cid';
 import * as mfsha2 from 'multiformats/hashes/sha2';
 import * as digest from 'multiformats/hashes/digest';
-import type { CIDVersion } from 'multiformats/types/src/cid';
 import options from '../utils/options.js';
 
 /**
@@ -76,7 +76,8 @@ import options from '../utils/options.js';
  * ==================================================
  */
 
-export function getIpfsFromAddress(url: string, params: Record<string, string| number>) {  
+export function getIpfsFromAddress(params: Record<string, string| number>|string, url: string = 'template-ipfs://{ipfscid:1:raw:reserve:sha2-256}') {  
+  if (typeof params === 'string') params = { reserve: params };   
   const matches = url.match(/^template-ipfs:\/\/\{ipfscid:([0-9]+):([a-z\-]+):([a-z]+):([a-z0-9\-]+)}(.+)?$/);
   if (!matches) return;
   const [, cidVersion, multicodec, field, , ext] = matches;
@@ -87,9 +88,22 @@ export function getIpfsFromAddress(url: string, params: Record<string, string| n
   if (multicodec === 'dag-pb') cidCodecCode = 0x70;
   const addr = decodeAddress(address as string)
   const mhdigest = digest.create(mfsha2.sha256.code, addr.publicKey)
-  const cid = CID.create(parseInt(cidVersion) as CIDVersion, cidCodecCode, mhdigest)
+  const cid = CID.create(Number(cidVersion) as CIDVersion, cidCodecCode, mhdigest)
   const ipfscid = cid.toString();
   return `ipfs://${ipfscid}${ext || ''}`
+}
+
+
+/**
+ * Generate address from cid
+ * Ex: template-ipfs://{ipfscid:1:raw:reserve:sha2-256}
+ * ==================================================
+ */
+
+export function generateAddressFromIpfs(cidStr: string) {  
+  const cid = CID.parse(cidStr);
+  const address = encodeAddress(cid.multihash.digest);
+  return address;
 }
 
 

@@ -204,7 +204,14 @@ export default class NFDs {
     });
     // add avatars
     nfds.forEach(nfd => {
-      nfd.avatar = nfd.properties?.verified?.avatar || nfd.properties?.userDefined?.avatar || undefined;
+      if (!nfd.properties) return;
+      if (nfd.properties.verified) {
+        // verified doesnt get cleared up 
+        // so if both are there, take userdefined
+        nfd.avatar = nfd.properties?.userDefined?.avatar || nfd.properties.verified?.avatar;  
+        return;
+      }
+      nfd.avatar = nfd.properties?.userDefined?.avatar;
     });
     return nfds;
   }

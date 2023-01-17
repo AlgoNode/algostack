@@ -45,7 +45,7 @@ export default class Medias {
       // get medias
       let url = params.url as string;
       if (String(params.url).startsWith('template-ipfs://')) {
-        const arc19Url = getIpfsFromAddress(url, params);
+        const arc19Url = getIpfsFromAddress(params, url);
         if (arc19Url) url = arc19Url;
       }
       files = await this.getMedias(url);
