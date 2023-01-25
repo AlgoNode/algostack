@@ -1,3 +1,5 @@
+import { SendOptions } from "../modules/txns/types.js";
+
 export type Modes = 'MAINNET' | 'TESTNET' | 'BETANET';
 export type DurationString = string;
 
@@ -36,6 +38,10 @@ export interface OptionsProps {
     [k:string]: DurationString,
   },
 
+
+  // Send txn options
+  sendOptions?: SendOptions,
+
   
 }
 
@@ -71,7 +77,9 @@ const options: OptionsProps = {
     medias: '1d',
   },
 
-  
+  sendOptions: {
+    wait: true,
+  },
 }
 
 export default options;
