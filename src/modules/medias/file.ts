@@ -56,7 +56,7 @@ export default class File {
       return;
     }
     // json
-    if (/^(application\/json(;?))/.test(this.mime)) {
+    if (/^(application\/json|text\/plain(;?))/.test(this.mime)) {
       this.type = MediaType.JSON;
       await this.loadJSON();
       return;
