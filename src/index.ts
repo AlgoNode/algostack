@@ -1,5 +1,4 @@
 import merge from 'lodash/merge.js';
-import polyfills from './helpers/polyfills.js';
 import Storage from './utils/storage.js';
 import options, { OptionsProps } from './utils/options.js';
 import type Addons from './modules/addons/index.js';
@@ -22,8 +21,6 @@ export interface PlugableModules {
   Medias?: typeof Medias,
 } 
 
-// Add polyfills
-polyfills();
 
 export default class AlgoStack {
   // Utils
