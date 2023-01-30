@@ -1,3 +1,4 @@
+import type { ConnectionSettings } from '@randlabs/myalgo-connect';
 import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
 import Storage from '../../utils/storage.js';
@@ -47,9 +48,9 @@ export default class Client {
   //
   // MYALGO
   // ----------------------------------------------
-  public async connectMyAlgo() {
+  public async connectMyAlgo(options: ConnectionSettings = {}) {
     this.useMyAlgo();
-    const connected = await this.connect();
+    const connected = await this.connect(options);
     return connected;
   }
   private useMyAlgo() {
@@ -75,9 +76,9 @@ export default class Client {
   //
   // Connect
   // ----------------------------------------------
-  private async connect() {
+  private async connect(options?: ConnectionSettings) {
     if (!this._connector) return undefined;
-    const addresses = await this._connector.connect();
+    const addresses = await this._connector.connect(options);
     if (addresses) {
       this._addresses = addresses;
       this.optionallyPersist();

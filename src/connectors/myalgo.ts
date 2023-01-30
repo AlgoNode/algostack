@@ -1,5 +1,6 @@
+import type { ConnectionSettings } from '@randlabs/myalgo-connect';
 import MyAlgoConnect from '@randlabs/myalgo-connect';
-import algosdk, { Transaction } from 'algosdk';
+import { Transaction } from 'algosdk';
 import BaseConnector from './base.js';
 
 export default class MyAlgo extends BaseConnector {
@@ -13,10 +14,13 @@ export default class MyAlgo extends BaseConnector {
   //
   // Connect account
   // ----------------------------------------------
-  async connect(): Promise<string[]|undefined> {
+  async connect(options: ConnectionSettings = {}): Promise<string[]|undefined> {
     if (!this.connector) return undefined;
     try {
-      const accounts = await this.connector.connect({shouldSelectOneAccount: true});
+      const accounts = await this.connector.connect({
+        shouldSelectOneAccount: true,
+        ...options,
+      });
       const addresses = accounts.map(account => account.address);
       return addresses;
     } 
