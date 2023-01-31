@@ -39,7 +39,8 @@ export default class MyAlgo extends BaseConnector {
       const result = await this.connector.signTransaction(txnsBytes);
       const signedBytes = result.map(signed => signed.blob);
       return signedBytes;
-    } catch {
+    } catch (e) {
+      console.error(e)
       return undefined;
     }
   };

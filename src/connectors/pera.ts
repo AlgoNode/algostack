@@ -60,7 +60,8 @@ export default class Pera extends BaseConnector {
       const result = await this.connector.signTransaction([peraTxns]);
       const signedBytes = result.map(arr => Uint8Array.from(arr));
       return signedBytes;
-    } catch {
+    } catch (e){
+      console.error(e)
       return undefined;
     }
   };
