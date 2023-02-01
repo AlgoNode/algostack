@@ -1,9 +1,10 @@
-import axios from 'axios';
 import type Cache from '../../cache/index.js';
 import type Addons from '../addons.js';
+import axios from 'axios';
+import { Buffer } from 'buffer';
 import BaseRunner from './_base.js';
 import { Payload } from '../../query/index.js';
-import { getFileContent, getFileType } from '../../../helpers/files.js';
+import { getFileContent } from '../../../helpers/files.js';
 
 export default class Icon extends BaseRunner {
   protected cache: Cache;
