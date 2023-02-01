@@ -50,7 +50,10 @@ export default class Txns {
         return camelcaseKeys(response, { deep: true });
       }
       const confirmation = await this.wait(response.txId);
-      return confirmation;
+      return {
+        ...confirmation,
+        txId: response.txId,
+      };
     }
     catch (error) {
       console.dir(error);
@@ -82,7 +85,10 @@ export default class Txns {
         return camelcaseKeys(response, { deep: true });
       }
       const confirmation = await this.wait(response.txId);
-      return confirmation;
+      return {
+        ...confirmation,
+        txId: response.txId,
+      };
 
     }
     catch (error) {
