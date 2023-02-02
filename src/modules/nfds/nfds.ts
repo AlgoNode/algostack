@@ -1,11 +1,10 @@
 import axios from 'axios';
-import uniq from 'lodash/uniq.js';
 import throttle from 'lodash/throttle.js';
 import chunk from 'lodash/chunk.js';
 import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
 import type Cache from '../cache/index.js';
-import { AddressString, NFDQueryCallback, NFDQuery } from './types.js';
+import { NFDProps, NFDQueryCallback } from './types.js';
 import { isAddress } from '../../helpers/strings.js';
 
 /**
@@ -14,7 +13,7 @@ import { isAddress } from '../../helpers/strings.js';
 */
 export default class NFDs {
   protected cache?: Cache;
-  protected fetching: Record<AddressString, NFDQueryCallback[]>;
+  protected fetching: Record<string, NFDQueryCallback[]>;
 
   constructor(forwarded: AlgoStack) {
     this.cache = forwarded.cache;
@@ -26,7 +25,7 @@ export default class NFDs {
   * Get a single NFD data
   * ==================================================
   */
-  async getNFD (nfd: string): Promise<Record<string,any>|undefined> {
+  async getNFD (nfd: string): Promise<NFDProps|undefined> {
     if (!nfd) return undefined;
     try {
       const { data } = await axios.get(`${options.nfdApiUrl}/nfd/${nfd.toLocaleLowerCase()}`, { 
@@ -45,7 +44,7 @@ export default class NFDs {
   * Get NFDs for a given address (batched lookup)
   * ==================================================
   */
-  async getNFDs <T extends boolean|undefined>(address: string, full?: T): Promise<T extends true ? Record<string,any>[] : string[] > {
+  async getNFDs <T extends boolean|undefined>(address: string, full?: T): Promise<T extends true ? NFDProps[] : string[] > {
     return new Promise(async resolve => {
       if (!isAddress(address)) return resolve([]);
       // get cache
@@ -68,14 +67,14 @@ export default class NFDs {
   * ==================================================
   */
   private batchFetchNFDs = throttle( async () => {
-    const fetching: AddressString[] = Object.keys(this.fetching)
+    const fetching: string[] = Object.keys(this.fetching)
     const batches = chunk(fetching, 20);
     batches.forEach( async addresses => {
-      let results: Record<string, Record<string,any>[]> = {}; 
+      let results: Record<string, NFDProps[]> = {}; 
       const addressesQueryString = `address=${addresses.join('&address=')}`;
       try {
         const response = await axios.get(`${options.nfdApiUrl}/nfd/v2/address?${addressesQueryString}`, { 
-          params: { view: 'thumbnail' }
+          params: { view: 'brief' }
         });
         if (response?.data) results = response.data
       } catch {}
@@ -148,7 +147,7 @@ export default class NFDs {
   * Search
   * ==================================================
   */
-  async search(prompt: string): Promise<Record<string, any>[]> {
+  async search(prompt: string): Promise<NFDProps[]> {
     // get cache
     if (this.cache) {
       const cached = await this.cache.find('nfdSearch', { prompt });
@@ -160,7 +159,7 @@ export default class NFDs {
       const { data } = await axios.get(`${options.nfdApiUrl}/nfd`, {
         params: { 
           substring: prompt, 
-          view: 'thumbnail',
+          view: 'brief',
         }
       })
       if (data.length) {
@@ -184,7 +183,7 @@ export default class NFDs {
   * Helpers
   * ==================================================
   */
-  private prepareResults(nfds: Record<string, any>[], address?: string) {
+  private prepareResults(nfds: NFDProps[], address?: string) {
     if (address) {
       nfds = nfds.filter(nfd => (
         nfd?.depositAccount === address
