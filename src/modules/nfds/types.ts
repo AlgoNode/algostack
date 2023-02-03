@@ -10,6 +10,7 @@ export interface NFDProps {
   avatarOutdated?: boolean,
   caAlgo?: Array<string>,
   category?: NFDCategory,
+  currentAsOfBlock?: number;
   depositAccount?: string,
   matchCheck?: string,
   metaTags?: Array<string>,
@@ -25,7 +26,13 @@ export interface NFDProps {
   reservedFor?: string,
   saleType?: NFDSaleType,
   sellAmount?: number,
+  seller?: string;
+  sigNameAddress?: string;
   state?: NFDState,
+  tags?: Array<string>;
+  timeChanged?: Date;
+  timeCreated?: Date;
+  timePurchased?: Date;
   unverifiedCa?: { [key: string]: Array<string>, },
   unverifiedCaAlgo?: Array<string>,
 }

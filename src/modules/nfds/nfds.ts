@@ -29,7 +29,7 @@ export default class NFDs {
     if (!nfd) return undefined;
     try {
       const { data } = await axios.get(`${options.nfdApiUrl}/nfd/${nfd.toLocaleLowerCase()}`, { 
-        params: { view: 'brief' }
+        params: { view: 'full' }
       });
       if (!data) return undefined;
       const result = this.prepareResults([data]);
@@ -74,7 +74,7 @@ export default class NFDs {
       const addressesQueryString = `address=${addresses.join('&address=')}`;
       try {
         const response = await axios.get(`${options.nfdApiUrl}/nfd/v2/address?${addressesQueryString}`, { 
-          params: { view: 'brief' }
+          params: { view: 'full' }
         });
         if (response?.data) results = response.data
       } catch {}
@@ -159,7 +159,7 @@ export default class NFDs {
       const { data } = await axios.get(`${options.nfdApiUrl}/nfd`, {
         params: { 
           substring: prompt, 
-          view: 'brief',
+          view: 'full',
         }
       })
       if (data.length) {
