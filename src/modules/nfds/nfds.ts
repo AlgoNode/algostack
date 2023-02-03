@@ -26,6 +26,7 @@ export default class NFDs {
   * ==================================================
   */
   async getNFD (nfd: string): Promise<NFDProps|undefined> {
+    // TODO : add cache
     if (!nfd) return undefined;
     try {
       const { data } = await axios.get(`${options.nfdApiUrl}/nfd/${nfd.toLocaleLowerCase()}`, { 
@@ -48,7 +49,7 @@ export default class NFDs {
     return new Promise(async resolve => {
       if (!isAddress(address)) return resolve([]);
       // get cache
-      if (this.cache) {
+      if (this.cache && false) {
         const cached = await this.cache.find('nfds', { address });
         if (cached) return resolve(full ? cached.data : cached.nfds);
       }
@@ -192,13 +193,8 @@ export default class NFDs {
     }
     // sort by avatar
     nfds.sort((a, b) => { 
-      let aW = 0; 
-      let bW = 0;
-      if (address && address === a.depositAccount) aW = 3; 
-      else if (a.properties?.verified?.avatar) aW = 2;
-      else if (a.properties?.userDefined?.avatar) aW = 1;
-      if (address && address === b.depositAccount) bW = 3; 
-      else if (b.properties?.userDefined?.avatar) bW = 1;
+      let aW = this.getNFDWeight(a, address); 
+      let bW = this.getNFDWeight(b, address);
       return bW - aW;
     });
     // add avatars
@@ -213,6 +209,18 @@ export default class NFDs {
       nfd.avatar = nfd.properties?.userDefined?.avatar;
     });
     return nfds;
+  }
+
+  private getNFDWeight(nfd: NFDProps, address?: string) {
+    let w = 0;
+    const { properties: props } = nfd
+    if (address && address === nfd.depositAccount) w += 5;
+    if (!props) return w;
+    ['avatar', 'domain', 'email', 'twitter', 'discord'].forEach(contact => {
+      if (props?.verified?.[contact]) w += 1.75;
+      if (props?.userDefined?.[contact]) w += 1;
+    })
+    return w;
   }
   
 

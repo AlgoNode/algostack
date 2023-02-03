@@ -30,3 +30,9 @@ export function isAddress(str: string) {
 export function isTransaction(str: string) {
   return /^([A-Z2-7]{52})+$/.test(str);
 }
+
+
+// starts http or https 
+export function isUrl(str: string) {
+  return /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/.test(str);
+}
