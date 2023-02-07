@@ -49,7 +49,7 @@ export default class NFDs {
     return new Promise(async resolve => {
       if (!isAddress(address)) return resolve([]);
       // get cache
-      if (this.cache && false) {
+      if (this.cache) {
         const cached = await this.cache.find('nfds', { address });
         if (cached) return resolve(full ? cached.data : cached.nfds);
       }
