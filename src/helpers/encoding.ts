@@ -1,7 +1,7 @@
 import { Buffer } from 'buffer'
 import { decodeObj} from 'algosdk';
 import { Encoding } from '../modules/addons/enums.js';
-export { decodeAddress } from 'algosdk';
+export { decodeAddress, encodeAddress } from 'algosdk';
 
 /**
  * Convert between UTF8 and base64
