@@ -32,6 +32,7 @@ export default class Cache {
         account: '&params',
         accountTransactions: '&params',
         accountAssets: '&params',
+        accountAppsLocalState: '&params',
         application: '&params',
         asset: '&params',
         assetBalances: '&params',

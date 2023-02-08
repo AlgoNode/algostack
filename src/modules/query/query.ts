@@ -192,6 +192,9 @@ export default class Query {
   private async accountAssets(accountId: string, params: QueryParams = {}, addons?: Addon[]) {
     return await this.indexerQuery( `/v2/accounts/:id/assets`, 'accountAssets', { ...params, id: accountId }, addons);
   }
+  private async accountAppsLocalState(accountId: string, params: QueryParams = {}, addons?: Addon[]) {
+    return await this.indexerQuery( `/v2/accounts/:id/apps-local-state`, 'accountAppsLocalState', { ...params, id: accountId }, addons);
+  }
   // app
   private async application(appId: number, params: QueryParams = {}, addons?: Addon[]) {
     return await this.indexerQuery( `/v2/applications/:id`, 'application', { ...params, id: appId }, addons);
@@ -220,6 +223,7 @@ export default class Query {
     account: this.account.bind(this),
     accountTransactions: this.accountTransactions.bind(this),
     accountAssets: this.accountAssets.bind(this),
+    accountAppsLocalState: this.accountAppsLocalState.bind(this),
     application: this.application.bind(this),
     asset: this.asset.bind(this),
     assetBalances: this.assetBalances.bind(this),
