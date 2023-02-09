@@ -50,7 +50,7 @@ export default class NFDs {
       if (!isAddress(address)) return resolve([]);
       // get cache
       if (this.cache) {
-        const cached = await this.cache.find('nfds', { address });
+        const cached = await this.cache.find('nfd/lookup', { address });
         if (cached) return resolve(full ? cached.data : cached.nfds);
       }
       // check if a task is currently fetching this address
@@ -91,7 +91,7 @@ export default class NFDs {
         }
         // save cache
         if (this.cache) {
-          await this.cache.save('nfds', verified, { address, nfds: domains });
+          await this.cache.save('nfd/lookup', verified, { address, nfds: domains });
         }
       });
     });  
@@ -107,7 +107,7 @@ export default class NFDs {
     return new Promise(async resolve => {
       // get cache
       if (this.cache) {
-        const cached = await this.cache.find('nfds', { nfds: domain });
+        const cached = await this.cache.find('nfd/lookup', { nfds: domain });
         if (cached?.address) return resolve(cached.address);
       }
   
@@ -133,10 +133,11 @@ export default class NFDs {
         delete this.fetching[domain];
       }
   
-      // save cache
-      if (this.cache && address) {
-        await this.cache.save('nfds', results, { address, nfds: domain });
-      }
+      // save cache 
+      // TODO : find a way to save a single nfd and maybe add more later
+      // if (this.cache && address) {
+      //   await this.cache.save('nfd/lookup', results, { address, nfds: domain });
+      // }
 
       // resolve 
       resolve(address);
@@ -151,7 +152,7 @@ export default class NFDs {
   async search(prompt: string): Promise<NFDProps[]> {
     // get cache
     if (this.cache) {
-      const cached = await this.cache.find('nfdSearch', { prompt });
+      const cached = await this.cache.find('nfd/search', { prompt });
       if (cached) return cached.data;
     }
 
@@ -172,7 +173,7 @@ export default class NFDs {
 
     // save cache
     if (this.cache) {
-      await this.cache.save('nfdSearch', results, { prompt });
+      await this.cache.save('nfd/search', results, { prompt });
     }
 
 

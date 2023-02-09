@@ -28,7 +28,7 @@ export default class Icon extends BaseRunner {
     
     // get cached data
     if (this.cache) {
-      const cached = await this.cache.find('icon', { id });
+      const cached = await this.cache.find('addons/icon', { id });
       if (cached) {
         icon = cached.data;
         return this.save(asa, icon);
@@ -41,7 +41,7 @@ export default class Icon extends BaseRunner {
     // In case there is no icon
     if (!iconUrl) {
       if (this.cache) {
-        await this.cache.save('icon', undefined, { id });
+        await this.cache.save('addons/icon', undefined, { id });
       }
       return this.save(asa, undefined);
     }
@@ -57,7 +57,7 @@ export default class Icon extends BaseRunner {
     
     // cache result
     if (this.cache) {
-      await this.cache.save('icon', icon, { id });
+      await this.cache.save('addons/icon', icon, { id });
     }
 
     return this.save(asa, icon);
@@ -71,7 +71,7 @@ export default class Icon extends BaseRunner {
   async getIconsList() {
     // get cached list
     if (this.cache) {
-      const cached = await this.cache.find('icon', { id: 0 });
+      const cached = await this.cache.find('addons/icon', { id: 0 });
       if (cached) {
         return cached.data;
       }
@@ -84,7 +84,7 @@ export default class Icon extends BaseRunner {
     });
     // cache result
     if (this.cache) {
-      await this.cache.save('icon', list, { id: 0 });
+      await this.cache.save('addons/icon', list, { id: 0 });
     }
     return list;
   }

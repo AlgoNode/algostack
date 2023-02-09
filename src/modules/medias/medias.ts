@@ -35,10 +35,11 @@ export default class Medias {
       };
       const params = assetProps?.params; 
       if (!id || !params.url) return resolve(files);
+      id = Number(id);
 
       // get cache
       if (this.cache) {
-        const cached = await this.cache.find('medias', { id });
+        const cached = await this.cache.find('medias/asset', { id });
         if (cached?.data) return resolve(cached.data);
       }
 
@@ -52,7 +53,7 @@ export default class Medias {
       
       // save cache
       if (this.cache) {
-        await this.cache.save('medias', files, { id });
+        await this.cache.save('medias/asset', files, { id });
       }
 
       resolve(files);

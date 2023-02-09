@@ -1,11 +1,12 @@
 import type Query from './query.js';
 import { Addon } from '../addons/index.js';
+import { ApiUrl } from './enums.js';
 
 export type LookupMethods = Query['lookup'];
 export type SearchMethods = Query['search'];
 
 export interface QueryOptions {
-  base?: 'indexerUrl'|'apiUrl',
+  base?: ApiUrl,
   endpoint: string, 
   store: string|null, 
   queryParams: QueryParams, 

@@ -28,39 +28,55 @@ export default class Cache {
     if (forwarded.query) {
       stores = { 
         ...stores, 
-        // lookups
-        account: '&params',
-        accountTransactions: '&params',
-        accountAssets: '&params',
-        accountAppsLocalState: '&params',
-        application: '&params',
-        asset: '&params',
-        assetBalances: '&params',
-        assetTransactions: '&params',
-        block: '&params',
-        txn: '&params',
+        // indexer
+        'indexer/account': '&params',
+        'indexer/accountAssets': '&params',
+        'indexer/accountApplications': '&params',
+        'indexer/accountTransactions': '&params',
+        'indexer/application': '&params',
+        'indexer/asset': '&params',
+        'indexer/assetBalances': '&params',
+        'indexer/assetTransactions': '&params',
+        'indexer/block': '&params',
+        'indexer/txn': '&params',
+
+        // node
+        'node/account': '&params',
+        'node/accountApplication': '&params',
+        'node/accountAsset': '&params',
+        'node/accountPendingTransactions': '&params',
+        'node/block': '&params',
+        'node/blockProof': '&params',
+        'node/blockTransactionProof': '&params',
+
         // search
-        applications: '&params',
-        accounts: '&params',
-        assets: '&params',
-        txns: '&params',
+        'indexer/applications': '&params',
+        'indexer/accounts': '&params',
+        'indexer/assets': '&params',
+        'indexer/txns': '&params',
       };
     }
     // Query Addons
     if (forwarded.addons) {
-      stores = { ...stores, icon: '&id' }
+      stores = { 
+        ...stores, 
+        'addons/icon': '&id' 
+      }
     }
     // NFDs
     if (forwarded.nfds) {
       stores = { 
         ...stores, 
-        nfds: '&address, *nfds',
-        nfdSearch: '&prompt', 
+        'nfd/lookup': '&address, *nfds',
+        'nfd/search': '&prompt', 
       };
     }
     // Medias
     if (forwarded.medias) {
-      stores = { ...stores, medias: '&id' };
+      stores = { 
+        ...stores, 
+        'medias/asset': '&id' 
+      };
     }
 
     if (options?.customCaches?.length) {
