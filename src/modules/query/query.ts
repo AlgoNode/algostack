@@ -5,10 +5,10 @@ import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
 import { Addon } from '../addons/index.js';
-import { utf8ToB64, objectValuesToString } from '../../helpers/encoding.js';
+import { utf8ToB64 } from '../../helpers/encoding.js';
 import type Cache from '../cache/index.js';
 import type Addons from '../addons/index.js';
-import type { QueryParams, Payload } from './types.js';
+import type { QueryParams, Payload, QueryOptions } from './types.js';
 
 /**
  * Query class
@@ -32,13 +32,15 @@ export default class Query {
   * Query wrapper
   * ==================================================
   */
-  private async indexerQuery(
-    endpoint: string, 
-    store: string|null, 
-    queryParams: QueryParams = {}, 
-    addons?: Addon[]
-  ) {
+  private async query(queryOptions: QueryOptions) {
+    const {
+      endpoint, 
+      store, 
+      queryParams = {}, 
+      addons,
+    } = queryOptions
     let data: Payload;
+
     // get cached data
     if (this.cache && store && !queryParams.refreshCache && !queryParams.noCache) {
       const cached = await this.cache.find(store, { params: queryParams });
@@ -55,7 +57,6 @@ export default class Query {
     if (loop) delete params.limit; 
     if (params.refreshCache !== undefined) delete params.refreshCache;
     if (params.noCache !== undefined) delete params.noCache;
-
 
     const cleanParams = this.cleanParams(params)
     const encodedParams = this.encodeParams(cleanParams);
@@ -184,39 +185,96 @@ export default class Query {
   */
   // accounts
   private async account(accountId: string, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/accounts/:id`, 'account', { ...params, id: accountId }, addons);
+    return await this.query({
+      endpoint: `/v2/accounts/:id`, 
+      store: 'account', 
+      queryParams: { ...params, id: accountId }, 
+      addons,
+    });
   }
   private async accountTransactions(accountId: string, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/accounts/:id/transactions`, 'accountTransactions', { ...params, id: accountId }, addons);
+    return await this.query({
+      endpoint: `/v2/accounts/:id/transactions`, 
+      store: 'accountTransactions', 
+      queryParams: { ...params, id: accountId }, 
+      addons,
+    });
   }
   private async accountAssets(accountId: string, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/accounts/:id/assets`, 'accountAssets', { ...params, id: accountId }, addons);
+    return await this.query({
+      endpoint: `/v2/accounts/:id/assets`, 
+      store: 'accountAssets', 
+      queryParams: { ...params, id: accountId }, 
+      addons,
+    });
   }
   private async accountAppsLocalState(accountId: string, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/accounts/:id/apps-local-state`, 'accountAppsLocalState', { ...params, id: accountId }, addons);
+    return await this.query({
+      endpoint: `/v2/accounts/:id/apps-local-state`, 
+      store: 'accountAppsLocalState', 
+      queryParams: { ...params, id: accountId }, 
+      addons,
+    });
   }
   // app
   private async application(appId: number, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/applications/:id`, 'application', { ...params, id: appId }, addons);
+    return await this.query({
+      endpoint: `/v2/applications/:id`, 
+      store: 'application', 
+      queryParams: { ...params, id: appId }, 
+      addons,
+    });
   }
   // asset
   private async asset(assetId: number, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/assets/:id`, 'asset', { ...params, id: assetId }, addons);
+    return await this.query({
+      endpoint: `/v2/assets/:id`, 
+      store: 'asset', 
+      queryParams: { ...params, id: assetId }, 
+      addons,
+    });
   }
   private async assetBalances(assetId: number, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/assets/:id/balances`, 'assetBalances', { ...params, id: assetId }, addons);
+    return await this.query({
+      endpoint: `/v2/assets/:id/balances`, 
+      store: 'assetBalances', 
+      queryParams: { ...params, id: assetId }, 
+      addons,
+    });
   }
   private async assetTransactions(assetId: number, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/assets/:id/transactions`, 'assetTransactions', { ...params, id: assetId }, addons);
+    return await this.query({
+      endpoint: `/v2/assets/:id/transactions`, 
+      store: 'assetTransactions', 
+      queryParams: { ...params, id: assetId }, 
+      addons,
+    });
   }
   // block
   private async block(round: number, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/blocks/:id`, 'block', { ...params, id: round }, addons);
+    return await this.query({
+      endpoint: `/v2/blocks/:id`, 
+      store: 'block', 
+      queryParams: { ...params, id: round }, 
+      addons,
+    });
   }
   // transaction
   private async transaction(id: string, params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/transactions/:id`, 'txn', { ...params, id: id }, addons);
+    return await this.query({
+      endpoint: `/v2/transactions/:id`, 
+      store: 'txn', 
+      queryParams: { ...params, id: id }, 
+      addons,
+    });
   }
+
+
+  /**
+  * Node queries (Algod API)
+  * ==================================================
+  */
+
 
   // Wrap everything together
   public lookup = {
@@ -238,16 +296,36 @@ export default class Query {
   * ==================================================
   */
   private async accounts(params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/accounts`, 'accounts', params, addons);
+    return await this.query({
+      endpoint: `/v2/accounts`, 
+      store: 'accounts', 
+      queryParams: params, 
+      addons,
+    });
   }
   private async applications(params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/applications`, 'applications', params, addons);
+    return await this.query({
+      endpoint: `/v2/applications`, 
+      store: 'applications', 
+      queryParams: params, 
+      addons,
+    });
   }
   private async assets(params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/assets`, 'assets', params, addons);
+    return await this.query({
+      endpoint: `/v2/assets`, 
+      store: 'assets', 
+      queryParams: params, 
+      addons,
+    });
   }
   private async transactions(params: QueryParams = {}, addons?: Addon[]) {
-    return await this.indexerQuery( `/v2/transactions`, 'txns', params, addons);
+    return await this.query({
+      endpoint: `/v2/transactions`, 
+      store: 'txns', 
+      queryParams: params, 
+      addons,
+    });
   }
 
   // Wrap everything together
@@ -260,11 +338,7 @@ export default class Query {
 
 
 
-  /**
-  * Node queries (Algod API)
-  * ==================================================
-  */
-//  private async 
+
 
 
 
