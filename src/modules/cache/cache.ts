@@ -44,7 +44,6 @@ export default class Cache {
         'node/account': '&params',
         'node/accountApplication': '&params',
         'node/accountAsset': '&params',
-        'node/accountPendingTransactions': '&params',
         'node/block': '&params',
         'node/blockProof': '&params',
         'node/blockTransactionProof': '&params',

@@ -35,7 +35,7 @@ export default class Query {
   */
   private async query(queryOptions: QueryOptions) {
     const {
-      base = ApiUrl.INDEXER
+      base = ApiUrl.INDEXER,
       endpoint, 
       store, 
       queryParams = {}, 

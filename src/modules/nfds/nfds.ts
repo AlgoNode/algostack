@@ -189,7 +189,7 @@ export default class NFDs {
     if (address) {
       nfds = nfds.filter(nfd => (
         nfd?.depositAccount === address
-        || nfd?.caAlgo.includes(address)
+        || nfd?.caAlgo?.includes(address)
       ));
     }
     // sort by avatar
