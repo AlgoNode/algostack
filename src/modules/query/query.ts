@@ -69,7 +69,7 @@ export default class Query {
     if (loop) {
       while (data['next-token']) {
         const nextData: Payload = await this.fetch(
-          url, 
+          `${options[base]}${url}`, 
           { ...kebabcaseParams, next: data['next-token']}
         );
         delete data['next-token'];
