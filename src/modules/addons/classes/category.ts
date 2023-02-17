@@ -17,10 +17,10 @@ export default class Category extends BaseRunner {
   
   async asset(asa: Payload) {
     if (!asa.params) return;
-    if (asa.params.total === 1) {
+    if (asa.params.total <= 100 ) {
       this.save(asa, AssetCategory.NFT);
     }
-    if (asa.params.total >= 10000) {
+    else {
       this.save(asa, AssetCategory.TOKEN);
     }
   } 
