@@ -1,5 +1,5 @@
 import { Buffer } from 'buffer'
-import { decodeObj} from 'algosdk';
+import { decodeObj } from 'algosdk';
 import { Encoding } from '../modules/addons/enums.js';
 export { decodeAddress, encodeAddress } from 'algosdk';
 
