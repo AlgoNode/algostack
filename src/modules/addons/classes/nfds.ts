@@ -1,9 +1,13 @@
-import BaseRunner from './_base.js';
+import type Addons from '../addons.js';
 import { Payload } from '../../query/index.js';
+import NFDs from '../../nfds/nfds.js';
+import BaseRunner from './_base.js';
 
 export default class AssetNFDs extends BaseRunner { 
-  constructor (data: Payload) {
-    super(data, ['asset', 'assets'], 'nfds', {});
+  protected nfds: NFDs;
+  constructor (data: Payload, forwarded: Addons) {
+    super(data, ['asset', 'assets', 'account',], 'nfds', {});
+    this.nfds = forwarded?.nfds;
   }
 
   async assets(asas: Payload) {
@@ -19,4 +23,10 @@ export default class AssetNFDs extends BaseRunner {
     // TODO : map nfds
   } 
 
+  async account(account: Payload) {
+    if (!account.address) return;
+    if (!['sig','msig'].includes(account.sigType)) return;
+    const nfds = await this.nfds.getNFDs(account.address);
+    return this.save(account, nfds);
+  } 
 }

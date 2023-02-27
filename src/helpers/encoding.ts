@@ -1,7 +1,8 @@
 import { Buffer } from 'buffer'
-import { decodeObj } from 'algosdk';
+import { get, set } from 'lodash';
+import { decodeAddress, decodeUnsignedTransaction, decodeObj, encodeAddress, EncodedTransaction, encodeObj, Transaction } from 'algosdk';
 import { Encoding } from '../modules/addons/enums.js';
-export { decodeAddress, encodeAddress } from 'algosdk';
+export { decodeAddress, encodeAddress, Transaction } from 'algosdk';
 
 /**
  * Convert between UTF8 and base64
@@ -68,8 +69,6 @@ export function objectValuesToString(params: object) {
     });
   return obj;
 }
-
-
 
 
 /**
