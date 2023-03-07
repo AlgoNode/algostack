@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { MediaType } from './enums.js';
+import { MediaType } from '../../enums.js';
 import { getFileType, getIpfsCid, getIpfsUrl, getRedirectedURL } from '../../helpers/files.js';
 import { isUrl } from '../../helpers/strings.js';
 

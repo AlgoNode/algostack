@@ -4,7 +4,7 @@ import camelcaseKeys from 'camelcase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
-import { Addon } from '../addons/index.js';
+import { Addon } from '../../enums.js';
 import { utf8ToB64 } from '../../helpers/encoding.js';
 import type Cache from '../cache/index.js';
 import type Addons from '../addons/index.js';

@@ -1,4 +1,4 @@
-import { Addon } from '../enums.js';
+import { Addon } from '../../../enums.js';
 import Category from './category.js';
 import Arcs from './arcs.js';
 import Nfds from './nfds.js';

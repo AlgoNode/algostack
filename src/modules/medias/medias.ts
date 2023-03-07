@@ -1,5 +1,5 @@
 import { getIpfsFromAddress } from '../../helpers/files.js';
-import { MediaType } from './enums.js';
+import { MediaType } from '../../enums.js';
 import { pRateLimit } from 'p-ratelimit';
 import AlgoStack from '../../index.js';
 import type Cache from '../cache/index.js';

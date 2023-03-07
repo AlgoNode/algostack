@@ -1,18 +1,5 @@
 
 /**
- * Available addons
- * ==================================================
- */
-export enum Addon {
-  NFDS = 'nfds',
-  ICON = 'icon',
-  DECODENOTES = 'decodeNotes',
-  CATEGORY = 'category',
-  ARCS = 'arcs',
-  APPID = 'appId',
-}
-
-/**
  * Asset categories
  * ==================================================
  */
@@ -46,4 +33,32 @@ export enum Encoding {
   HEX = 'hex',
   UTF8 = 'utf8',
   ADDRESS = 'address',
+}
+
+/**
+* Media types
+* ==================================================
+*/
+export enum MediaType {
+  IMAGE = 'image',
+  VIDEO = 'video',
+  AUDIO = 'audio',
+  TEXT = 'text',
+  HTML = 'html',
+  JSON = 'json',
+  OTHER = 'other',
+}
+
+
+/**
+ * Available addons
+ * ==================================================
+ */
+export enum Addon {
+  NFDS = 'nfds',
+  ICON = 'icon',
+  DECODENOTES = 'decodeNotes',
+  CATEGORY = 'category',
+  ARCS = 'arcs',
+  APPID = 'appId',
 }

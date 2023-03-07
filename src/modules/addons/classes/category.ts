@@ -1,6 +1,6 @@
 import BaseRunner from './_base.js';
 import { Payload } from '../../query/index.js';
-import { AssetCategory } from '../enums.js';
+import { AssetCategory } from '../../../enums.js';
 
 export default class Category extends BaseRunner {
   constructor (data: Payload) {

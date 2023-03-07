@@ -9,17 +9,11 @@ import type Cache from './modules/cache/index.js';
 import type Query from './modules/query/index.js';
 import type Medias from './modules/medias/index.js';
 import type { LookupMethods, SearchMethods } from './modules/query/index.js';
+import type { PlugableModules } from './types.js';
 
 export type { OptionsProps } from './utils/options.js';
-export interface PlugableModules {
-  Cache?: typeof Cache,
-  Client?: typeof Client,
-  Txns?: typeof Txns,
-  Query?: typeof Query,
-  Addons?: typeof Addons,
-  NFDs?: typeof NFDs,
-  Medias?: typeof Medias,
-} 
+export * from './types.js';
+export * from './enums.js';
 
 
 export default class AlgoStack {

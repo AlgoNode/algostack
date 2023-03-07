@@ -1,8 +1,7 @@
-import BaseRunner from './_base.js';
 import type Addons from '../addons.js';
-import { Payload } from '../../query/index.js';
 import type Query from '../../query/index.js';
-import { Arc } from '../enums.js';
+import { Payload } from '../../query/index.js';
+import BaseRunner from './_base.js';
 import algosdk from 'algosdk';
 
 export default class Arcs extends BaseRunner {

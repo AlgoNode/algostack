@@ -1,10 +1,10 @@
-import AlgoStack from '../../index.js';
 import type NFDs from '../nfds/index.js';
 import type Cache from '../cache/index.js';
 import type Query from '../query/index.js';
 import type { Payload } from '../query/index.js';
+import { Addon } from '../../enums.js';
+import AlgoStack from '../../index.js';
 import allAddons from './classes/index.js';
-import { Addon } from './enums.js';
 
 //
 // QUERY ADDONS class

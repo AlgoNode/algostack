@@ -1,7 +1,7 @@
 import { Buffer } from 'buffer'
 import { get, set } from 'lodash';
 import { decodeObj, encodeAddress } from 'algosdk';
-import { Encoding } from '../modules/addons/enums.js';
+import { Encoding } from '../enums.js';
 import axios from 'axios';
 import { isAddress } from './strings.js';
 export { decodeAddress, encodeAddress, Transaction } from 'algosdk';
@@ -75,10 +75,13 @@ export class B64Decoder {
   
   constructor (str: string) {
     this.original = str;
-    this.parsed = {};
     const buffer = Buffer.from(str, 'base64');
     const decoded = buffer.toString('utf8'); 
-
+    this.parsed = {
+      [Encoding.B64]: str,
+      [Encoding.HEX]: buffer.toString('hex').toUpperCase(),
+    };
+    
     // UTF8 - Latin char only
     if (!/[^\x00-\x7F]+/.test(decoded)) {
       this.parsed[Encoding.UTF8] = decoded;

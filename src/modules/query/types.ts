@@ -1,5 +1,5 @@
 import type Query from './query.js';
-import { Addon } from '../addons/index.js';
+import { Addon } from '../../enums.js';
 import { ApiUrl } from './enums.js';
 
 export type LookupMethods = Query['lookup'];
