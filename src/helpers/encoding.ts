@@ -1,8 +1,18 @@
 import { Buffer } from 'buffer'
 import { get, set } from 'lodash';
-import { decodeAddress, decodeUnsignedTransaction, decodeObj, encodeAddress, EncodedTransaction, encodeObj, Transaction } from 'algosdk';
+import { decodeObj, encodeAddress } from 'algosdk';
 import { Encoding } from '../modules/addons/enums.js';
+import axios from 'axios';
+import { isAddress } from './strings.js';
 export { decodeAddress, encodeAddress, Transaction } from 'algosdk';
+
+export interface DecodedB64 {
+  encoding: Encoding,
+  original: string,
+  decoded: Partial<
+    Record<Encoding, string>
+  >,
+}
 
 /**
  * Convert between UTF8 and base64
@@ -15,46 +25,6 @@ export function b64ToUtf8 (str: string) {
   return Buffer.from(str, 'base64').toString();
 }
 
-
-/**
- * Decode base 64
- * Check for encoding returning latin chars
- * ==================================================
- */
-export function decodeBase64(str: string) {
-  const buffer = Buffer.from(str, 'base64');
-  const decoded = buffer.toString('utf8');
-
-  const result = {
-    encoding: Encoding.B64,
-    original: str,
-    decoded: str,
-  };
-
-  // MsgPack
-  if (decoded.startsWith('�')) {
-    try {
-      result.encoding = Encoding.MSGPACK,
-      result.decoded = decodeObj(buffer) as string;
-    } catch {}
-  }
-  
-  // JSON
-  else if (decoded.startsWith('{')) {
-    try {
-      result.encoding = Encoding.JSON,
-      result.decoded = JSON.parse(decoded);
-    } catch {}
-  }
-
-  // UTF8 - Latin char only
-  else if (!/[^\x00-\x7F]+/.test(decoded)) {
-    result.encoding = Encoding.UTF8,
-    result.decoded = decoded;
-  }
-
-  return result;
-}
 
 
 /**
@@ -71,20 +41,77 @@ export function objectValuesToString(params: object) {
 }
 
 
+
+export async function decompileTeal(b64: string) {
+
+  const programBuffer = Buffer.from(b64, 'base64');
+  const result = await axios({
+    method: 'post',
+    url: 'https://mainnet-api.algonode.cloud/v2/teal/disassemble',
+    headers: {
+      'Content-Type': 'application/x-binary',
+    },
+    data: programBuffer,
+  })
+  // const append = Buffer.from([0xa4, 0x61, 0x70, 0x61, 0x70]);
+  // const prepend = Buffer.from([ 0x8]);
+  // const buffer = Buffer.concat([append, programBuffer]);
+  // console.log(buffer)
+  // const lsig = logicSigFromByte(buffer);
+  return result;
+}
+
+
+
 /**
-//  * Encode transaction node
-//  * ==================================================
-//  */
-// export function encodeNote(obj) {
-//   obj = {...obj};
-//   Object.entries(obj).forEach(([key, value]) => {
-//     if (typeof value === 'boolean') obj[key] = value.toString();
-//   });
-//   obj = omitBy(obj, (v) => (
-//     isNil(v) || v === ''
-//   ));
-//   return algosdk.encodeObj(obj);
-// }
+ * Decode base 64
+ * Check for encoding returning latin chars
+ * ==================================================
+ */
+export class B64Decoder {
+  public readonly original: string;
+  public readonly parsed: Partial< Record< Encoding, string|Record<string, any> > >;
+  public encoding: Encoding;
+  
+  constructor (str: string) {
+    this.original = str;
+    this.parsed = {};
+    const buffer = Buffer.from(str, 'base64');
+    const decoded = buffer.toString('utf8'); 
 
+    // UTF8 - Latin char only
+    if (!/[^\x00-\x7F]+/.test(decoded)) {
+      this.parsed[Encoding.UTF8] = decoded;
+      this.encoding = Encoding.UTF8;
+    }
 
+    // JSON
+    if (decoded.startsWith('{')) {
+      try {
+        this.parsed[Encoding.JSON] = JSON.parse(decoded);
+        this.encoding = Encoding.JSON;
+      } catch {}
+    }
 
+    // MsgPack
+    try {
+      this.parsed[Encoding.MSGPACK] = decodeObj(buffer) as string;
+      this.encoding = Encoding.MSGPACK;
+    } catch {}
+
+    // Address
+    if (str.length === 44) {
+      try {
+        const address = encodeAddress(buffer) as string;
+        if (isAddress(address)) {
+          this.parsed[Encoding.ADDRESS] = encodeAddress(buffer) as string;
+          this.encoding = Encoding.ADDRESS;
+        }
+      } catch {}
+    }
+  }
+
+  get decoded () {
+    return this.parsed?.[this.encoding];
+  }
+}

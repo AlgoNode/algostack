@@ -45,4 +45,5 @@ export enum Encoding {
   B32 = 'base32',
   HEX = 'hex',
   UTF8 = 'utf8',
+  ADDRESS = 'address',
 }
