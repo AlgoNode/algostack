@@ -1,15 +1,16 @@
-import axios from 'axios';
+import type Cache from '../cache/index.js';
+import type Addons from '../addons/index.js';
+import type { QueryParams, Payload, QueryOptions } from './types.js';
+import { Buffer } from 'buffer'
 import { pRateLimit } from 'p-ratelimit';
+import { Addon } from '../../enums.js';
+import { utf8ToB64 } from '../../helpers/encoding.js';
+import { ApiUrl } from './enums.js';
 import camelcaseKeys from 'camelcase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
-import { Addon } from '../../enums.js';
-import { utf8ToB64 } from '../../helpers/encoding.js';
-import type Cache from '../cache/index.js';
-import type Addons from '../addons/index.js';
-import type { QueryParams, Payload, QueryOptions } from './types.js';
-import { ApiUrl } from './enums.js';
+import axios, { AxiosHeaders } from 'axios';
 
 /**
  * Query class
@@ -155,13 +156,20 @@ export default class Query {
         ? String(params.method).toUpperCase()
         : 'GET';
       if (params.method) delete params.method;
+      
+      const headers = params.headers as AxiosHeaders;
+      if (params.headers) delete params.headers
+
+      const data = params?.data || params;
+
       const response = await this.rateLimit(
         () => axios({
-            url,
-            method,
-            params: method === 'GET' ? params : undefined, 
-            data: method !== 'GET' ? params : undefined,
-          })
+          url,
+          method,
+          headers,
+          params: method === 'GET' ? data : undefined, 
+          data: method !== 'GET' ? data : undefined,
+        })
       );
       return response.data;
     }
@@ -314,15 +322,16 @@ export default class Query {
       addons,
     });
   }
-  // private async nodeBlockTransactionProof(round: number, params: QueryParams = {}, addons?: Addon[]) {
-  //   return await this.query({
-  //     base: ApiUrl.NODE,
-  //     endpoint: `/v2/blocks/:id`, 
-  //     store: 'node/block', 
-  //     queryParams: { ...params, id: round }, 
-  //     addons,
-  //   });
-  // }
+  private async nodeDisassembleTeal(b64: string) {
+    const programBuffer = Buffer.from(b64, 'base64');
+    const response = await this.custom(`${options[ApiUrl.NODE]}/v2/teal/disassemble`, 'node/teal', {
+      method: 'POST',
+      refreshCache: true,
+      headers: { 'Content-Type': 'application/x-binary' },
+      data: programBuffer,
+    });
+    return response?.result;
+  }
 
 
   // Wrap everything together
@@ -343,6 +352,7 @@ export default class Query {
       accountApplicaction: this.nodeAccountApplication.bind(this),
       accountAsset: this.nodeAccountAsset.bind(this),
       block: this.nodeBlock.bind(this),
+      dissableTeal: this.nodeDisassembleTeal.bind(this),
     }
   }
 
@@ -433,8 +443,6 @@ export default class Query {
   
     return data;
   }
-
-
 
 }
 

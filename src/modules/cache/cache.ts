@@ -47,6 +47,7 @@ export default class Cache {
         'node/block': '&params',
         'node/blockProof': '&params',
         'node/blockTransactionProof': '&params',
+        'node/teal': '&params',
 
         // search
         'indexer/applications': '&params',

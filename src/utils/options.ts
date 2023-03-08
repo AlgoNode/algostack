@@ -72,6 +72,7 @@ const options: OptionsProps = {
     'indexer/block': '1w',
     'indexer/transaction': '1w',
     'node/account': '10s',
+    'node/teal': '6h',
     'nfd/lookup': '1h',
     'nfd/search': '1m',
     'addons/icon': '1d',
