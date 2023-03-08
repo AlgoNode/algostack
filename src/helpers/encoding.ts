@@ -75,6 +75,7 @@ export class B64Decoder {
   
   constructor (str: string) {
     this.original = str;
+    this.encoding = Encoding.B64;
     const buffer = Buffer.from(str, 'base64');
     const decoded = buffer.toString('utf8'); 
     this.parsed = {
