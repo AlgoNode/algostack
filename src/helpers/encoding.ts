@@ -18,8 +18,12 @@ export interface DecodedB64 {
  * Convert between UTF8 and base64
  * ==================================================
  */
+
 export function utf8ToB64 (str: string) {
   return Buffer.from(str).toString('base64');
+}
+export function hexToB64 (str: string) {
+  return Buffer.from(str.replace(/^0x/, ''), 'hex').toString('base64');
 }
 export function b64ToUtf8 (str: string) {
   return Buffer.from(str, 'base64').toString();
@@ -80,12 +84,12 @@ export class B64Decoder {
     const decoded = buffer.toString('utf8'); 
     this.parsed = {
       [Encoding.B64]: str,
-      [Encoding.HEX]: buffer.toString('hex').toUpperCase(),
+      [Encoding.HEX]: '0x'+buffer.toString('hex').toUpperCase(),
     };
     
     // UTF8 - Latin char only
-    if (!/[^\x00-\x7F]+/.test(decoded)) {
-      this.parsed[Encoding.UTF8] = decoded;
+    if (/^[\x00-\x20\x2b\x2D\x2E\x30-\x39\x41-\x5A\x5F\x61-\x7A]+$/.test(decoded)) {
+      this.parsed[Encoding.UTF8] = decoded.replace(/[\x00-\x1F]/g, ' ');
       this.encoding = Encoding.UTF8;
     }
 

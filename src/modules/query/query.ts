@@ -25,7 +25,8 @@ export default class Query {
     this.addons = forwarded.addons;
     this.rateLimit = pRateLimit({
       interval: 1000,
-      rate: 50, 
+      rate: 50,
+      concurrency: 25,
     });
   }
 
@@ -323,6 +324,7 @@ export default class Query {
     });
   }
   private async nodeDisassembleTeal(b64: string) {
+    if (!b64?.length) return undefined;
     const programBuffer = Buffer.from(b64, 'base64');
     const response = await this.custom(`${options[ApiUrl.NODE]}/v2/teal/disassemble`, 'node/teal', {
       method: 'POST',
