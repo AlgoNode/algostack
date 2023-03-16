@@ -34,6 +34,8 @@ export default class Cache {
         'indexer/accountApplications': '&params',
         'indexer/accountTransactions': '&params',
         'indexer/application': '&params',
+        'indexer/applicationBox': '&params',
+        'indexer/applicationBoxes': '&params',
         'indexer/asset': '&params',
         'indexer/assetBalances': '&params',
         'indexer/assetTransactions': '&params',

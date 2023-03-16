@@ -236,6 +236,22 @@ export default class Query {
       addons,
     });
   }
+  private async indexerApplicationBox(appId: number, boxName: string, params: QueryParams = {}, addons?: Addon[]) {
+    return await this.query({
+      endpoint: `/v2/applications/:id/boxes`, 
+      store: 'indexer/applicationBoxes', 
+      queryParams: { ...params, id: appId, name: `b64:${boxName}` }, 
+      addons,
+    });
+  }
+  private async indexerApplicationBoxes(appId: number, params: QueryParams = {}, addons?: Addon[]) {
+    return await this.query({
+      endpoint: `/v2/applications/:id/boxes`, 
+      store: 'indexer/applicationBoxes', 
+      queryParams: { ...params, id: appId }, 
+      addons,
+    });
+  }
   // asset
   private async indexerAsset(assetId: number, params: QueryParams = {}, addons?: Addon[]) {
     return await this.query({
@@ -343,6 +359,8 @@ export default class Query {
     accountApplications: this.indexerAccountApplications.bind(this),
     accountTransactions: this.indexerAccountTransactions.bind(this),
     application: this.indexerApplication.bind(this),
+    applicationBox: this.indexerApplicationBox.bind(this),
+    applicationBoxes: this.indexerApplicationBoxes.bind(this),
     asset: this.indexerAsset.bind(this),
     assetBalances: this.indexerAssetBalances.bind(this),
     assetTransactions: this.indexerAssetTransactions.bind(this),
