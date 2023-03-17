@@ -1,11 +1,11 @@
 import type { ConnectionSettings } from '@randlabs/myalgo-connect';
-import AlgoStack from '../../index.js';
+import AlgoStack, { Connectors } from '../../index.js';
 import options from '../../utils/options.js';
 import Storage from '../../utils/storage.js';
 import MyAlgo from '../../connectors/myalgo.js';
 import Pera from '../../connectors/pera.js';
+import Defly from '../../connectors/defly.js';
 import Mnemonic from '../../connectors/mnemonic.js';
-import { ConnectorStrings } from './types.js';
 
 /**
  * Client class
@@ -13,8 +13,8 @@ import { ConnectorStrings } from './types.js';
  */
 export default class Client {
   protected storage: Storage;
-  private _connector?: MyAlgo | Pera | Mnemonic | undefined = undefined; 
-  private _connected?: ConnectorStrings = undefined;
+  private _connector?: MyAlgo | Pera | Defly | Mnemonic | undefined = undefined; 
+  private _connected?: Connectors = undefined;
   private _addresses: string[] = [];
 
   constructor(forwarded: AlgoStack) {
@@ -40,7 +40,7 @@ export default class Client {
   // Mnemonic
   // ----------------------------------------------
   public connectMnemonic(mnemonic: string = '') {
-    this._connected = 'MNEMONIC'; 
+    this._connected = Connectors.MNEMONIC; 
     this._connector = new Mnemonic(mnemonic);
     return this._connector.ready;
   }
@@ -54,7 +54,7 @@ export default class Client {
     return connected;
   }
   private useMyAlgo() {
-    this._connected = 'MYALGO'; 
+    this._connected = Connectors.MYALGO; 
     this._connector = new MyAlgo();
   }
 
@@ -68,8 +68,21 @@ export default class Client {
     return connected;
   }
   private usePera() {
-    this._connected = 'PERA'; 
+    this._connected = Connectors.PERA; 
     this._connector = new Pera();
+  }
+
+  //
+  // DEFLY
+  // ----------------------------------------------
+  public async connectDefly() {
+    this.useDefly();
+    const connected = await this.connect();
+    return connected;
+  }
+  private useDefly() {
+    this._connected = Connectors.DEFLY; 
+    this._connector = new Defly();
   }
   
 
@@ -117,8 +130,9 @@ export default class Client {
     if (!options.persistConnection) return;
     const persisted = this.storage.get('client');
     if (!persisted || !persisted.connected) return;
-    if (persisted.connected === 'MYALGO') this.useMyAlgo();
-    if (persisted.connected === 'PERA') this.usePera();
+    if (persisted.connected === Connectors.MYALGO) this.useMyAlgo();
+    if (persisted.connected === Connectors.PERA) this.usePera();
+    if (persisted.connected === Connectors.DEFLY) this.useDefly();
     if (persisted.addresses) this._addresses = persisted.addresses;
   }
 }

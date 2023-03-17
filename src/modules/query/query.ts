@@ -175,7 +175,7 @@ export default class Query {
       return response.data;
     }
     catch (err: any) {
-      return { error: err.toJSON()};
+      return { error: err.toJSON ? err.toJSON() : err};
     }
   }
 

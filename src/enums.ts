@@ -62,3 +62,15 @@ export enum Addon {
   ARCS = 'arcs',
   APPID = 'appId',
 }
+
+
+/**
+* Connectors
+* ==================================================
+*/
+export enum Connectors {
+  MYALGO = 'myalgo',
+  PERA = 'pera',
+  DEFLY = 'defly',
+  MNEMONIC = 'mnemonic',
+}

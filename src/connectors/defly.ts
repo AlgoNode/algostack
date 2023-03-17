@@ -1,15 +1,15 @@
 
 import { Transaction } from 'algosdk';
-import { PeraWalletConnect } from "@perawallet/connect";
+import { DeflyWalletConnect } from "@blockshake/defly-connect";
 import BaseConnector from './base.js';
 
 export default class Pera extends BaseConnector {
-  protected connector?: PeraWalletConnect = undefined;
+  protected connector?: DeflyWalletConnect = undefined;
   
   constructor() {
     super();
     if (typeof window === 'undefined') return;
-    this.connector = new PeraWalletConnect();
+    this.connector = new DeflyWalletConnect();
     const persistedWC = JSON.parse(localStorage.getItem('walletconnect') || '{}');
     if (persistedWC.connected) {
       this.connector.reconnectSession();
@@ -55,7 +55,7 @@ export default class Pera extends BaseConnector {
   // ----------------------------------------------
   public async sign(txns: Transaction[]): Promise<Uint8Array[]|undefined> { 
     if (!this.connector) return undefined;
-    const unsignedTxns = txns.map(txn => ({ txn }));
+    const unsignedTxns = txns.map(txn => ({ txn })); 
     try {
       const result = await this.connector.signTransaction([unsignedTxns]);
       const signedBytes = result.map(arr => Uint8Array.from(arr));
