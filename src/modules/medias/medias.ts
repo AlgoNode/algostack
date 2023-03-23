@@ -70,8 +70,14 @@ export default class Medias {
     let arc3Files: File[] = [];
     // check for image
     if (data.image) {
-      // const image = await new File(data.image).check();
-      const image = await this.rateLimit( () => new File(data.image).check() );
+      const media = await this.rateLimit( () => new File(data.image).check() );
+      if (media.type === MediaType.IMAGE || media.type === MediaType.VIDEO) {
+        arc3Files.push(media);
+      }
+    }
+    else if (data.external_url) {
+      const image = await this.rateLimit( () => new File(data.external_url).check() );
+      console.log(data.external_url)
       if (image.type === MediaType.IMAGE) {
         arc3Files.push(image);
       }

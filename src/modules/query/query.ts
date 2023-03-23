@@ -438,7 +438,6 @@ export default class Query {
     queryParams: QueryParams = {}
   ) {
     let data: Payload;
-    
     // get cached data
     if (this.cache && store && !queryParams.refreshCache && !queryParams.noCache) {
       const cached = await this.cache.find(store, { params: queryParams });
