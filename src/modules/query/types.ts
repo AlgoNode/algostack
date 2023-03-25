@@ -9,7 +9,7 @@ export interface QueryOptions {
   base?: ApiUrl,
   endpoint: string, 
   store: string|null, 
-  queryParams: QueryParams, 
+  params: QueryParams, 
   addons?: Addon[]
 }
 
