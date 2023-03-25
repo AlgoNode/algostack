@@ -17,7 +17,9 @@ export interface QueryParams {
   limit?: number,
   noCache?: boolean,
   refreshCache?: boolean,
-  [key: string]: string|number|boolean|Record<string,any>|undefined,
+  addons?: Addon[],
+  filter?: (item: Payload) => boolean,
+  [key: string]: string|number|boolean|Payload|undefined,
 }
 
 
