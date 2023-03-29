@@ -3,7 +3,6 @@ import type Addons from '../addons/index.js';
 import type { QueryParams, Payload, QueryOptions } from './types.js';
 import { Buffer } from 'buffer'
 import { pRateLimit } from 'p-ratelimit';
-import { Addon } from '../../enums.js';
 import { utf8ToB64 } from '../../helpers/encoding.js';
 import { ApiUrl } from './enums.js';
 import camelcaseKeys from 'camelcase-keys';
@@ -76,13 +75,13 @@ export default class Query {
     let i = 0;
     while (this.shouldFetchNext(data, originalParams) && i < 20) {
       i++;
-      const nextData: Payload = await this.fetch(
+      let nextData: Payload = await this.fetch(
         `${options[base]}${url}`, 
         { ...kebabcaseParams, next: data['next-token']}
       );
       delete data['next-token'];
       if (addons) await this.addons.apply(nextData, addons);
-      if (filter) data = this.applyFilter(nextData, filter);
+      if (filter) nextData = this.applyFilter(nextData, filter);
       // merge arrays, including possible new 'next-token'
       Object.entries(nextData).forEach(([key, value]) => {
         if (Array.isArray(value) && data[key])
