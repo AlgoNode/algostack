@@ -68,7 +68,7 @@ const options: OptionsProps = {
     'indexer/asset': '1w',
     'indexer/assetBalances': '2s',
     'indexer/assetTransactions': '2s',
-    'indexer/assets': '10s',
+    'indexer/assets': '5m',
     'indexer/block': '1w',
     'indexer/transaction': '1w',
     'node/account': '10s',

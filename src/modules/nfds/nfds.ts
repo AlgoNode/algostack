@@ -56,7 +56,6 @@ export default class NFDs {
       // check if a task is currently fetching this address
       if (!this.fetching[address]) this.fetching[address] = [];  
       this.fetching[address].push({ full, resolve });
-
       // trigger throttled fetch
       this.batchFetchNFDs();
     })
@@ -149,7 +148,7 @@ export default class NFDs {
   * Search
   * ==================================================
   */
-  async search(prompt: string): Promise<NFDProps[]> {
+  async search(prompt: string, params: {}): Promise<NFDProps[]> {
     // get cache
     if (this.cache) {
       const cached = await this.cache.find('nfd/search', { prompt });
@@ -158,12 +157,14 @@ export default class NFDs {
 
     let results = [];
     try {
-      const { data } = await axios.get(`${options.nfdApiUrl}/nfd`, {
+      const response = await axios.get(`${options.nfdApiUrl}/nfd`, {
         params: { 
+          ...params,
           substring: prompt, 
           view: 'full',
         }
       })
+      const data = response.data;
       if (data.length) {
         results = this.prepareResults(
           data.filter(nfd => nfd.state !== 'forSale')

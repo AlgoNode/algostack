@@ -83,14 +83,14 @@ export default class Query {
       delete data['next-token'];
       if (addons) await this.addons.apply(nextData, addons);
       if (filter) data = this.applyFilter(nextData, filter);
-
       // merge arrays, including possible new 'next-token'
       Object.entries(nextData).forEach(([key, value]) => {
-        if (Array.isArray(value) && value.length && data[key])
+        if (Array.isArray(value) && data[key])
           data[key] = [ ...data[key], ...value ];
         else 
           data[key] = value;
       });
+
     }
 
     // convert to camelcase for standarized addons
@@ -117,11 +117,11 @@ export default class Query {
     return data;
   }
 
-  private getResultsLength(data: Payload|Payload[]) {
+  private getResultsQty(data: Payload|Payload[]) {
     if (Array.isArray(data)) {
       return data.length;
     }    
-    return Object.values((data))
+    return Object.values(data)
       .filter(value => Array.isArray(value))
       .reduce((total, value) => (Math.max(value.length, total)),  0);
   }
@@ -136,7 +136,7 @@ export default class Query {
     if (params.filter 
       && params.limit 
       && data['next-token']
-      && this.getResultsLength(data) < params.limit
+      && this.getResultsQty(data) < params.limit
     ) return true;
     return false;
   }
