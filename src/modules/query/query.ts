@@ -89,7 +89,6 @@ export default class Query {
         else 
           data[key] = value;
       });
-
     }
 
     // convert to camelcase for standarized addons

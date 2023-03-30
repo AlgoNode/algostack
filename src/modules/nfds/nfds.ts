@@ -193,12 +193,10 @@ export default class NFDs {
         || nfd?.caAlgo?.includes(address)
       ));
     }
+    // add scores
+    nfds.forEach(nfd => nfd.score = this.getNFDScore(nfd, address));
     // sort by avatar
-    nfds.sort((a, b) => { 
-      let aW = this.getNFDWeight(a, address); 
-      let bW = this.getNFDWeight(b, address);
-      return bW - aW;
-    });
+    nfds.sort((a, b) => ((b.score||0) - (a.score||0)));
     // add avatars
     nfds.forEach(nfd => {
       if (!nfd.properties) return;
@@ -213,16 +211,16 @@ export default class NFDs {
     return nfds;
   }
 
-  private getNFDWeight(nfd: NFDProps, address?: string) {
-    let w = 0;
+  private getNFDScore(nfd: NFDProps, address?: string) {
+    let score = 0;
     const { properties: props } = nfd
-    if (address && address === nfd.depositAccount) w += 5;
-    if (!props) return w;
+    if (address && address === nfd.depositAccount) score += 5;
+    if (!props) return score;
     ['avatar', 'domain', 'email', 'twitter', 'discord'].forEach(contact => {
-      if (props?.verified?.[contact]) w += 1.75;
-      if (props?.userDefined?.[contact]) w += 1;
+      if (props?.verified?.[contact]) score += 1.75;
+      if (props?.userDefined?.[contact]) score += 1;
     })
-    return w;
+    return score;
   }
   
 

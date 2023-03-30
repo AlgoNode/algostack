@@ -35,6 +35,8 @@ export interface NFDProps {
   timePurchased?: Date;
   unverifiedCa?: { [key: string]: Array<string>, },
   unverifiedCaAlgo?: Array<string>,
+
+  score?: number,
 }
 
 
