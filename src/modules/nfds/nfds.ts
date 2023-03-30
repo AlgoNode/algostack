@@ -6,6 +6,7 @@ import options from '../../utils/options.js';
 import type Cache from '../cache/index.js';
 import { NFDProps, NFDQueryCallback } from './types.js';
 import { isAddress } from '../../helpers/strings.js';
+import { QueryParams } from '../query/types.js';
 
 /**
 * NFDs module
@@ -148,33 +149,38 @@ export default class NFDs {
   * Search
   * ==================================================
   */
-  async search(prompt: string, params: {}): Promise<NFDProps[]> {
+  async search(str: string, originalParams: QueryParams): Promise<NFDProps[]> {
+    const params = { ...originalParams };
+    if ( params.refreshCache !== undefined ) delete params.refreshCache;
+    if ( params.noCache !== undefined ) delete params.noCache;
+    params.substring = str;
+    params.view = 'full';
+    
     // get cache
-    if (this.cache) {
-      const cached = await this.cache.find('nfd/search', { prompt });
+    if (this.cache && !originalParams.refreshCache && !originalParams.noCache) {
+      const cached = await this.cache.find('nfd/search', { params });
       if (cached) return cached.data;
     }
 
+
     let results = [];
     try {
-      const response = await axios.get(`${options.nfdApiUrl}/nfd`, {
+      const response = await axios.get(`${options.nfdApiUrl}/nfd/v2/search`, {
         params: { 
           ...params,
-          substring: prompt, 
+          substring: str, 
           view: 'full',
         }
       })
-      const data = response.data;
-      if (data.length) {
-        results = this.prepareResults(
-          data.filter(nfd => nfd.state !== 'forSale')
-        );
+      const nfds = response.data?.nfds;
+      if (nfds.length) {
+        results = this.prepareResults(nfds);
       }
     } catch {}
 
     // save cache
-    if (this.cache) {
-      await this.cache.save('nfd/search', results, { prompt });
+    if (this.cache && !originalParams.noCache) {
+      await this.cache.save('nfd/search', results, { params });
     }
 
 

@@ -70,7 +70,7 @@ export default class Cache {
       stores = { 
         ...stores, 
         'nfd/lookup': '&address, *nfds',
-        'nfd/search': '&prompt', 
+        'nfd/search': '&params', 
       };
     }
     // Medias
