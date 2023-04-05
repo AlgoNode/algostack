@@ -1,4 +1,4 @@
-import Dexie from 'dexie';
+import Dexie, { DexieError } from 'dexie';
 import objHash from 'object-hash';
 import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
@@ -14,8 +14,8 @@ export default class Cache {
   protected v: number;
 
   constructor() {
-    this.db = new Dexie(options.storageNamespace);
     this.v = options.version || 1;
+    this.db = new Dexie(options.storageNamespace);
   }
 
   /**
@@ -94,6 +94,7 @@ export default class Cache {
     
     // Init
     this.db.version(this.v).stores(stores);
+    
   }  
 
   /**
@@ -139,7 +140,7 @@ export default class Cache {
       await this.db[store].put(entry);
     }
     catch(e) {
-      console.error(store, e)
+      await this.handleError(e, store);
     }
   }
 
@@ -171,6 +172,30 @@ export default class Cache {
     return durationStringToMs(expirationStr);
   }
 
+
+  /**
+  * Error handler
+  * ==================================================
+  */
+  private async handleError(error: DexieError, store?: string) {
+    const names: string[] = [error.name];
+    if (error.inner?.name) names.push(error.inner.name);
+
+    if (names.includes(Dexie.errnames.Upgrade)) {
+      console.log('upgrade error')
+      await this.clearAll();
+    }
+
+  }
+
+
+  /**
+  * Reset
+  * ==================================================
+  */
+  private async clearAll() {
+    await this.db.delete();
+  }
 
   
 
