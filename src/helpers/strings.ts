@@ -6,7 +6,11 @@ export function isIntegers(str: string) {
 // Asset ID = integers, max 19 characters
 // https://github.com/algorand/js-algorand-sdk/blob/cfd5b8891e2e44f1c546e4db734f8287e9a6ef72/src/transaction.ts#L25
 export function isAssetId(str: string) {
-  return /^\d{1,19}$/.test(str);
+  return /^\d{1,14}$/.test(str);
+}
+
+export function isAppId(str: string) {
+  return /^\d{1,14}$/.test(str);
 }
 
 // String contain spaces = Asset name
