@@ -1,10 +1,11 @@
 import type Cache from '../../cache/index.js';
 import type Addons from '../addons.js';
-import axios from 'axios';
+import axios, { ResponseType } from 'axios';
 import { Buffer } from 'buffer';
 import BaseRunner from './_base.js';
 import { Payload } from '../../query/index.js';
 import { getFileContent } from '../../../helpers/files.js';
+import { getFileType } from '../../../helpers/files.js';
 
 export default class Icon extends BaseRunner {
   protected cache: Cache;
@@ -36,10 +37,9 @@ export default class Icon extends BaseRunner {
     }
 
     const list = await this.getIconsList();
-    const iconUrl = list?.[id]?.svg;
     
     // In case there is no icon
-    if (!iconUrl) {
+    if (!list[id]?.svg || !list[id]?.png) {
       if (this.cache) {
         await this.cache.save('addons/icon', undefined, { id });
       }
@@ -48,12 +48,18 @@ export default class Icon extends BaseRunner {
 
     // Get SVG icon
     // Save as base64
-    const svgContent = await getFileContent(iconUrl);
-    if (svgContent) {
-      const safeSvg = this.fixSvg(svgContent);
-      const b64content = Buffer.from(safeSvg).toString('base64');
-      icon = `data:image/svg+xml;base64,${b64content}`
-    } 
+    const svgUrlType = await getFileType(list[id].svg);
+    const type = svgUrlType == 'image/svg+xml' ? 'svg' : 'png';
+    icon = list[id][type];
+    
+    if (type === 'svg') {
+      let content = await getFileContent(icon);
+      if (content) {
+        content = this.fixSvg(content);
+        const b64content = Buffer.from(content).toString('base64');
+        icon = `data:image/svg+xml;base64,${b64content}`
+      }   
+    }
     
     // cache result
     if (this.cache) {

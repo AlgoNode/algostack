@@ -1,5 +1,5 @@
 import type { CIDVersion } from 'multiformats/types/src/cid';
-import axios from 'axios';
+import axios, { ResponseType } from 'axios';
 import { decodeAddress, encodeAddress } from 'algosdk';
 import { CID } from 'multiformats/cid';
 import * as mfsha2 from 'multiformats/hashes/sha2';
@@ -7,15 +7,13 @@ import * as digest from 'multiformats/hashes/digest';
 import options from '../utils/options.js';
 
 /**
- * Get file type for a remote URL
- * abort request as soon as headers are in
- * inspired by https://stackoverflow.com/questions/38679681/getting-a-file-type-from-url#answer-38679875
+ * Get file content
  * ==================================================
  */
- export function getFileContent(url: string): Promise<string|undefined> {
+ export function getFileContent(url: string, responseType: ResponseType = 'text'): Promise<string|undefined> {
   return new Promise(async resolve => {
     try {
-      const response = await axios.get(url);
+      const response = await axios.get(url, { responseType });
       resolve(response.data);
     } 
     catch (e) {
