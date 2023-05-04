@@ -175,7 +175,7 @@ export default class Cache {
     if (error.inner?.name) names.push(error.inner.name);
 
     if (names.includes(Dexie.errnames.Upgrade)) {
-      console.log('upgrade error')
+      console.warn('An error occured while upgrading IndexedDB tables. Clearing IndexedDB Cache.');
       await this.clearAll();
     }
 
@@ -189,8 +189,5 @@ export default class Cache {
   private async clearAll() {
     await this.db.delete();
   }
-
-  
-
 }
 
