@@ -13,7 +13,9 @@ import options from '../utils/options.js';
  export function getFileContent(url: string, responseType: ResponseType = 'text'): Promise<string|undefined> {
   return new Promise(async resolve => {
     try {
-      const response = await axios.get(url, { responseType });
+      const response = await axios.get(url, { 
+        responseType
+      });
       resolve(response.data);
     } 
     catch (e) {
@@ -32,11 +34,12 @@ import options from '../utils/options.js';
  export function getFileType(url: string): Promise<string> {
   return new Promise(async resolve => {
     try {
-      const head = await axios.head(url, { maxRedirects: 0 });
+      const head = await axios.get(url, { maxRedirects: 0 });
       const contentType = head.headers['content-type']; 
       resolve(contentType);
     } 
     catch (e) {
+      console.log(e)
       resolve(undefined);
     }
   });

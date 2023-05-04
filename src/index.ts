@@ -1,7 +1,6 @@
 import merge from 'lodash/merge.js';
 import Storage from './utils/storage.js';
 import options, { OptionsProps } from './utils/options.js';
-import type Addons from './modules/addons/index.js';
 import type Client from './modules/client/index.js';
 import type Txns from './modules/txns/index.js';
 import type NFDs from './modules/nfds/index.js';
@@ -24,7 +23,6 @@ export default class AlgoStack {
   public client?: Client;
   public txns?: Txns;
   public query?: Query;
-  public addons?: Addons;
   public nfds?: NFDs;
   public medias?: Medias;
   public cache?: Cache;
@@ -43,7 +41,6 @@ export default class AlgoStack {
     if (modules.Client) this.client = new modules.Client(this);
     if (modules.Txns) this.txns = new modules.Txns(this);
     if (modules.Medias) this.medias = new modules.Medias(this);
-    if (modules.Addons) this.addons = new modules.Addons();
     if (modules.Query) {
       this.query = new modules.Query(this);
       this.lookup = this.query.lookup;
@@ -52,7 +49,6 @@ export default class AlgoStack {
 
     // Delayed init when all modules are added
     if (this.cache) this.cache.init(this);
-    if (this.addons) this.addons.init(this);
 
   }
 }

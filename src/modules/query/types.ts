@@ -10,17 +10,22 @@ export interface QueryOptions {
   endpoint: string, 
   store: string|null, 
   params: QueryParams, 
-  addons?: Addon[]
+  addons?: Addons,
 }
 
 export interface QueryParams {
   limit?: number,
   noCache?: boolean,
   refreshCache?: boolean,
-  addons?: Addon[],
+  addons?: Addons,
   filter?: (item: Payload) => boolean,
   [key: string]: string|number|boolean|Payload|undefined,
 }
 
 
 export type Payload = Record<string, any>;
+
+
+export type FilterFn = (item: Payload) => boolean;
+export type AddonFn = (item: Payload) => void;
+export type Addons = AddonFn[] | Record<string, AddonFn[]>

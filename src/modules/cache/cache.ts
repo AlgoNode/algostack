@@ -58,13 +58,6 @@ export default class Cache {
         'indexer/txns': '&params',
       };
     }
-    // Query Addons
-    if (forwarded.addons) {
-      stores = { 
-        ...stores, 
-        'addons/icon': '&id' 
-      }
-    }
     // NFDs
     if (forwarded.nfds) {
       stores = { 

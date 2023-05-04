@@ -1,6 +1,5 @@
 import type Cache from '../cache/index.js';
-import type Addons from '../addons/index.js';
-import type { QueryParams, Payload, QueryOptions } from './types.js';
+import type { QueryParams, Payload, QueryOptions, FilterFn, AddonFn, Addons } from './types.js';
 import { Buffer } from 'buffer'
 import { pRateLimit } from 'p-ratelimit';
 import { utf8ToB64 } from '../../helpers/encoding.js';
@@ -16,12 +15,10 @@ import axios, { AxiosHeaders } from 'axios';
  * ==================================================
  */
 export default class Query {
-  protected addons?: Addons;
   protected cache?: Cache; 
   protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
   constructor(forwarded: AlgoStack) {
     this.cache = forwarded.cache;
-    this.addons = forwarded.addons;
     this.rateLimit = pRateLimit({
       interval: 1000,
       rate: 50,
@@ -54,7 +51,7 @@ export default class Query {
     
     let { params, url } = this.mergeUrlAndParams(endpoint, originalParams);
     
-    const addons = params.addons;
+    const addons = params.addons as Addons|undefined;
     if (addons) delete params.addons;
     const filter = params.filter;
     if (filter) delete params.filter;
@@ -68,7 +65,7 @@ export default class Query {
     const kebabcaseParams = kebabcaseKeys(encodedParams, { deep: true }); 
 
     data = await this.fetch(`${options[base]}${url}`, kebabcaseParams);
-    if (addons) await this.addons.apply(data, addons);
+    if (addons) await this.applyAddons(data, addons);
     if (filter) data = this.applyFilter(data, filter);
     
     // Loop
@@ -80,7 +77,7 @@ export default class Query {
         { ...kebabcaseParams, next: data['next-token']}
       );
       delete data['next-token'];
-      if (addons) await this.addons.apply(nextData, addons);
+      if (addons) await this.applyAddons(nextData, addons);
       if (filter) nextData = this.applyFilter(nextData, filter);
       // merge arrays, including possible new 'next-token'
       Object.entries(nextData).forEach(([key, value]) => {
@@ -106,9 +103,35 @@ export default class Query {
   * Iterate throught results
   * ==================================================
   */
-  private applyFilter(data: Payload|Payload[], filterFn: (item: Payload) => boolean) {
-    if (Array.isArray(data)) 
-      return data.filter(filterFn);
+  private async applyAddon(data: Payload|Payload[], addons: AddonFn[]) {
+    if (!Array.isArray(data)) data = [data];
+    await Promise.all(
+      data.reduce((promises, dataset) => ([
+        ...promises,
+        ...addons.map(addon => addon(dataset)),
+      ]),[])
+    )
+  }
+  private async applyAddons(data: Payload|Payload[], addons: Addons ) {
+    // addons are applied to all data
+    if (Array.isArray(addons)) {
+      await this.applyAddon(data, addons as AddonFn[]);
+      return;
+    }
+    // addons are applied to specified props
+    const addonsKeys = Object.keys(addons);
+    const dataKeys = Object.keys(data)
+      .filter(key => addonsKeys.includes(key));
+    if (!dataKeys.length) return;
+    await Promise.all( 
+      dataKeys.map(key => this.applyAddon(data[key], addons[key]))
+    );
+  }
+  
+
+
+  private applyFilter(data: Payload|Payload[], filterFn: FilterFn) {
+    if (Array.isArray(data)) return data.filter(filterFn);
     Object.entries((data)).forEach(([key, value]) => {
       if (Array.isArray(value)) data[key] = value.filter(filterFn);
     });

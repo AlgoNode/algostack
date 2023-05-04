@@ -5,3 +5,4 @@ export enum ApiUrl {
   NODE = 'apiUrl',
   INDEXER = 'indexerUrl',
 }
+
