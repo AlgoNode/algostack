@@ -178,7 +178,6 @@ export default class Cache {
       console.warn('An error occured while upgrading IndexedDB tables. Clearing IndexedDB Cache.');
       await this.clearAll();
     }
-
   }
 
 

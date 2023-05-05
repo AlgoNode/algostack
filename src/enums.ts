@@ -68,7 +68,7 @@ export enum Addon {
 * Connectors
 * ==================================================
 */
-export enum Connectors {
+export enum Connector {
   MYALGO = 'myalgo',
   PERA = 'pera',
   DEFLY = 'defly',
