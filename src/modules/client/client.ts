@@ -23,6 +23,7 @@ export default class Client {
     this.optionallyLoadPersisted();
   }
 
+
   //
   // Accessors (readonly outside of class)
   // ----------------------------------------------
@@ -36,61 +37,12 @@ export default class Client {
     return this._addresses;
   }
 
-
-  //
-  // Mnemonic
-  // ----------------------------------------------
-  public connectMnemonic(mnemonic: string = '') {
-    this._connected = Connector.MNEMONIC; 
-    this._connector = new Mnemonic(mnemonic);
-    return this._connector.ready;
-  }
-
-  //
-  // MYALGO
-  // ----------------------------------------------
-  public async connectMyAlgo(options: ConnectionSettings = {}) {
-    this.useMyAlgo();
-    const connected = await this.connect(options);
-    return connected;
-  }
-  private useMyAlgo() {
-    this._connected = Connector.MYALGO; 
-    this._connector = new MyAlgo();
-  }
-
-
-  //
-  // PERA
-  // ----------------------------------------------
-  public async connectPera() {
-    this.usePera();
-    const connected = await this.connect();
-    return connected;
-  }
-  private usePera() {
-    this._connected = Connector.PERA; 
-    this._connector = new Pera();
-  }
-
-  //
-  // DEFLY
-  // ----------------------------------------------
-  public async connectDefly() {
-    this.useDefly();
-    const connected = await this.connect();
-    return connected;
-  }
-  private useDefly() {
-    this._connected = Connector.DEFLY; 
-    this._connector = new Defly();
-  }
-  
-
   //
   // Connect
   // ----------------------------------------------
-  private async connect(options?: ConnectionSettings) {
+  public async connect(connector: Connector, options?: any) {
+    this.useConnector(connector);
+    
     if (!this._connector) return undefined;
     const addresses = await this._connector.connect(options);
     if (addresses) {
@@ -104,10 +56,6 @@ export default class Client {
     }
   }
 
-
-  //
-  // disconnect
-  // ----------------------------------------------
   public disconnect() {
     if (this._connector) this._connector.disconnect();
     this._connected = undefined;
@@ -116,6 +64,68 @@ export default class Client {
     this.optionallyPersist();
   }
 
+  //
+  // Connectors
+  // --------------------------------------------------
+  private useConnector(connector: Connector) {
+    if (connector === Connector.MYALGO) this.useMyAlgo();
+    else if (connector === Connector.PERA) this.usePera();
+    else if (connector === Connector.DEFLY) this.useDefly();
+    else if (connector === Connector.MNEMONIC) this.useMnemonic();
+  }
+
+  //
+  // Mnemonic
+  // ----------------------------------------------
+  public async connectMnemonic(mnemonic: string = '') {
+    const connected = await this.connect(Connector.MNEMONIC, mnemonic);
+    return connected;
+  }
+  public useMnemonic(mnemonic: string = '') {
+    this._connected = Connector.MNEMONIC; 
+    this._connector = new Mnemonic();
+    return this._connector.ready;
+  }
+
+  //
+  // MYALGO
+  // ----------------------------------------------
+  public async connectMyAlgo(options: Record<string, any> = {}) {
+    const connected = await this.connect(Connector.MYALGO, options as ConnectionSettings);
+    return connected;
+  }
+  private useMyAlgo() {
+    this._connected = Connector.MYALGO; 
+    this._connector = new MyAlgo();
+  }
+
+
+  //
+  // PERA
+  // ----------------------------------------------
+  public async connectPera() {
+    const connected = await this.connect(Connector.PERA);
+    return connected;
+  }
+  private usePera() {
+    this._connected = Connector.PERA; 
+    this._connector = new Pera();
+  }
+
+  //
+  // DEFLY
+  // ----------------------------------------------
+  public async connectDefly() {
+    const connected = await this.connect(Connector.DEFLY);
+    return connected;
+  }
+  private useDefly() {
+    this._connected = Connector.DEFLY; 
+    this._connector = new Defly();
+  }
+  
+
+  
 
   //
   // Persist connection
@@ -131,10 +141,8 @@ export default class Client {
     if (!options.persistConnection) return;
     const persisted = this.storage.get('client');
     if (!persisted || !persisted.connected) return;
-    if (persisted.connected === Connector.MYALGO) this.useMyAlgo();
-    if (persisted.connected === Connector.PERA) this.usePera();
-    if (persisted.connected === Connector.DEFLY) this.useDefly();
     if (persisted.addresses) this._addresses = persisted.addresses;
+    this.useConnector(persisted.connected);
   }
 }
 

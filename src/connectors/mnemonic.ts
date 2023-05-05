@@ -1,14 +1,18 @@
 import algosdk, { Transaction, Account } from 'algosdk';
 import BaseConnector from './base.js';
 
-export default class MyAlgo extends BaseConnector {
+export default class Mnemonic extends BaseConnector {
   protected connector?: any = {};
   private account: Account;
   public ready: boolean = false;
-  constructor(mnemonic?: string) {
-    super();
-    if (!mnemonic) {
-      this.ready = undefined;
+  
+
+  //
+  // Connect account
+  // ----------------------------------------------
+  async connect(mnemonic: string): Promise<string[]|undefined> {
+    if (!this.connector || !mnemonic) { 
+      this.ready = undefined; 
       return; 
     } 
     // Warn if used on the client side
@@ -20,6 +24,7 @@ export default class MyAlgo extends BaseConnector {
     try {
       this.account = algosdk.mnemonicToSecretKey(mnemonic);
       this.ready = true;
+      return [this.account.addr];
     } catch (e) {
       this.ready = undefined;
     }
