@@ -91,8 +91,6 @@ export default class Query {
       });
     }
 
-    // convert to camelcase for standarized addons
-    data = camelcaseKeys(data, { deep: true }); 
     
     // cache result
     if (this.cache && store && !originalParams.noCache && !data.error) {
