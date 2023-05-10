@@ -65,6 +65,8 @@ export default class Query {
     const kebabcaseParams = kebabcaseKeys(encodedParams, { deep: true }); 
 
     data = await this.fetch(`${options[base]}${url}`, kebabcaseParams);
+    data = camelcaseKeys(data, { deep: true }); 
+    
     if (addons) await this.applyAddons(data, addons);
     if (filter) data = this.applyFilter(data, filter);
     
@@ -74,9 +76,10 @@ export default class Query {
       i++;
       let nextData: Payload = await this.fetch(
         `${options[base]}${url}`, 
-        { ...kebabcaseParams, next: data['next-token']}
+        { ...kebabcaseParams, next: data.nextToken}
       );
-      delete data['next-token'];
+      delete data.nextToken;
+      nextData = camelcaseKeys(nextData, { deep: true }); 
       if (addons) await this.applyAddons(nextData, addons);
       if (filter) nextData = this.applyFilter(nextData, filter);
       // merge arrays, including possible new 'next-token'
