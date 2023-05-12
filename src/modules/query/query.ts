@@ -91,6 +91,7 @@ export default class Query {
       });
     }
 
+
     
     // cache result
     if (this.cache && store && !originalParams.noCache && !data.error) {
