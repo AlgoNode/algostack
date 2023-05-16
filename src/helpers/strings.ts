@@ -38,12 +38,24 @@ export function isTransaction(str: string) {
 
 // check if string is a valid url
 // https://www.freecodecamp.org/news/check-if-a-javascript-string-is-a-url/
+const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
+  '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // validate domain name
+  '((\\d{1,3}\\.){3}\\d{1,3}))'+ // validate OR ip (v4) address
+  '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // validate port and path
+  '(\\?[;&a-z\\d%_.~+=-]*)?'+ // validate query string
+  '(\\#[-a-z\\d_]*)?$','i'); // validate fragment locator
 export function isUrl(str: string) {
-  const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
-    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // validate domain name
-    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // validate OR ip (v4) address
-    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // validate port and path
-    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // validate query string
-    '(\\#[-a-z\\d_]*)?$','i'); // validate fragment locator
   return urlPattern.test(str);
+}
+
+
+// cheeck if string is a media file url
+const extensions = [
+  'bmp','gif','ico','jpg','jpeg','png','svg','tif','tiff','webp',
+  'avi','h264','m4v','mkv','mov','mp4','mpg','mpeg','ogv','webm','wmv',
+  'aif','mid','midi','mp3','mpa','ogg','wav','wma',
+];
+const fileUrlPattern = new RegExp(`\.(${extensions.join('|')})$`,'i');
+export function isMediaFileUrl(str: string) {
+  return isUrl(str) && fileUrlPattern.test(str);
 }

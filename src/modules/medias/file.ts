@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { MediaType } from '../../enums.js';
 import { getFileType, getIpfsCid, getIpfsUrl, getRedirectedURL } from '../../helpers/files.js';
-import { isUrl } from '../../helpers/strings.js';
+import { isMediaFileUrl, isUrl } from '../../helpers/strings.js';
 
 /**
  * File class
@@ -34,9 +34,15 @@ export default class File {
     this.url = await getRedirectedURL(this.url);
     this.cid = getIpfsCid(this.url);
     if (this.cid) this.url = getIpfsUrl(this.cid);
-    if (isUrl(this.url) && !/^https:\/\//.test(this.url)) 
+    if (isUrl(this.url) && !/^https:\/\//.test(this.url)) {
       this.url = `https://${this.url}`;
-    this.mime = await getFileType(this.url);
+    }
+    if (!this.cid && !isMediaFileUrl(this.url)) {
+      this.mime = 'text/html';
+    }
+    else {
+      this.mime = await getFileType(this.url);
+    }
     await this.setType();
     return this;
   }

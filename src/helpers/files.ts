@@ -5,6 +5,7 @@ import { CID } from 'multiformats/cid';
 import * as mfsha2 from 'multiformats/hashes/sha2';
 import * as digest from 'multiformats/hashes/digest';
 import options from '../utils/options.js';
+import { isMediaFileUrl } from './strings.js';
 
 /**
  * Get file content
