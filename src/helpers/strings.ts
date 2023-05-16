@@ -48,12 +48,19 @@ export function isUrl(str: string) {
   return urlPattern.test(str);
 }
 
+const domainPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
+  '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,})'+ // validate domain name
+  '(\/)?$','i'); // optionnal trailing slash
+export function isDomainUrl(str: string) {
+  return domainPattern.test(str);
+}
 
 // cheeck if string is a media file url
 const extensions = [
   'bmp','gif','ico','jpg','jpeg','png','svg','tif','tiff','webp',
   'avi','h264','m4v','mkv','mov','mp4','mpg','mpeg','ogv','webm','wmv',
   'aif','mid','midi','mp3','mpa','ogg','wav','wma',
+  'json',
 ];
 const fileUrlPattern = new RegExp(`\.(${extensions.join('|')})$`,'i');
 export function isMediaFileUrl(str: string) {
