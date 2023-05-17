@@ -4,6 +4,7 @@ import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
 import { durationStringToMs } from '../../helpers/format.js';
 import { CacheEntry } from './types.js';
+import { includes, isArray } from 'lodash';
 
 /**
  * Cache module
@@ -97,8 +98,8 @@ export default class Cache {
   */
   public async find(store: string, query: CacheEntry): Promise<Record<string,any>|undefined> {
     if (!this.db[store]) {
-      console.error(`Store not found (${store})`);  
-      return; 
+      console.error(`Store not found (${store})`);
+      return;
     }
     query = this.filterCacheEntry(query);
     try {
@@ -120,6 +121,21 @@ export default class Cache {
   public async getEntry(store: string, query: CacheEntry) {
     if (!this.db[store]) return console.error(`Store not found (${store})`);
     return await this.db[store].get(query) as Record<string, any>;
+  }
+
+  public async search(store: string, str: string, keys: string[]) {
+    if (!this.db[store]) return console.error(`Store not found (${store})`);
+    const includesStr = new RegExp(str, 'i');
+    const results = await this.db[store].filter((entry) => (
+      Object.entries(entry.data)
+        .filter(([key]) => keys.includes(key))
+        .some(([, value]) => (
+          Array.isArray(value)
+            ? value.some(value => typeof value === 'string' && includesStr.test(value))
+            : typeof value === 'string' && includesStr.test(value)
+        ))
+    )).toArray();
+    return results;
   }
 
 
