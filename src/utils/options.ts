@@ -28,7 +28,7 @@ export interface OptionsProps {
   // For custom query endpoints, 
   // ...or anything else you want to cache using the cache module
   // cache will be indexed using the params object
-  customCaches?: string[],
+  customCaches?: (string|{ name: string, index: string })[],
 
   // Cache expiration 
   // Format: 1w, 1d, 1h, 1m, 1s, 1ms 

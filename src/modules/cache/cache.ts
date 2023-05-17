@@ -19,9 +19,9 @@ export default class Cache {
   }
 
   /**
-   * Init DB
-   * ==================================================
-   */
+  * Init DB
+  * ==================================================
+  */
   public init(forwarded: AlgoStack) {
     let stores: Record<string, string> = {}
     // Query module
@@ -76,8 +76,9 @@ export default class Cache {
 
     if (options?.customCaches?.length) {
       const customStores: Record<string, string> = {} 
-      options.customCaches.forEach(storeName => {
-        customStores[storeName] = '&params';
+      options.customCaches.forEach(store => {
+        if (typeof store === 'string') customStores[store] = '&params';
+        else customStores[store.name] = store.index || '&params';
       });
       stores = {
         ...customStores,
@@ -91,9 +92,9 @@ export default class Cache {
   }  
 
   /**
-   * Find an entry based on its ID and the query
-   * ==================================================
-   */
+  * Find an entry based on its ID and the query
+  * ==================================================
+  */
   public async find(store: string, query: CacheEntry): Promise<Record<string,any>|undefined> {
     if (!this.db[store]) {
       console.error(`Store not found (${store})`);  
@@ -101,15 +102,14 @@ export default class Cache {
     }
     query = this.filterCacheEntry(query);
     try {
-      const results = await this.db[store].get(query) as Record<string, any>;
-      if (!results) return;
-      const expiration = this.getExpiration(store);
-      const isExpired = results.timestamp + expiration < Date.now();
+      const entry = await this.getEntry(store, query);
+      if (!entry) return;
+      const isExpired = this.isExpired(store, entry);
       if (isExpired) {
         console.warn(`[${store}] Cache entry has expired.`)
         return;
       }
-      return results;
+      return entry;
     }
     catch(e) {
       // console.log(store, e)
@@ -117,11 +117,16 @@ export default class Cache {
     };
   }
 
+  public async getEntry(store: string, query: CacheEntry) {
+    if (!this.db[store]) return console.error(`Store not found (${store})`);
+    return await this.db[store].get(query) as Record<string, any>;
+  }
+
 
   /**
-   * Save an entry
-   * ==================================================
-   */
+  * Save an entry
+  * ==================================================
+  */
   public async save(store: string, data: any, entry: CacheEntry) {
     if (!this.db[store]) return console.error(`Store not found (${store})`);
     entry = {
@@ -140,9 +145,9 @@ export default class Cache {
 
 
   /**
-   * Prepare cache entry
-   * ==================================================
-   */
+  * Prepare cache entry
+  * ==================================================
+  */
   private filterCacheEntry (entry: CacheEntry = {}) {
     const result = entry;
     Object.entries(result)
@@ -156,10 +161,16 @@ export default class Cache {
 
 
   /**
-   * Get Expiration or a store
-   * ==================================================
-   */
-   private getExpiration(store: string) {
+  * Expiration
+  * ==================================================
+  */
+  public isExpired(store: string, entry: CacheEntry) {
+    const expiration = this.getExpiration(store);
+    const isExpired = entry.timestamp + expiration < Date.now();
+    return isExpired;
+  }
+
+  private getExpiration(store: string) {
     const expirationStr = options.cacheExpiration[store] 
       || options.cacheExpiration.default;
     return durationStringToMs(expirationStr);
