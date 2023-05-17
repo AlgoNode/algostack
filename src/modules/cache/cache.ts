@@ -135,7 +135,8 @@ export default class Cache {
             : typeof value === 'string' && includesStr.test(value)
         ))
     )).toArray();
-    return results;
+    const entries = results.map(entry => entry.data); 
+    return entries;
   }
 
 
