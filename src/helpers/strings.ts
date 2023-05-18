@@ -55,14 +55,32 @@ export function isDomainUrl(str: string) {
   return domainPattern.test(str);
 }
 
-// cheeck if string is a media file url
+
+// check if string is a media file url
+const imageExtensions = [ 'bmp','gif','ico','jpg','jpeg','png','svg','tif','tiff','webp' ];
+const videoExtensions = [ 'avi','h264','m4v','mkv','mov','mp4','mpg','mpeg','ogv','webm','wmv' ];
+const audioExtensions = [ 'aif','mid','midi','mp3','mpa','ogg','wav','wma' ]; 
 const extensions = [
-  'bmp','gif','ico','jpg','jpeg','png','svg','tif','tiff','webp',
-  'avi','h264','m4v','mkv','mov','mp4','mpg','mpeg','ogv','webm','wmv',
-  'aif','mid','midi','mp3','mpa','ogg','wav','wma',
+  ...imageExtensions,
+  ...videoExtensions,
+  ...audioExtensions,
   'json',
 ];
+
+const imageUrlPattern = new RegExp(`\.(${imageExtensions.join('|')})$`,'i');
+const videoUrlPattern = new RegExp(`\.(${videoExtensions.join('|')})$`,'i');
+const audioUrlPattern = new RegExp(`\.(${audioExtensions.join('|')})$`,'i');
 const fileUrlPattern = new RegExp(`\.(${extensions.join('|')})$`,'i');
+
+export function isImageFileUrl(str: string) {
+  return isUrl(str) && imageUrlPattern.test(str);
+}
+export function isVideoFileUrl(str: string) {
+  return isUrl(str) && videoUrlPattern.test(str);
+}
+export function isAudioFileUrl(str: string) {
+  return isUrl(str) && audioUrlPattern.test(str);
+}
 export function isMediaFileUrl(str: string) {
   return isUrl(str) && fileUrlPattern.test(str);
 }
