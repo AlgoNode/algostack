@@ -5,7 +5,7 @@ import { CID } from 'multiformats/cid';
 import * as mfsha2 from 'multiformats/hashes/sha2';
 import * as digest from 'multiformats/hashes/digest';
 import options from '../utils/options.js';
-import { isMediaFileUrl } from './strings.js';
+import { getContentTypeFromUrl, isDomainUrl } from './strings.js';
 
 /**
  * Get file content
@@ -34,13 +34,15 @@ import { isMediaFileUrl } from './strings.js';
  */
  export function getFileType(url: string): Promise<string> {
   return new Promise(async resolve => {
+    if (isDomainUrl(url)) return resolve('text/html');
+    const contentType = getContentTypeFromUrl(url);
+    if (contentType) return resolve(contentType)
     try {
-      const head = await axios.get(url, { maxRedirects: 0 });
+      const head = await axios.head(url, { maxRedirects: 0 });
       const contentType = head.headers['content-type']; 
       resolve(contentType);
     } 
     catch (e) {
-      console.log(e)
       resolve(undefined);
     }
   });
@@ -126,12 +128,12 @@ export async function getRedirectedURL (url: string) {
 
   try {
     const head = await axios.head(url);      
-    // console.log(head)
+    console.log(head)
     if (head?.request?.responseURL?.length) return head?.request.responseURL;
     return url;
   } 
   catch (e) {
-    // console.log(e)
+    console.log(e)
     return url;
   }
 }

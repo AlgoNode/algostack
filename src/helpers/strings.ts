@@ -55,22 +55,30 @@ export function isDomainUrl(str: string) {
   return domainPattern.test(str);
 }
 
+// check for ipfs protocol
+export function isIpfsProtocol(url:string){
+  return /^ipfs:\/\//.test(url);
+}
 
 // check if string is a media file url
-const imageExtensions = [ 'bmp','gif','ico','jpg','jpeg','png','svg','tif','tiff','webp' ];
-const videoExtensions = [ 'avi','h264','m4v','mkv','mov','mp4','mpg','mpeg','ogv','webm','wmv' ];
-const audioExtensions = [ 'aif','mid','midi','mp3','mpa','ogg','wav','wma' ]; 
-const extensions = [
-  ...imageExtensions,
-  ...videoExtensions,
-  ...audioExtensions,
-  'json',
+const extensions = {
+  image: [ 'bmp','gif','ico','jpg','jpeg','png','svg','tif','tiff','webp' ],
+  video: [ 'avi','h264','m4v','mkv','mov','mp4','mpg','mpeg','ogv','webm','wmv' ],
+  audio: [ 'aif','mid','midi','mp3','mpa','ogg','wav','wma' ],
+  application: [ 'json' ],
+}
+
+const allExtensions = [
+  ...extensions.image,
+  ...extensions.video,
+  ...extensions.audio,
+  ...extensions.application,
 ];
 
-const imageUrlPattern = new RegExp(`\.(${imageExtensions.join('|')})$`,'i');
-const videoUrlPattern = new RegExp(`\.(${videoExtensions.join('|')})$`,'i');
-const audioUrlPattern = new RegExp(`\.(${audioExtensions.join('|')})$`,'i');
-const fileUrlPattern = new RegExp(`\.(${extensions.join('|')})$`,'i');
+const imageUrlPattern = new RegExp(`\.(${extensions.image.join('|')})$`,'i');
+const videoUrlPattern = new RegExp(`\.(${extensions.video.join('|')})$`,'i');
+const audioUrlPattern = new RegExp(`\.(${extensions.audio.join('|')})$`,'i');
+const allMediasUrlPattern = new RegExp(`\.(${allExtensions.join('|')})$`,'i');
 
 export function isImageFileUrl(str: string) {
   return isUrl(str) && imageUrlPattern.test(str);
@@ -82,5 +90,18 @@ export function isAudioFileUrl(str: string) {
   return isUrl(str) && audioUrlPattern.test(str);
 }
 export function isMediaFileUrl(str: string) {
-  return isUrl(str) && fileUrlPattern.test(str);
+  return isUrl(str) && allMediasUrlPattern.test(str);
+}
+
+
+// get mime/type from url file extension
+export function getContentTypeFromUrl(url: string) {
+  const matched = url.match(/\.(\w{3,5})($|#|\?)/i);
+  if (!matched) return undefined;
+  const ext = matched[2];
+  let mime: string;
+  Object.entries(extensions).forEach(([category, extensions]) => {
+    if (extensions.includes(ext)) mime = `${category}/${ext}`;
+  });
+  return mime;
 }
