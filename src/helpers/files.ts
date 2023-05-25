@@ -54,14 +54,7 @@ import { getContentTypeFromUrl, isDomainUrl } from './strings.js';
 
 
 
-/**
- * Get an IPFS gateway url for a specific cid
- * ==================================================
- */
 
- export function getIpfsUrl(cid: string, gateway: string = 'https://ipfs.algonode.xyz/ipfs') {
-  return `${gateway}/${cid}`;
-}
 
 /**
  * Extract the IPFS cid from an ipfs URL

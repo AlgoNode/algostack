@@ -13,6 +13,7 @@
     "./nfds": "./dist/esm/modules/nfds/index.js",
     "./query": "./dist/esm/modules/query/index.js",
     "./txns": "./dist/esm/modules/txns/index.js",
+    "./files": "./dist/esm/modules/files/index.js",
     "./medias": "./dist/esm/modules/medias/index.js",
     "./helpers/*": "./dist/esm/helpers/*.js",
     "./package.json": "./package.json"

@@ -4,6 +4,7 @@ import type NFDs from './modules/nfds/index.js';
 import type Cache from './modules/cache/index.js';
 import type Query from './modules/query/index.js';
 import type Medias from './modules/medias/index.js';
+import type Files from './modules/files/files.js';
 
 // export * from './modules/client/types.js';
 export * from './modules/txns/types.js';
@@ -20,6 +21,7 @@ export interface PlugableModules {
   query?: Query,
   nfds?: NFDs,
   medias?: Medias,
+  files?: Files,
 }
 
 export type ModuleOptions = Record<string, any>;

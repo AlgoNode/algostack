@@ -1,11 +1,12 @@
+import type Cache from '../cache/index.js';
+import type { File } from '../files/index.js'
 import { getIpfsFromAddress } from '../../helpers/files.js';
 import { MediaType } from '../../enums.js';
 import { pRateLimit } from 'p-ratelimit';
-import AlgoStack from '../../index.js';
-import type Cache from '../cache/index.js';
-import File from './file.js'
 import { AssetFiles, MediasConfigs } from './types.js';
 import { BaseModule } from '../_baseModule.js';
+import AlgoStack from '../../index.js';
+import Files from '../files/files.js';
 
 /**
  * Media module
@@ -14,11 +15,11 @@ import { BaseModule } from '../_baseModule.js';
 export default class Medias extends BaseModule {
   private configs: MediasConfigs;
   protected cache?: Cache;
+  protected files?: Files;
   protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
   constructor(configs: MediasConfigs) {
     super();
     this.configs = {
-      ipfsGatewayUrl: 'https://ipfs.algonode.xyz/ipfs',
       ...configs,
     }
     this.rateLimit = pRateLimit({
@@ -30,6 +31,8 @@ export default class Medias extends BaseModule {
   public init(stack: AlgoStack) {
     super.init(stack);
     this.cache = stack.cache;
+    this.files = stack.files;
+    if (!this.files) throw('Files module is required.')
     return this;
   }
 
@@ -81,13 +84,13 @@ export default class Medias extends BaseModule {
     let arc3Files: File[] = [];
     // check for image
     if (data.image) {
-      const media = await this.rateLimit( () => new File(data.image).check() );
+      const media = await this.rateLimit( () => this.files.getMeta(data.image) );
       if (media.type === MediaType.IMAGE || media.type === MediaType.VIDEO) {
         arc3Files.push(media);
       }
     }
     else if (data.external_url) {
-      const image = await this.rateLimit( () => new File(data.external_url).check() );
+      const image = await this.rateLimit( () => this.files.getMeta(data.external_url));
       console.log(data.external_url)
       if (image.type === MediaType.IMAGE) {
         arc3Files.push(image);
@@ -96,7 +99,7 @@ export default class Medias extends BaseModule {
     // check for video {
     if (data.animation_url) {
       // const animation = await new File(data.animation_url).check();
-      const animation = await this.rateLimit( () => new File(data.animation_url).check() );
+      const animation = await this.rateLimit( () => this.files.getMeta(data.animation_url) );
       arc3Files.push(animation);
     }
     return arc3Files;
@@ -109,22 +112,22 @@ export default class Medias extends BaseModule {
   * ==================================================
   */
   public async getMedias(url: string) {
-    const files: AssetFiles =  {
+    const assetFiles: AssetFiles =  {
       metadata: undefined,
       medias: [],
     };
-    const file = await this.rateLimit( () => new File(url).check() );
+    const media = await this.rateLimit( () => this.files.getMeta(url) );
     // media is json file (metadata)
-    if (file.type === MediaType.JSON) {
-      files.metadata = file;
-      const arc3Files = await this.getArc3(file.content as Record<string, any>);
-      files.medias.push(...arc3Files);
+    if (media.type === MediaType.JSON) {
+      assetFiles.metadata = media;
+      const arc3Files = await this.getArc3(media.content as Record<string, any>);
+      assetFiles.medias.push(...arc3Files);
     }
     else {
-      files.medias.push(file);
+      assetFiles.medias.push(media);
     }
 
-    return files;
+    return assetFiles;
   }
 
 }

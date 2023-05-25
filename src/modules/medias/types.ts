@@ -1,10 +1,6 @@
-import type File from "./file.js";
+import type { File } from "../files/index.js";
 
-export interface MediasConfigs {
-  // IPFS
-  ipfsGatewayUrl?: string,
-}
-
+export interface MediasConfigs {}
 
 export interface AssetFiles {
   metadata?: File,

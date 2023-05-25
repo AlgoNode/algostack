@@ -5,6 +5,7 @@ import type NFDs from './modules/nfds/index.js';
 import type Cache from './modules/cache/index.js';
 import type Query from './modules/query/index.js';
 import type Medias from './modules/medias/index.js';
+import type Files from './modules/files/index.js';
 import type { LookupMethods, SearchMethods } from './modules/query/index.js';
 import type { PlugableModules } from './types.js';
 import merge from 'lodash/merge.js';
@@ -25,6 +26,7 @@ export default class AlgoStack {
   public query?: Query;
   public nfds?: NFDs;
   public medias?: Medias;
+  public files?: Files;
   public cache?: Cache;
   
   // Methods
@@ -42,6 +44,7 @@ export default class AlgoStack {
     if (modules.nfds) this.nfds = modules.nfds.init(this);
     if (modules.client) this.client = modules.client.init(this);
     if (modules.txns) this.txns = modules.txns.init(this);
+    if (modules.files) this.files = modules.files.init(this);
     if (modules.medias) this.medias = modules.medias.init(this);
     if (modules.query) {
       this.query = modules.query.init(this);
