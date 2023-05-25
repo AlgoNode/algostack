@@ -106,37 +106,3 @@ export function generateAddressFromIpfs(cidStr: string) {
   return address;
 }
 
-
-/**
-* Get URL redirects for shortend urls (ex: bit.ly)
-* ==================================================
-*/
-const shortners = [
-  'bit.ly',
-  'tinyurl.com',
-  'rebrand.ly',
-]
-const shortnersRegex = new RegExp(`^(?:http:\/\/|https:\/\/)?(?:${shortners.join('|')})\/`);
-
-export async function getRedirectedURL (url: string) {
-  const isShortened = shortnersRegex.test(url);
-  if (!isShortened) return url;
-  
-  try {
-    if (!/^(?:http:\/\/|https:\/\/)/.test(url)) url = `https://${url}`;
-    
-    const head = await axios({
-      url,
-      method: 'HEAD',
-      beforeRedirect: (options, { headers }) => {
-        console.log(options)
-      }
-    });      
-    if (head?.request?.responseURL?.length) return head.request.responseURL;
-    return url;
-  } 
-  catch (e) {
-    // console.log(e.request)
-    return url;
-  }
-}
