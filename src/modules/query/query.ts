@@ -1,5 +1,5 @@
 import type Cache from '../cache/index.js';
-import type { QueryParams, Payload, QueryOptions, FilterFn, AddonFn, Addons } from './types.js';
+import type { QueryParams, Payload, QueryOptions, FilterFn, AddonFn, Addons, QueryConfigs } from './types.js';
 import { Buffer } from 'buffer'
 import { pRateLimit } from 'p-ratelimit';
 import { utf8ToB64 } from '../../helpers/encoding.js';
@@ -7,23 +7,30 @@ import { ApiUrl } from './enums.js';
 import camelcaseKeys from 'camelcase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
-import options from '../../utils/options.js';
 import axios, { AxiosHeaders } from 'axios';
+import { BaseModule } from '../_baseModule.js';
 
 /**
  * Query class
  * ==================================================
  */
-export default class Query {
+export default class Query extends BaseModule {
   protected cache?: Cache; 
   protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
-  constructor(forwarded: AlgoStack) {
-    this.cache = forwarded.cache;
+  
+  constructor() {
+    super();
     this.rateLimit = pRateLimit({
       interval: 1000,
       rate: 50,
       concurrency: 25,
     });
+  }
+  
+  public init(stack: AlgoStack) {
+    super.init(stack);
+    this.cache = stack.cache;
+    return this;
   }
 
  
@@ -64,7 +71,7 @@ export default class Query {
     const encodedParams = this.encodeParams(cleanParams);
     const kebabcaseParams = kebabcaseKeys(encodedParams, { deep: true }); 
 
-    data = await this.fetch(`${options[base]}${url}`, kebabcaseParams);
+    data = await this.fetch(`${this.stack.configs[base]}${url}`, kebabcaseParams);
     data = camelcaseKeys(data, { deep: true }); 
     
     if (addons) await this.applyAddons(data, addons);
@@ -75,7 +82,7 @@ export default class Query {
     while (this.shouldFetchNext(data, originalParams) && i < 20) {
       i++;
       let nextData: Payload = await this.fetch(
-        `${options[base]}${url}`, 
+        `${this.stack.configs[base]}${url}`, 
         { ...kebabcaseParams, next: data.nextToken}
       );
       delete data.nextToken;
@@ -242,7 +249,7 @@ export default class Query {
   * ==================================================
   */
   public async health() {
-    return this.fetch(`${options.indexerUrl}/health`);
+    return this.fetch(`${this.stack.configs.indexerUrl}/health`);
   }
 
 
@@ -382,7 +389,7 @@ export default class Query {
   private async nodeDisassembleTeal(b64: string) {
     if (!b64?.length) return undefined;
     const programBuffer = Buffer.from(b64, 'base64');
-    const response = await this.custom(`${options[ApiUrl.NODE]}/v2/teal/disassemble`, 'node/teal', {
+    const response = await this.custom(`${this.stack.configs[ApiUrl.NODE]}/v2/teal/disassemble`, 'node/teal', {
       method: 'POST',
       refreshCache: true,
       headers: { 'Content-Type': 'application/x-binary' },

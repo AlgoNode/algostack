@@ -5,6 +5,8 @@ import { ApiUrl } from './enums.js';
 export type LookupMethods = Query['lookup'];
 export type SearchMethods = Query['search'];
 
+export interface QueryConfigs { }
+
 export interface QueryOptions {
   base?: ApiUrl,
   endpoint: string, 

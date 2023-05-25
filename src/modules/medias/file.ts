@@ -35,6 +35,7 @@ export default class File {
     
     this.url = await getRedirectedURL(this.url);
     this.cid = getIpfsCid(this.url);
+
     if (this.cid) this.url = getIpfsUrl(this.cid);
     if (!this.cid && !/^https:\/\//.test(this.url)) {
       this.url = `https://${this.url}`;

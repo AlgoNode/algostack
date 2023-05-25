@@ -1,23 +1,29 @@
 // import Buffer from 'buffer';
+import type { TxnsConfigs } from './types.js';
 import algosdk, { Transaction, TransactionLike } from 'algosdk';
 import camelcaseKeys from 'camelcase-keys';
 import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
 import Client from '../client/index.js';
-import { SendOptions } from './types.js';
+import { BaseModule } from '../_baseModule.js';
 
 
 /**
  * Txns class
  * ==================================================
  */
-export default class Txns {
+export default class Txns extends BaseModule {
+  private configs: TxnsConfigs;
   protected client: Client;
   public algosdk;
   public algod;
 
-  constructor(forwarded: AlgoStack) {
-    this.client = forwarded.client || new Client(forwarded);
+  constructor(configs: TxnsConfigs = {}) {
+    super();
+    this.configs = {
+      wait: true,
+      ...configs,
+    }
     this.algod = new algosdk.Algodv2(
       options.apiToken || '', 
       options.apiUrl, 
@@ -25,16 +31,24 @@ export default class Txns {
     );
   }
 
-  private getOption(key: keyof SendOptions, currentOptions?: SendOptions) {
-    return currentOptions?.[key] !== undefined 
-      ? currentOptions[key]
-      : options.sendOptions[key];
+  public init(stack: AlgoStack) {
+    super.init(stack);
+    this.client = stack.client;
+    if (!this.client) throw('Client module is required');
+    return this;
+  }
+
+
+  private getConfig(key: keyof TxnsConfigs, configs?: TxnsConfigs) {
+    return configs?.[key] !== undefined 
+      ? configs[key]
+      : this.configs[key];
   }
 
   //
   // Single Transaction
   // ----------------------------------------------
-  async sendTxn(params: Record<string, any>, options?: SendOptions): Promise<Record<string,any>|undefined> {
+  async sendTxn(params: Record<string, any>, configs?: TxnsConfigs): Promise<Record<string,any>|undefined> {
     
     try {
       const baseParams = await this.getTxnParams();
@@ -46,7 +60,7 @@ export default class Txns {
       if (!signedTxn) return;
       const response = await this.submitTxn(signedTxn);
       if (!response.txId) return;
-      if (!this.getOption('wait', options)) {
+      if (!this.getConfig('wait', configs)) {
         return camelcaseKeys(response, { deep: true });
       }
       const confirmation = await this.wait(response.txId);
@@ -63,7 +77,7 @@ export default class Txns {
   //
   // Grouped Transactions
   // ----------------------------------------------
-  async sendGroupedTxns(paramsGroup: Record<string, any>[], options?: SendOptions): Promise<Record<string,any>|undefined>  {
+  async sendGroupedTxns(paramsGroup: Record<string, any>[], configs?: TxnsConfigs): Promise<Record<string,any>|undefined>  {
     try {
       const baseParams = await this.getTxnParams();
       let group: Transaction[] = [];
@@ -81,7 +95,7 @@ export default class Txns {
       if (!signedTxns) return;
       const response = await this.submitTxn(signedTxns);
       if (!response.txId) return;
-      if (!this.getOption('wait', options)) {
+      if (!this.getConfig('wait', configs)) {
         return camelcaseKeys(response, { deep: true });
       }
       const confirmation = await this.wait(response.txId);
@@ -99,7 +113,7 @@ export default class Txns {
   //
   // Sequenced transactions
   // ----------------------------------------------
-  async sendSequencedTxns(paramsSequence: TransactionLike[], options?: SendOptions): Promise<Record<string,any>[]|undefined>  {
+  async sendSequencedTxns(paramsSequence: TransactionLike[], configs?: TxnsConfigs): Promise<Record<string,any>[]|undefined>  {
     try {
       const baseParams = await this.getTxnParams();
       let sequence: Transaction[] = [];

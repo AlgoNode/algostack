@@ -1,3 +1,4 @@
-export type SendOptions = {
+
+export interface TxnsConfigs {
   wait?: boolean,
 }

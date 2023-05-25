@@ -14,10 +14,12 @@ export * from './modules/medias/types.js';
 
 
 export interface PlugableModules {
-  Cache?: typeof Cache,
-  Client?: typeof Client,
-  Txns?: typeof Txns,
-  Query?: typeof Query,
-  NFDs?: typeof NFDs,
-  Medias?: typeof Medias,
-} 
+  cache?: Cache,
+  client?: Client,
+  txns?: Txns,
+  query?: Query,
+  nfds?: NFDs,
+  medias?: Medias,
+}
+
+export type ModuleOptions = Record<string, any>;

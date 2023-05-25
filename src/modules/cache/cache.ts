@@ -1,32 +1,52 @@
 import Dexie, { DexieError } from 'dexie';
 import objHash from 'object-hash';
 import AlgoStack from '../../index.js';
-import options from '../../utils/options.js';
 import { durationStringToMs } from '../../helpers/format.js';
-import { CacheEntry } from './types.js';
-import { includes, isArray } from 'lodash';
+import { CacheConfigs, CacheEntry } from './types.js';
+import { BaseModule } from '../_baseModule.js';
 
 /**
  * Cache module
  * ==================================================
  */
-export default class Cache {
+export default class Cache extends BaseModule {
   protected db: Dexie;
-  protected v: number;
+  protected v: number = 1;
+  protected configs: CacheConfigs;
 
-  constructor() {
-    this.v = options.version || 1;
-    this.db = new Dexie(options.storageNamespace);
+  constructor(configs: CacheConfigs = {}) {
+    super();
+    this.configs = {
+      namespace: 'algostack',
+      stores: undefined,
+      expiration: {
+        default: '1h',
+        'indexer/asset': '1w',
+        'indexer/assetBalances': '2s',
+        'indexer/assetTransactions': '2s',
+        'indexer/assets': '5m',
+        'indexer/block': '1w',
+        'indexer/transaction': '1w',
+        'node/account': '10s',
+        'node/teal': '6h',
+        'nfd/lookup': '1h',
+        'nfd/search': '1m',
+        'addons/icon': '1d',
+        'medias/asset': '1d',
+      },
+      ...configs,
+    }
+
+    this.db = new Dexie(this.configs.namespace);
   }
 
-  /**
-  * Init DB
-  * ==================================================
-  */
-  public init(forwarded: AlgoStack) {
+
+  public init(stack: AlgoStack) {
+    super.init(stack);
+    this.v = stack.configs.version; 
     let stores: Record<string, string> = {}
     // Query module
-    if (forwarded.query) {
+    if (stack.query) {
       stores = { 
         ...stores, 
         // indexer
@@ -60,7 +80,7 @@ export default class Cache {
       };
     }
     // NFDs
-    if (forwarded.nfds) {
+    if (stack.nfds) {
       stores = { 
         ...stores, 
         'nfd/lookup': '&address, *nfds',
@@ -68,29 +88,30 @@ export default class Cache {
       };
     }
     // Medias
-    if (forwarded.medias) {
+    if (stack.medias) {
       stores = { 
         ...stores, 
         'medias/asset': '&id' 
       };
     }
-
-    if (options?.customCaches?.length) {
-      const customStores: Record<string, string> = {} 
-      options.customCaches.forEach(store => {
-        if (typeof store === 'string') customStores[store] = '&params';
-        else customStores[store.name] = store.index || '&params';
+    if (this.configs.stores?.length) {
+      const extraStores: Record<string, string> = {} 
+      this.configs.stores.forEach(store => {
+        if (typeof store === 'string') extraStores[store] = '&params';
+        else extraStores[store.name] = store.index || '&params';
       });
       stores = {
-        ...customStores,
+        ...extraStores,
         ...stores,
       }
     }
     
     // Init
-    this.db.version(this.v).stores(stores);
-    
+    this.db.version(this.v).stores(stores);    
+    return this;
   }  
+
+
 
   /**
   * Find an entry based on its ID and the query
@@ -188,8 +209,8 @@ export default class Cache {
   }
 
   private getExpiration(store: string) {
-    const expirationStr = options.cacheExpiration[store] 
-      || options.cacheExpiration.default;
+    const expirationStr = this.configs.expiration[store] 
+      || this.configs.expiration.default;
     return durationStringToMs(expirationStr);
   }
 

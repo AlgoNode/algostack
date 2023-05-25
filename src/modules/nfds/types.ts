@@ -1,5 +1,10 @@
 import { NFDCategory, NFDSaleType, NFDState } from "./enums";
 
+export interface NFDConfigs {
+  // NFD api Url
+  nfdApiUrl?: string,
+}
+
 
 export interface NFDProps {
   // addons

@@ -2,25 +2,36 @@ import axios from 'axios';
 import throttle from 'lodash/throttle.js';
 import chunk from 'lodash/chunk.js';
 import AlgoStack from '../../index.js';
-import options from '../../utils/options.js';
 import type Cache from '../cache/index.js';
-import { NFDProps, NFDQueryCallback } from './types.js';
+import { NFDConfigs, NFDProps, NFDQueryCallback } from './types.js';
 import { isAddress } from '../../helpers/strings.js';
 import { QueryParams } from '../query/types.js';
+import { BaseModule } from '../_baseModule.js';
 
 /**
 * NFDs module
 * ==================================================
 */
-export default class NFDs {
+export default class NFDs extends BaseModule{
+  private configs: NFDConfigs;
   protected cache?: Cache;
   protected fetching: Record<string, NFDQueryCallback[]>;
 
-  constructor(forwarded: AlgoStack) {
-    this.cache = forwarded.cache;
+  constructor(configs: NFDConfigs = {}) {
+    super();
     this.fetching = {};
+    this.configs = {
+      nfdApiUrl: 'https://api.nf.domains',
+      ...configs,
+    }
   }
   
+  public init(stack: AlgoStack) {
+    super.init(stack);
+    this.cache = stack.cache;
+    return this;
+  }
+
 
   /**
   * Get a single NFD data
@@ -30,7 +41,7 @@ export default class NFDs {
     // TODO : add cache
     if (!nfd) return undefined;
     try {
-      const { data } = await axios.get(`${options.nfdApiUrl}/nfd/${nfd.toLocaleLowerCase()}`, { 
+      const { data } = await axios.get(`${this.configs.nfdApiUrl}/nfd/${nfd.toLocaleLowerCase()}`, { 
         params: { view: 'full' }
       });
       if (!data) return undefined;
@@ -74,7 +85,7 @@ export default class NFDs {
       let results: Record<string, NFDProps[]> = {}; 
       const addressesQueryString = `address=${addresses.join('&address=')}`;
       try {
-        const response = await axios.get(`${options.nfdApiUrl}/nfd/v2/address?${addressesQueryString}`, { 
+        const response = await axios.get(`${this.configs.nfdApiUrl}/nfd/v2/address?${addressesQueryString}`, { 
           params: { view: 'full' }
         });
         if (response?.data) results = response.data
@@ -121,7 +132,7 @@ export default class NFDs {
       let results = [];
       this.fetching[domain] = [];  
       try {
-        const response = await axios.get(`${options.nfdApiUrl}/nfd/${domain}`);
+        const response = await axios.get(`${this.configs.nfdApiUrl}/nfd/${domain}`);
         if (response?.data) results = [response.data]
       } catch {}
       
@@ -165,7 +176,7 @@ export default class NFDs {
 
     let results = [];
     try {
-      const response = await axios.get(`${options.nfdApiUrl}/nfd/v2/search`, {
+      const response = await axios.get(`${this.configs.nfdApiUrl}/nfd/v2/search`, {
         params: { 
           ...params,
           substring: str, 

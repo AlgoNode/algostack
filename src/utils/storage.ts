@@ -1,14 +1,13 @@
-import AlgoStack from "../index.js";
-import options from "./options.js";
-
 //
 // Storage class
 // ----------------------------------------------
 export default class Storage {
+  private namespace: string;
   public available: boolean = true;
   public data: Object = {}
 
-  constructor() {
+  constructor(namespace: string) {
+    this.namespace = namespace;
     this.available = typeof localStorage !== 'undefined';
     if (!this.available) return;
     this.preload();
@@ -19,7 +18,7 @@ export default class Storage {
   // ----------------------------------------------
   preload() {
     if (!this.available) return false;
-    const raw: string = localStorage.getItem(options.storageNamespace) || '{}';
+    const raw: string = localStorage.getItem(this.namespace) || '{}';
     this.data = JSON.parse(raw);
   }
   
@@ -37,7 +36,7 @@ export default class Storage {
   set(key: string, value: any) {
     if (!this.available) return false;
     this.data[key] = value;
-    localStorage.setItem(options.storageNamespace, JSON.stringify(this.data));
+    localStorage.setItem(this.namespace, JSON.stringify(this.data));
   }
 }
 

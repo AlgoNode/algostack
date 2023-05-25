@@ -1,25 +1,33 @@
 import type { ConnectionSettings } from '@randlabs/myalgo-connect';
 import { Connector } from '../../enums.js';
 import AlgoStack from '../../index.js';
-import options from '../../utils/options.js';
 import Storage from '../../utils/storage.js';
 import MyAlgo from '../../connectors/myalgo.js';
 import Pera from '../../connectors/pera.js';
 import Defly from '../../connectors/defly.js';
 import Mnemonic from '../../connectors/mnemonic.js';
+import { BaseModule } from '../_baseModule.js';
+import { ClientConfigs } from './types.js';
 
 /**
  * Client class
  * ==================================================
  */
-export default class Client {
+export default class Client extends BaseModule {
+  protected configs: ClientConfigs;
   protected storage: Storage;
   private _connector?: MyAlgo | Pera | Defly | Mnemonic | undefined = undefined; 
   private _connected?: Connector = undefined;
   private _addresses: string[] = [];
 
-  constructor(forwarded: AlgoStack) {
-    this.storage = forwarded.storage;
+  constructor(configs: ClientConfigs) {
+    super();
+    this.configs = {
+      namespace: 'algostack',
+      persistConnection: true,
+      ...configs,
+    }
+    this.storage = new Storage(this.configs.namespace)
     this.optionallyLoadPersisted();
   }
 
@@ -131,14 +139,14 @@ export default class Client {
   // Persist connection
   // ----------------------------------------------
   private optionallyPersist() {
-    if (!options.persistConnection) return;
+    if (!this.configs.persistConnection) return;
     this.storage.set('client', {
       connected: this._connected,
       addresses: this._addresses,
     });
   }
   private optionallyLoadPersisted() {
-    if (!options.persistConnection) return;
+    if (!this.configs.persistConnection) return;
     const persisted = this.storage.get('client');
     if (!persisted || !persisted.connected) return;
     if (persisted.addresses) this._addresses = persisted.addresses;

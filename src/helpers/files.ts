@@ -7,6 +7,9 @@ import * as digest from 'multiformats/hashes/digest';
 import options from '../utils/options.js';
 import { getContentTypeFromUrl, isDomainUrl } from './strings.js';
 
+
+
+
 /**
  * Get file content
  * ==================================================
@@ -43,6 +46,7 @@ import { getContentTypeFromUrl, isDomainUrl } from './strings.js';
       resolve(contentType);
     } 
     catch (e) {
+      // console.log(e)
       resolve(undefined);
     }
   });
@@ -55,8 +59,8 @@ import { getContentTypeFromUrl, isDomainUrl } from './strings.js';
  * ==================================================
  */
 
- export function getIpfsUrl(cid: string) {
-  return `${options.ipfsGatewayUrl}/${cid}`;
+ export function getIpfsUrl(cid: string, gateway: string = 'https://ipfs.algonode.xyz/ipfs') {
+  return `${gateway}/${cid}`;
 }
 
 /**
@@ -66,7 +70,6 @@ import { getContentTypeFromUrl, isDomainUrl } from './strings.js';
  export function getIpfsCid(url: string) {
   const isUrl = /^(?:[a-zA-z0-9-]+(?::\/\/|\.[a-zA-z0-9]+\/))/.test(url);
   if (!isUrl) return undefined;
-  
   const match = url
     .match(/^(?:ipfs:\/\/|(?:(?:http:\/\/|https:\/\/)\S*(?:ipfs\/)))([a-zA-z0-9\/\.\-]+)/);
   return match?.[1];
@@ -115,25 +118,32 @@ export function generateAddressFromIpfs(cidStr: string) {
 * Get URL redirects for shortend urls (ex: bit.ly)
 * ==================================================
 */
+const shortners = [
+  'bit.ly',
+  'tinyurl.com',
+  'rebrand.ly',
+]
+const shortnersRegex = new RegExp(`^(?:http:\/\/|https:\/\/)?(?:${shortners.join('|')})\/`);
+
 export async function getRedirectedURL (url: string) {
-  const shortners = [
-    'bit.ly',
-    'tinyurl.com',
-    'rebrand.ly',
-  ]
-  const shortnersRegex = new RegExp(`^(?:http:\/\/|https:\/\/)?(?:${shortners.join('|')})\/`);
   const isShortened = shortnersRegex.test(url);
   if (!isShortened) return url;
-  if (!/^(?:http:\/\/|https:\/\/)/.test(url)) url = `https://${url}`;
-
+  
   try {
-    const head = await axios.head(url);      
-    console.log(head)
-    if (head?.request?.responseURL?.length) return head?.request.responseURL;
+    if (!/^(?:http:\/\/|https:\/\/)/.test(url)) url = `https://${url}`;
+    
+    const head = await axios({
+      url,
+      method: 'HEAD',
+      beforeRedirect: (options, { headers }) => {
+        console.log(options)
+      }
+    });      
+    if (head?.request?.responseURL?.length) return head.request.responseURL;
     return url;
   } 
   catch (e) {
-    console.log(e)
+    // console.log(e.request)
     return url;
   }
 }

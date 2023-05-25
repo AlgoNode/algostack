@@ -4,23 +4,34 @@ import { pRateLimit } from 'p-ratelimit';
 import AlgoStack from '../../index.js';
 import type Cache from '../cache/index.js';
 import File from './file.js'
-import { AssetFiles } from './types.js';
+import { AssetFiles, MediasConfigs } from './types.js';
+import { BaseModule } from '../_baseModule.js';
 
 /**
  * Media module
  * ==================================================
  */
-export default class Medias {
+export default class Medias extends BaseModule {
+  private configs: MediasConfigs;
   protected cache?: Cache;
   protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
-  constructor(forwarded: AlgoStack) {
-    this.cache = forwarded.cache;
+  constructor(configs: MediasConfigs) {
+    super();
+    this.configs = {
+      ipfsGatewayUrl: 'https://ipfs.algonode.xyz/ipfs',
+      ...configs,
+    }
     this.rateLimit = pRateLimit({
       interval: 1000,
       rate: 100, 
     });
   }
  
+  public init(stack: AlgoStack) {
+    super.init(stack);
+    this.cache = stack.cache;
+    return this;
+  }
 
   /**
   * Get all medias for an asset
