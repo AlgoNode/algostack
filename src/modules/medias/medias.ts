@@ -6,7 +6,7 @@ import { pRateLimit } from 'p-ratelimit';
 import { AssetFiles, MediasConfigs } from './types.js';
 import { BaseModule } from '../_baseModule.js';
 import AlgoStack from '../../index.js';
-import Files from '../files/files.js';
+import Files from '../files/index.js';
 
 /**
  * Media module

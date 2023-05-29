@@ -11,10 +11,8 @@ import type { PlugableModules } from './types.js';
 import merge from 'lodash/merge.js';
 import defaultConfigs from './utils/options.js';
 
-export type { Configs } from './utils/options.js';
 export * from './types.js';
 export * from './enums.js';
-
 
 export default class AlgoStack {
   // Utils

@@ -12,6 +12,8 @@ export * from './modules/nfds/types.js';
 export * from './modules/cache/types.js';
 export * from './modules/query/types.js';
 export * from './modules/medias/types.js';
+export type { Configs } from './utils/options.js';
+
 
 
 export interface PlugableModules {
