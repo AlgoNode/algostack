@@ -6,7 +6,8 @@ import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
 import Client from '../client/index.js';
 import { BaseModule } from '../_baseModule.js';
-import { merge } from 'lodash';
+import merge from 'lodash/merge.js';
+
 
 
 /**

@@ -7,7 +7,8 @@ import { NFDConfigs, NFDProps, NFDQueryCallback } from './types.js';
 import { isAddress } from '../../helpers/strings.js';
 import { QueryParams } from '../query/types.js';
 import { BaseModule } from '../_baseModule.js';
-import { merge } from 'lodash';
+import merge from 'lodash/merge.js';
+
 
 /**
 * NFDs module

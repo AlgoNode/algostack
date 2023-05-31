@@ -4,7 +4,8 @@ import AlgoStack from '../../index.js';
 import { durationStringToMs } from '../../helpers/format.js';
 import { CacheConfigs, CacheEntry } from './types.js';
 import { BaseModule } from '../_baseModule.js';
-import { cloneDeep, merge } from 'lodash';
+import merge from 'lodash/merge.js';
+
 
 /**
  * Cache module

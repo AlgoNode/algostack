@@ -1,5 +1,4 @@
 import { Buffer } from 'buffer'
-import { get, set } from 'lodash';
 import { decodeObj, encodeAddress } from 'algosdk';
 import { Encoding } from '../enums.js';
 import axios from 'axios';

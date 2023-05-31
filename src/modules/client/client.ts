@@ -8,7 +8,8 @@ import Defly from '../../connectors/defly.js';
 import Mnemonic from '../../connectors/mnemonic.js';
 import { BaseModule } from '../_baseModule.js';
 import { ClientConfigs } from './types.js';
-import { merge } from 'lodash';
+import merge from 'lodash/merge.js';
+
 
 /**
  * Client class
