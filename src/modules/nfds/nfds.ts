@@ -232,7 +232,7 @@ export default class NFDs extends BaseModule{
   private getNFDScore(nfd: NFDProps, address?: string) {
     let score = 0;
     const { properties: props } = nfd
-    if (address && address === nfd.depositAccount) score += 5;
+    if (address && address === nfd.depositAccount) score += 15;
     if (!props) return score;
     ['avatar', 'domain', 'email', 'twitter', 'discord'].forEach(contact => {
       if (props?.verified?.[contact]) score += 1.75;
