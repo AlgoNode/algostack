@@ -101,6 +101,7 @@ export default class Query extends BaseModule {
     
     // cache result
     if (this.cache && store && !originalParams.noCache && !data.error) {
+      // console.log('CACHING')
       await this.cache.save(store, data, { params: originalParams });
     }
     return data;

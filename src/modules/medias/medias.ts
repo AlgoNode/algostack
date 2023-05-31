@@ -7,6 +7,7 @@ import { AssetFiles, MediasConfigs } from './types.js';
 import { BaseModule } from '../_baseModule.js';
 import AlgoStack from '../../index.js';
 import Files from '../files/index.js';
+import { merge } from 'lodash';
 
 /**
  * Media module
@@ -19,9 +20,7 @@ export default class Medias extends BaseModule {
   protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
   constructor(configs: MediasConfigs) {
     super();
-    this.configs = {
-      ...configs,
-    }
+    this.configs = merge({}, configs);
     this.rateLimit = pRateLimit({
       interval: 1000,
       rate: 100, 

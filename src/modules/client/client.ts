@@ -8,6 +8,7 @@ import Defly from '../../connectors/defly.js';
 import Mnemonic from '../../connectors/mnemonic.js';
 import { BaseModule } from '../_baseModule.js';
 import { ClientConfigs } from './types.js';
+import { merge } from 'lodash';
 
 /**
  * Client class
@@ -22,11 +23,11 @@ export default class Client extends BaseModule {
 
   constructor(configs: ClientConfigs) {
     super();
-    this.configs = {
+    this.configs = merge({
       namespace: 'algostack',
       persistConnection: true,
-      ...configs,
-    }
+    }, configs); 
+    
     this.storage = new Storage(this.configs.namespace)
     this.optionallyLoadPersisted();
   }

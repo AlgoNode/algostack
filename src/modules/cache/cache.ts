@@ -4,6 +4,7 @@ import AlgoStack from '../../index.js';
 import { durationStringToMs } from '../../helpers/format.js';
 import { CacheConfigs, CacheEntry } from './types.js';
 import { BaseModule } from '../_baseModule.js';
+import { cloneDeep, merge } from 'lodash';
 
 /**
  * Cache module
@@ -16,11 +17,11 @@ export default class Cache extends BaseModule {
 
   constructor(configs: CacheConfigs = {}) {
     super();
-    this.configs = {
+    this.configs = merge({
       namespace: 'algostack',
       stores: undefined,
       expiration: {
-        default: '1h',
+        'default': '1h',
         'indexer/asset': '1w',
         'indexer/assetBalances': '2s',
         'indexer/assetTransactions': '2s',
@@ -34,8 +35,7 @@ export default class Cache extends BaseModule {
         'addons/icon': '1d',
         'medias/asset': '1d',
       },
-      ...configs,
-    }
+    }, configs);
 
     this.db = new Dexie(this.configs.namespace);
   }
@@ -122,7 +122,7 @@ export default class Cache extends BaseModule {
       console.error(`Store not found (${store})`);
       return;
     }
-    query = this.filterCacheEntry(query);
+    query = this.hashObjectProps(query);
     try {
       const entry = await this.getEntry(store, query);
       if (!entry) return;
@@ -141,6 +141,7 @@ export default class Cache extends BaseModule {
 
   public async getEntry(store: string, query: CacheEntry) {
     if (!this.db[store]) return console.error(`Store not found (${store})`);
+    query = this.hashObjectProps(query);
     return await this.db[store].get(query) as Record<string, any>;
   }
 
@@ -168,7 +169,7 @@ export default class Cache extends BaseModule {
   public async save(store: string, data: any, entry: CacheEntry) {
     if (!this.db[store]) return console.error(`Store not found (${store})`);
     entry = {
-      ...this.filterCacheEntry(entry), 
+      ...this.hashObjectProps(entry), 
       data, 
       timestamp: Date.now(),
     }
@@ -186,15 +187,19 @@ export default class Cache extends BaseModule {
   * Prepare cache entry
   * ==================================================
   */
-  private filterCacheEntry (entry: CacheEntry = {}) {
+  private hashObjectProps (entry: CacheEntry = {}) {
+    if (typeof entry !== 'object') return entry;
     const result = entry;
     Object.entries(result)
       .forEach(([key, value]) => {
-        if (typeof value === 'object' && !Array.isArray(value)) result[key] = objHash(value)
+        if (typeof value === 'object' && !Array.isArray(value)){
+          result[key] = objHash(value)
+        }
         if (value === null || value === undefined) delete result[key]; 
       });
     return result;
   }
+  
 
 
 

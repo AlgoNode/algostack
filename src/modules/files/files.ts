@@ -4,6 +4,7 @@ import { getFileType, getIpfsCid } from '../../helpers/files.js';
 import { isIpfsProtocol, isUrl } from '../../helpers/strings.js';
 import { BaseModule } from '../_baseModule.js';
 import { File, FilesConfigs } from './types.js';
+import { merge } from 'lodash';
 
 /**
  * Files class
@@ -18,11 +19,10 @@ export default class Files extends BaseModule {
    */
   constructor(configs: FilesConfigs = {}) {
     super();
-    this.configs = {
+    this.configs = merge({
       ipfsGatewayUrl: 'https://ipfs.algonode.xyz/ipfs',
       transformUrl: undefined,
-      ...configs,
-    }
+    }, configs);
   }
 
 

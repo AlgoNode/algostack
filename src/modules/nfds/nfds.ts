@@ -7,6 +7,7 @@ import { NFDConfigs, NFDProps, NFDQueryCallback } from './types.js';
 import { isAddress } from '../../helpers/strings.js';
 import { QueryParams } from '../query/types.js';
 import { BaseModule } from '../_baseModule.js';
+import { merge } from 'lodash';
 
 /**
 * NFDs module
@@ -20,10 +21,9 @@ export default class NFDs extends BaseModule{
   constructor(configs: NFDConfigs = {}) {
     super();
     this.fetching = {};
-    this.configs = {
+    this.configs = merge({
       nfdApiUrl: 'https://api.nf.domains',
-      ...configs,
-    }
+    }, configs);
   }
   
   public init(stack: AlgoStack) {

@@ -6,6 +6,7 @@ import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
 import Client from '../client/index.js';
 import { BaseModule } from '../_baseModule.js';
+import { merge } from 'lodash';
 
 
 /**
@@ -20,10 +21,10 @@ export default class Txns extends BaseModule {
 
   constructor(configs: TxnsConfigs = {}) {
     super();
-    this.configs = {
+    this.configs = merge({
       wait: true,
-      ...configs,
-    }
+    }, configs); 
+
     this.algod = new algosdk.Algodv2(
       options.apiToken || '', 
       options.apiUrl, 
