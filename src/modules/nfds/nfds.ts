@@ -95,7 +95,9 @@ export default class NFDs extends BaseModule{
       addresses.forEach( async address => {
         const verified = this.prepareResults(results[address] || [], address)
         // map domains only
-        const domains = verified.map(nfd => nfd.name);
+        const domains = verified
+          .filter(nfd => nfd?.name)
+          .map(nfd => nfd.name);
         // trigger current stack
         if (this.fetching[address]?.length) {
           this.fetching[address].forEach(({full, resolve}) => resolve(full ? verified : domains));
