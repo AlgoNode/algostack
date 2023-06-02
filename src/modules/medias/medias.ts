@@ -32,7 +32,7 @@ export default class Medias extends BaseModule {
     super.init(stack);
     this.cache = stack.cache;
     this.files = stack.files;
-    if (!this.files) throw('Files module is required.')
+    if (!this.files) throw new Error('Files module is required.')
     return this;
   }
 
