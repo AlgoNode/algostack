@@ -60,6 +60,11 @@ export function isIpfsProtocol(url:string){
   return /^ipfs:\/\//.test(url);
 }
 
+// check for ipfs subdomain
+export function isIpfsSubdomain(url:string){
+  return /^(?:http:\/\/|https:\/\/)([a-zA-z0-9]+)(\.ipfs\.)(.+)[a-z]{2,}/.test(url);
+}
+
 // check if string is a media file url
 const extensions = {
   image: [ 'bmp','gif','ico','jpg','jpeg','png','svg','tif','tiff','webp' ],

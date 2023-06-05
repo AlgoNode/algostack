@@ -5,7 +5,7 @@ import { CID } from 'multiformats/cid';
 import * as mfsha2 from 'multiformats/hashes/sha2';
 import * as digest from 'multiformats/hashes/digest';
 import options from '../utils/options.js';
-import { getContentTypeFromUrl, isDomainUrl } from './strings.js';
+import { getContentTypeFromUrl, isDomainUrl, isIpfsSubdomain } from './strings.js';
 
 
 
@@ -37,7 +37,7 @@ import { getContentTypeFromUrl, isDomainUrl } from './strings.js';
  */
  export function getFileType(url: string): Promise<string> {
   return new Promise(async resolve => {
-    if (isDomainUrl(url)) return resolve('text/html');
+    if (isDomainUrl(url) && !isIpfsSubdomain(url)) return resolve('text/html');
     const contentType = getContentTypeFromUrl(url);
     if (contentType) return resolve(contentType)
     try {
