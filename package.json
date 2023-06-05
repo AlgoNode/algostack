@@ -46,6 +46,7 @@
     "p-ratelimit": "^1.0.1"
   },
   "devDependencies": {
+    "fake-indexeddb": "^4.0.1",
     "tslib": "^2.4.0",
     "typescript": "^4.8.2"
   }

@@ -1,9 +1,10 @@
-import Dexie, { DexieError } from 'dexie';
-import objHash from 'object-hash';
-import AlgoStack from '../../index.js';
 import { durationStringToMs } from '../../helpers/format.js';
 import { CacheConfigs, CacheEntry } from './types.js';
 import { BaseModule } from '../_baseModule.js';
+import { indexedDB, IDBKeyRange } from "fake-indexeddb";
+import Dexie, { DexieError } from 'dexie';
+import objHash from 'object-hash';
+import AlgoStack from '../../index.js';
 import merge from 'lodash/merge.js';
 
 
@@ -38,7 +39,12 @@ export default class Cache extends BaseModule {
       },
     }, configs);
 
-    this.db = new Dexie(this.configs.namespace);
+    this.db = new Dexie(
+      this.configs.namespace, 
+      typeof window !== 'undefined' && window.indexedDB 
+        ? undefined
+        : { indexedDB, IDBKeyRange }
+      );
   }
 
 

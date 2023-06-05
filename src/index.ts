@@ -37,7 +37,7 @@ export default class AlgoStack {
     this.configs = merge(defaultConfigs, configs);
 
     // Add modules
-    if (modules.cache && typeof window !== 'undefined') this.cache = modules.cache;
+    if (modules.cache) this.cache = modules.cache;
 
     if (modules.nfds) this.nfds = modules.nfds.init(this);
     if (modules.client) this.client = modules.client.init(this);
