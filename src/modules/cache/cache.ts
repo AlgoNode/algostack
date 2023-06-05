@@ -22,6 +22,7 @@ export default class Cache extends BaseModule {
     this.configs = merge({
       namespace: 'algostack',
       stores: undefined,
+      logExpiration: false,
       expiration: {
         'default': '1h',
         'indexer/asset': '1w',
@@ -135,7 +136,7 @@ export default class Cache extends BaseModule {
       if (!entry) return;
       const isExpired = this.isExpired(store, entry);
       if (isExpired) {
-        console.warn(`[${store}] Cache entry has expired.`)
+        if (this.configs.logExpiration) console.warn(`[${store}] Cache entry has expired.`)
         return;
       }
       return entry;

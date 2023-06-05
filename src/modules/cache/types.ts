@@ -6,6 +6,9 @@ export interface CacheConfigs {
   // ...or anything else you want to cache using the cache module
   // cache will be indexed using the params object
   stores?: (string|{ name: string, index: string })[],
+  
+  // logs
+  logExpiration?: boolean,
 
   // Cache expiration 
   // Format: 1w, 1d, 1h, 1m, 1s, 1ms 
