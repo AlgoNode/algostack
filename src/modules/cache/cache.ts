@@ -2,6 +2,7 @@ import { durationStringToMs } from '../../helpers/format.js';
 import { CacheConfigs, CacheEntry } from './types.js';
 import { BaseModule } from '../_baseModule.js';
 import { indexedDB, IDBKeyRange } from "fake-indexeddb";
+import { makeStrRegExpSafe } from '../../helpers/strings.js';
 import Dexie, { DexieError } from 'dexie';
 import objHash from 'object-hash';
 import AlgoStack from '../../index.js';
@@ -155,7 +156,8 @@ export default class Cache extends BaseModule {
 
   public async search(store: string, str: string, keys: string[]) {
     if (!this.db[store]) return console.error(`Store not found (${store})`);
-    const includesStr = new RegExp(str, 'i');
+    const regexSafeStr =  makeStrRegExpSafe();
+    const includesStr = new RegExp( regexSafeStr, 'i');
     const results = await this.db[store].filter((entry) => (
       Object.entries(entry.data)
         .filter(([key]) => keys.includes(key))

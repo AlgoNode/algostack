@@ -1,3 +1,7 @@
+import escapeRegExp from 'lodash/escapeRegExp.js';
+
+
+
 // Integers
 export function isIntegers(str: string) {
   return /^\d+$/.test(str);
@@ -48,6 +52,7 @@ export function isUrl(str: string) {
   return urlPattern.test(str);
 }
 
+// url is a domain base (no files at thte end)
 const domainPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
   '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,})'+ // validate domain name
   '(\/)?$','i'); // optionnal trailing slash
@@ -109,4 +114,12 @@ export function getContentTypeFromUrl(url: string) {
     if (extensions.includes(ext)) mime = `${category}/${ext}`;
   });
   return mime;
+}
+
+
+// Make sure a string is safe for regexes. 
+// Can be ran multiple times on the same string.
+export function makeStrRegExpSafe(str?: string) {
+  if (!str) return '';
+  return escapeRegExp(str).replace(/\\(\\)./g, '\\');
 }
