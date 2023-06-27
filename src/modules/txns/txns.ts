@@ -25,16 +25,17 @@ export default class Txns extends BaseModule {
     this.configs = merge({
       wait: true,
     }, configs); 
-
-    this.algod = new algosdk.Algodv2(
-      options.apiToken || '', 
-      options.apiUrl, 
-      options.apiPort || ''
-    );
   }
 
   public init(stack: AlgoStack) {
     super.init(stack);
+    
+    this.algod = new algosdk.Algodv2(
+      this.stack.configs.apiToken || '', 
+      this.stack.configs.apiUrl, 
+      this.stack.configs.apiPort || ''
+    );
+
     this.client = stack.client;
     if (!this.client) throw('Client module is required');
     return this;
