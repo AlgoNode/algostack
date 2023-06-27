@@ -4,11 +4,11 @@ import { Buffer } from 'buffer'
 import { pRateLimit } from 'p-ratelimit';
 import { utf8ToB64 } from '../../helpers/encoding.js';
 import { ApiUrl } from './enums.js';
+import { BaseModule } from '../_baseModule.js';
 import camelcaseKeys from 'camelcase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
 import axios, { AxiosHeaders } from 'axios';
-import { BaseModule } from '../_baseModule.js';
 
 /**
  * Query class

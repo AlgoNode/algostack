@@ -1,11 +1,11 @@
 // import Buffer from 'buffer';
 import type { TxnsConfigs } from './types.js';
+import { BaseModule } from '../_baseModule.js';
 import algosdk, { Transaction, TransactionLike } from 'algosdk';
 import camelcaseKeys from 'camelcase-keys';
 import AlgoStack from '../../index.js';
 import options from '../../utils/options.js';
 import Client from '../client/index.js';
-import { BaseModule } from '../_baseModule.js';
 import merge from 'lodash/merge.js';
 
 

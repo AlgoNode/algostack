@@ -1,10 +1,9 @@
-import type { CIDVersion } from 'multiformats/types/src/cid';
+import type { Version as CIDVersion } from 'multiformats/dist/types/src/link/interface';
 import axios, { ResponseType } from 'axios';
 import { decodeAddress, encodeAddress } from 'algosdk';
 import { CID } from 'multiformats/cid';
 import * as mfsha2 from 'multiformats/hashes/sha2';
 import * as digest from 'multiformats/hashes/digest';
-import options from '../utils/options.js';
 import { getContentTypeFromUrl, isDomainUrl, isIpfsSubdomain } from './strings.js';
 
 
