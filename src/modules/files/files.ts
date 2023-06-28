@@ -4,7 +4,7 @@ import { getFileType, getIpfsCid } from '../../helpers/files.js';
 import { isIpfsProtocol, isUrl } from '../../helpers/strings.js';
 import { BaseModule } from '../_baseModule.js';
 import { File, FilesConfigs } from './types.js';
-import merge from 'lodash/merge.js';
+import merge from 'lodash-es/merge.js';
 
 
 /**

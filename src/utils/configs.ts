@@ -1,6 +1,6 @@
 
 /**
- * All options available in AlgoStack
+ * All configs available in AlgoStack
  * ==================================================
  */
 export interface Configs {

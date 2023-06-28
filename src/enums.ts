@@ -1,18 +1,19 @@
 export * from './modules/txns/enums.js';
 
 /**
- * Asset categories
- * ==================================================
- */
+* Asset categories
+* ==================================================
+*/
 export enum AssetCategory {
   NFT = 'nft',
   TOKEN = 'token',
 }
 
+
 /**
- * Arcs standards
- * ==================================================
- */
+* Arcs standards
+* ==================================================
+*/
 export enum Arc {
   ARC3 = 'ARC3',
   ARC19 = 'ARC19',
@@ -21,9 +22,9 @@ export enum Arc {
 }
 
 /**
- * Note encoding
- * ==================================================
- */
+* Note encoding
+* ==================================================
+*/
 export enum Encoding {
   NONE = 'none',
   TEXT = 'text',
@@ -35,6 +36,7 @@ export enum Encoding {
   UTF8 = 'utf8',
   ADDRESS = 'address',
 }
+
 
 /**
 * Media types
@@ -52,9 +54,9 @@ export enum MediaType {
 
 
 /**
- * Available addons
- * ==================================================
- */
+* Available addons
+* ==================================================
+*/
 export enum Addon {
   NFDS = 'nfds',
   ICON = 'icon',

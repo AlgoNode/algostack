@@ -1,4 +1,4 @@
-import escapeRegExp from 'lodash/escapeRegExp.js';
+import escapeRegExp from 'lodash-es/escapeRegExp.js';
 
 
 

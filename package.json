@@ -2,21 +2,23 @@
   "name": "algostack",
   "version": "0.4.12",
   "description": "",
+  "author": "",
+  "license": "MIT",
   "type": "module",
-  "main": "./dist/esm/index.js",
-  "module": "./dist/esm/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "exports": {
-    ".": "./dist/esm/index.js",
-    "./addons": "./dist/esm/modules/addons/index.js",
-    "./cache": "./dist/esm/modules/cache/index.js",
-    "./client": "./dist/esm/modules/client/index.js",
-    "./nfds": "./dist/esm/modules/nfds/index.js",
-    "./query": "./dist/esm/modules/query/index.js",
-    "./txns": "./dist/esm/modules/txns/index.js",
-    "./files": "./dist/esm/modules/files/index.js",
-    "./medias": "./dist/esm/modules/medias/index.js",
-    "./helpers": "./dist/esm/helpers/index.js",
-    "./helpers/*": "./dist/esm/helpers/*.js",
+    ".": "./dist/index.js",
+    "./addons": "./dist/modules/addons/index.js",
+    "./cache": "./dist/modules/cache/index.js",
+    "./client": "./dist/modules/client/index.js",
+    "./nfds": "./dist/modules/nfds/index.js",
+    "./query": "./dist/modules/query/index.js",
+    "./txns": "./dist/modules/txns/index.js",
+    "./files": "./dist/modules/files/index.js",
+    "./medias": "./dist/modules/medias/index.js",
+    "./helpers": "./dist/helpers/index.js",
+    "./helpers/*": "./dist/helpers/*.js",
     "./package.json": "./package.json"
   },
   "files": [
@@ -26,11 +28,9 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json -w"
   },
-  "author": "",
-  "license": "MIT",
   "devDependencies": {
-    "tslib": "^2.4.0",
-    "typescript": "^4.8.2"
+    "tslib": "^2.6.0",
+    "typescript": "^5.1.5"
   },
   "dependencies": {
     "@blockshake/defly-connect": "^1.1.5",
@@ -46,7 +46,7 @@
     "dexie": "^3.2.4",
     "fake-indexeddb": "^4.0.1",
     "kebabcase-keys": "^1.0.0",
-    "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
     "multiformats": "^12.0.1",
     "object-hash": "^3.0.0",
     "p-ratelimit": "^1.0.1"

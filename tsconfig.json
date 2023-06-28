@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-    "outDir": "./dist/esm",
+    "outDir": "./dist",
     "target": "ES2015",
     "module": "ESNext",
+    "moduleResolution": "node",
     "lib": ["ESNext", "DOM"],
     "typeRoots": [ "./node_modules/@types" ],
     "noImplicitAny": false,
     "declaration": true,
     "importHelpers": true,
-    "moduleResolution": "node",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": false,
     "allowSyntheticDefaultImports": true,

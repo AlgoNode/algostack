@@ -1,13 +1,13 @@
 import axios from 'axios';
-import throttle from 'lodash/throttle.js';
-import chunk from 'lodash/chunk.js';
+import throttle from 'lodash-es/throttle.js';
+import chunk from 'lodash-es/chunk.js';
 import AlgoStack from '../../index.js';
 import type Cache from '../cache/index.js';
 import { NFDConfigs, NFDProps, NFDQueryCallback } from './types.js';
 import { isAddress } from '../../helpers/strings.js';
 import { QueryParams } from '../query/types.js';
 import { BaseModule } from '../_baseModule.js';
-import merge from 'lodash/merge.js';
+import merge from 'lodash-es/merge.js';
 
 
 /**

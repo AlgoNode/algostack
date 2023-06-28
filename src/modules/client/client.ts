@@ -1,14 +1,13 @@
 import type { ConnectionSettings } from '@randlabs/myalgo-connect';
 import { Connector } from '../../enums.js';
-import AlgoStack from '../../index.js';
+import { BaseModule } from '../_baseModule.js';
+import { ClientConfigs } from './types.js';
 import Storage from '../../utils/storage.js';
 import MyAlgo from '../../connectors/myalgo.js';
 import Pera from '../../connectors/pera.js';
 import Defly from '../../connectors/defly.js';
 import Mnemonic from '../../connectors/mnemonic.js';
-import { BaseModule } from '../_baseModule.js';
-import { ClientConfigs } from './types.js';
-import merge from 'lodash/merge.js';
+import merge from 'lodash-es/merge.js';
 
 
 /**

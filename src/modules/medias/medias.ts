@@ -7,7 +7,7 @@ import { AssetFiles, MediasConfigs } from './types.js';
 import { BaseModule } from '../_baseModule.js';
 import AlgoStack from '../../index.js';
 import Files from '../files/index.js';
-import merge from 'lodash/merge.js';
+import merge from 'lodash-es/merge.js';
 
 
 /**

@@ -6,15 +6,6 @@ import type Query from './modules/query/index.js';
 import type Medias from './modules/medias/index.js';
 import type Files from './modules/files/files.js';
 
-// export * from './modules/client/types.js';
-export * from './modules/txns/types.js';
-export * from './modules/nfds/types.js';
-export * from './modules/cache/types.js';
-export * from './modules/query/types.js';
-export * from './modules/medias/types.js';
-export type { Configs } from './utils/options.js';
-
-
 
 export interface PlugableModules {
   cache?: Cache,
@@ -26,4 +17,13 @@ export interface PlugableModules {
   files?: Files,
 }
 
-export type ModuleOptions = Record<string, any>;
+export type { Configs } from './utils/configs.js';
+
+export * from './enums.js';
+export * from './modules/client/types.js';
+export * from './modules/txns/types.js';
+export * from './modules/nfds/types.js';
+export * from './modules/cache/types.js';
+export * from './modules/query/types.js';
+export * from './modules/medias/types.js';
+

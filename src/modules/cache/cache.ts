@@ -6,7 +6,7 @@ import { makeStrRegExpSafe } from '../../helpers/strings.js';
 import Dexie, { DexieError } from 'dexie';
 import objHash from 'object-hash';
 import AlgoStack from '../../index.js';
-import merge from 'lodash/merge.js';
+import merge from 'lodash-es/merge.js';
 
 
 /**
