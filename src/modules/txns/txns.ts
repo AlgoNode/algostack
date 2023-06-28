@@ -4,7 +4,6 @@ import { BaseModule } from '../_baseModule.js';
 import algosdk, { Transaction, TransactionLike } from 'algosdk';
 import camelcaseKeys from 'camelcase-keys';
 import AlgoStack from '../../index.js';
-import options from '../../utils/options.js';
 import Client from '../client/index.js';
 import merge from 'lodash/merge.js';
 
@@ -51,7 +50,7 @@ export default class Txns extends BaseModule {
   //
   // Single Transaction
   // ----------------------------------------------
-  async sendTxn(params: Record<string, any>, configs?: TxnsConfigs): Promise<Record<string,any>|undefined> {
+  public async sendTxn(params: Record<string, any>, configs?: TxnsConfigs): Promise<Record<string,any>|undefined> {
     
     try {
       const baseParams = await this.getTxnParams();
@@ -80,7 +79,7 @@ export default class Txns extends BaseModule {
   //
   // Grouped Transactions
   // ----------------------------------------------
-  async sendGroupedTxns(paramsGroup: Record<string, any>[], configs?: TxnsConfigs): Promise<Record<string,any>|undefined>  {
+  public async sendGroupedTxns(paramsGroup: Record<string, any>[], configs?: TxnsConfigs): Promise<Record<string,any>|undefined>  {
     try {
       const baseParams = await this.getTxnParams();
       let group: Transaction[] = [];
@@ -116,7 +115,7 @@ export default class Txns extends BaseModule {
   //
   // Sequenced transactions
   // ----------------------------------------------
-  async sendSequencedTxns(paramsSequence: TransactionLike[], configs?: TxnsConfigs): Promise<Record<string,any>[]|undefined>  {
+  public async sendSequencedTxns(paramsSequence: TransactionLike[], configs?: TxnsConfigs): Promise<Record<string,any>[]|undefined>  {
     try {
       const baseParams = await this.getTxnParams();
       let sequence: Transaction[] = [];
@@ -149,7 +148,7 @@ export default class Txns extends BaseModule {
   //
   // Get txn params
   // ----------------------------------------------
-  async getTxnParams () {
+  public async getTxnParams () {
     const txn = await this.algod.getTransactionParams().do();
     return txn;
   }
@@ -158,7 +157,7 @@ export default class Txns extends BaseModule {
   //
   // Sign
   // ----------------------------------------------
-  async signTxn (txns: Transaction|Transaction[]): Promise<Uint8Array[]|false> {
+  public async signTxn (txns: Transaction|Transaction[]): Promise<Uint8Array[]|false> {
     if (!this.client || !this.client.connector) return false;
     if (!Array.isArray(txns)) txns = [txns];
     const signedTxns = await this.client.connector.sign(txns);
@@ -168,7 +167,7 @@ export default class Txns extends BaseModule {
   //
   // Send transaction
   // ----------------------------------------------
-  async submitTxn (signedTxn: Uint8Array|Uint8Array[]) {
+  public async submitTxn (signedTxn: Uint8Array|Uint8Array[]) {
     const txn = await this.algod.sendRawTransaction(signedTxn).do();
     return txn;
   }
@@ -176,7 +175,7 @@ export default class Txns extends BaseModule {
   //
   // Wait for txn to be processed 
   // ----------------------------------------------
-  async wait (txnId, maxBlocks = 10): Promise<Record<string, any>> {
+  public async wait (txnId, maxBlocks = 10): Promise<Record<string, any>> {
     const confirmation = await algosdk.waitForConfirmation(this.algod, txnId, maxBlocks);
     return camelcaseKeys(confirmation, { deep: true });
   }

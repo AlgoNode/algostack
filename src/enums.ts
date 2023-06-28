@@ -1,3 +1,4 @@
+export * from './modules/txns/enums.js';
 
 /**
  * Asset categories
