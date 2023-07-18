@@ -49,11 +49,11 @@ export default class Txns extends BaseModule {
     return txn;
   }
 
-  public async prepareTxn(params: TransactionParams) {
+  public async prepareTxn(params: Partial<TransactionParams>): Promise<TransactionParams> {
     const baseParams = await this.getBaseParams();
     return { ...baseParams, ...params }; 
   }
-  public async prepareTxns(group: TransactionParams[]) {
+  public async prepareTxns(group: Partial<TransactionParams>[]): Promise<TransactionParams[]> {
     const baseParams = await this.getBaseParams();
     return group.map(params => ({ ...baseParams, ...params })); 
   }
@@ -72,7 +72,7 @@ export default class Txns extends BaseModule {
   //
   // Single Transaction
   // ----------------------------------------------
-  public async sendTxn(params: TransactionParams, configs?: TxnsConfigs): Promise<Record<string,any>|undefined> {
+  public async sendTxn(params: Partial<TransactionParams>, configs?: TxnsConfigs): Promise<Record<string,any>|undefined> {
     
     try {
       const txnParams = await this.prepareTxn(params);
@@ -90,7 +90,7 @@ export default class Txns extends BaseModule {
   //
   // Grouped Transactions
   // ----------------------------------------------
-  public async sendGroupedTxns(group: TransactionParams[], configs?: TxnsConfigs): Promise<Record<string,any>|undefined>  {
+  public async sendGroupedTxns(group: Partial<TransactionParams>[], configs?: TxnsConfigs): Promise<Record<string,any>|undefined>  {
     try {
       const paramsGroup = await this.prepareTxns(group);
       const txnsGroup = this.makeTxns(paramsGroup);
@@ -111,7 +111,7 @@ export default class Txns extends BaseModule {
   //
   // Sequenced transactions
   // ----------------------------------------------
-  public async sendSequencedTxns(sequence: TransactionParams[]): Promise<Record<string,any>[]|undefined>  {
+  public async sendSequencedTxns(sequence: Partial<TransactionParams>[]): Promise<Record<string,any>[]|undefined>  {
     try {
       const paramsSequence = await this.prepareTxns(sequence);
       const txnsSequence = this.makeTxns(paramsSequence);
