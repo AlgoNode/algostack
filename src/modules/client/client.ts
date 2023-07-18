@@ -8,6 +8,7 @@ import Pera from '../../connectors/pera.js';
 import Defly from '../../connectors/defly.js';
 import Mnemonic from '../../connectors/mnemonic.js';
 import merge from 'lodash-es/merge.js';
+import AlgoStack from '../../index.js';
 
 
 /**
@@ -30,6 +31,13 @@ export default class Client extends BaseModule {
     
     this.storage = new Storage(this.configs.namespace)
     this.optionallyLoadPersisted();
+  }
+  
+
+  public init(stack: AlgoStack) {
+    super.init(stack);
+    if (this.configs.mnemonic) this.connectMnemonic(this.configs.mnemonic);
+    return this;
   }
 
 
