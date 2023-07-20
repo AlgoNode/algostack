@@ -72,7 +72,7 @@ export default class Txns extends BaseModule {
   //
   // Single Transaction
   // ----------------------------------------------
-  public async sendTxn(params: Partial<TransactionParams>, configs?: TxnsConfigs): Promise<Record<string,any>|undefined> {
+  public async sendTxn(params: Partial<TransactionParams>, configs: TxnsConfigs = this.configs): Promise<Record<string,any>|undefined> {
     
     try {
       const txnParams = await this.prepareTxn(params);
@@ -90,7 +90,7 @@ export default class Txns extends BaseModule {
   //
   // Grouped Transactions
   // ----------------------------------------------
-  public async sendGroupedTxns(group: Partial<TransactionParams>[], configs?: TxnsConfigs): Promise<Record<string,any>|undefined>  {
+  public async sendGroupedTxns(group: Partial<TransactionParams>[], configs: TxnsConfigs = this.configs): Promise<Record<string,any>|undefined>  {
     try {
       const paramsGroup = await this.prepareTxns(group);
       const txnsGroup = this.makeTxns(paramsGroup);
