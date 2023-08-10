@@ -501,10 +501,7 @@ export default class Query extends BaseModule {
     let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
     if (params.refreshCache !== undefined) delete params.refreshCache;
     if (params.noCache !== undefined) delete params.noCache;
-    console.log(url, params)
-    // const kebabcaseParams = kebabcaseKeys(params, { deep: true }); 
     data = await this.fetch(url, params, client);
-    // data = camelcaseKeys(data, { deep: true }); 
     
     // cache result
     if (this.cache && store && !originalParams.noCache && !data.error) {
