@@ -1,5 +1,6 @@
 import type Cache from '../cache/index.js';
 import type { QueryParams, Payload, QueryOptions, FilterFn, AddonFn, Addons, QueryConfigs } from './types.js';
+import type { AxiosHeaders, AxiosInstance } from 'axios';
 import { Buffer } from 'buffer'
 import { pRateLimit } from 'p-ratelimit';
 import { utf8ToB64 } from '../../helpers/encoding.js';
@@ -8,7 +9,7 @@ import { BaseModule } from '../_baseModule.js';
 import camelcaseKeys from 'camelcase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
-import axios, { AxiosHeaders } from 'axios';
+import axios from 'axios'; 
 
 /**
  * Query class
@@ -172,15 +173,20 @@ export default class Query extends BaseModule {
   }
 
   private mergeUrlAndParams(url: string, params: Record<string, any>) {
-    params = {...params};
-    Object.entries(params)
-      .forEach(([key,value]) => {
-        if (url.indexOf('/:'+ key) > -1) {
-          url = url.replace(':'+ key, value);
-          delete params[key];
+    if (!url) return { url: '/', params }
+    const unusedParams: Record<string, any> = {}   
+    if (params) {
+      Object.entries(params)
+        .forEach(([key, value]) => {
+        if (url && url.indexOf(':'+ key) > -1) {
+          url = url.replace(':'+ key, String(value));
+        }
+        else {
+          unusedParams[key] = value;
         }
       });
-    return  { url, params };
+    }
+    return { url, params: unusedParams };
   } 
 
   /**
@@ -209,7 +215,7 @@ export default class Query extends BaseModule {
   * Fetch data
   * ==================================================
   */
-  private async fetch(url: string, params: QueryParams = {}) {
+  private async fetch(url: string, params: QueryParams = {}, client: AxiosInstance = axios) {
     try {
       if (url.indexOf(':id') > -1) {
         return { error: { 
@@ -228,7 +234,7 @@ export default class Query extends BaseModule {
       const data = params?.data || params;
 
       const response = await this.rateLimit(
-        () => axios({
+        () => client.request({
           url,
           method,
           headers,
@@ -238,8 +244,8 @@ export default class Query extends BaseModule {
       );
       return response.data;
     }
-    catch (err: any) {
-      return { error: err.toJSON ? err.toJSON() : err};
+    catch (e: any) {
+      return { error: e.toJSON ? e.toJSON() : e};
     }
   }
 
@@ -479,7 +485,8 @@ export default class Query extends BaseModule {
   public async custom(
     apiUrl: string, 
     store: string|null, 
-    originalParams: QueryParams = {}
+    originalParams: QueryParams = {},
+    client?: AxiosInstance,
   ) {
     let data: Payload;
     // get cached data
@@ -494,9 +501,9 @@ export default class Query extends BaseModule {
     let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
     if (params.refreshCache !== undefined) delete params.refreshCache;
     if (params.noCache !== undefined) delete params.noCache;
-
+    console.log(url, params)
     // const kebabcaseParams = kebabcaseKeys(params, { deep: true }); 
-    data = await this.fetch(url, params);
+    data = await this.fetch(url, params, client);
     // data = camelcaseKeys(data, { deep: true }); 
     
     // cache result
