@@ -53,7 +53,7 @@ export default class Medias extends BaseModule {
 
       // get cache
       if (this.cache) {
-        const cached = await this.cache.find('medias/asset', { id });
+        const cached = await this.cache.find('medias/asset', { where: { id }});
         if (cached?.data) return resolve(cached.data);
       }
 

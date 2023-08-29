@@ -21,4 +21,16 @@ export interface CacheConfigs {
 }
 
 export type DurationString = string;
+
+
 export type CacheEntry = Record<string, any>;
+export type CacheWhere = Record<string, any>; 
+export type CacheFilter = (entry: CacheEntry) => boolean;
+export interface CacheQuery {
+  where?: CacheWhere,
+  filter?: CacheFilter,
+  limit?: number,
+  orderBy?: string,
+  order?: 'asc'|'ASC'|'desc'|'DESC',
+  includeExpired?: boolean, 
+}

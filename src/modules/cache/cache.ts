@@ -1,5 +1,5 @@
 import { durationStringToMs } from '../../helpers/format.js';
-import { CacheConfigs, CacheEntry } from './types.js';
+import { CacheConfigs, CacheEntry, CacheQuery, CacheWhere, CacheResults } from './types.js';
 import { BaseModule } from '../_baseModule.js';
 import { indexedDB, IDBKeyRange } from "fake-indexeddb";
 import { makeStrRegExpSafe } from '../../helpers/strings.js';
@@ -126,33 +126,40 @@ export default class Cache extends BaseModule {
   * Find an entry based on its ID and the query
   * ==================================================
   */
-  public async find(store: string, query: CacheEntry): Promise<Record<string,any>|undefined> {
-    if (!this.db[store]) {
+
+
+  public async find<Q extends CacheQuery>(store: string, query: Q): Promise<
+    Q extends { limit: number }
+      ? CacheEntry[]|undefined
+      : CacheEntry|undefined
+  > {
+    let table = this.db[store];
+    if (!table) {
       console.error(`Store not found (${store})`);
-      return;
+      return undefined;
     }
-    query = this.hashObjectProps(query);
-    try {
-      const entry = await this.getEntry(store, query);
-      if (!entry) return;
-      const isExpired = this.isExpired(store, entry);
-      if (isExpired) {
-        if (this.configs.logExpiration) console.warn(`[${store}] Cache entry has expired.`)
-        return;
-      }
-      return entry;
-    }
-    catch(e) {
-      // console.log(store, e)
-      return;
-    };
+    
+    if (query.where) table = table.where( this.hashObjectProps(query.where) );
+    if (query.filter) table = table.filter( query.filter );
+    if (query.orderBy) table = table.orderBy(query.orderBy);
+    if (query.order && ['desc', 'DESC'].includes(query.order)) table = table.desc();
+    if (!query.includeExpired) table = table.filter( (entry: CacheEntry) => !this.isExpired(store, entry));
+
+    //
+    // Return a single entry object
+    // if no limit param is defined 
+    // Default behavior
+    // --------------------------------------------------
+    if (query.limit === undefined) return await table.first();
+
+    //
+    // Find multiple entries
+    // --------------------------------------------------    
+    return await table
+      .limit(query.limit)
+      .toArray();
   }
 
-  public async getEntry(store: string, query: CacheEntry) {
-    if (!this.db[store]) return console.error(`Store not found (${store})`);
-    query = this.hashObjectProps(query);
-    return await this.db[store].get(query) as Record<string, any>;
-  }
 
   public async search(store: string, str: string, keys: string[]) {
     if (!this.db[store]) return console.error(`Store not found (${store})`);
@@ -220,6 +227,8 @@ export default class Cache extends BaseModule {
   public isExpired(store: string, entry: CacheEntry) {
     const expiration = this.getExpiration(store);
     const isExpired = entry.timestamp + expiration < Date.now();
+    if ( isExpired && this.configs.logExpiration) 
+      console.warn(`[${store}] Cache entry has expired.`)
     return isExpired;
   }
 

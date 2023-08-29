@@ -63,7 +63,7 @@ export default class NFDs extends BaseModule{
       if (!isAddress(address)) return resolve([]);
       // get cache
       if (this.cache) {
-        const cached = await this.cache.find('nfd/lookup', { address });
+        const cached = await this.cache.find('nfd/lookup', { where: { address }});
         if (cached) return resolve(full ? cached.data : cached.nfds);
       }
       // check if a task is currently fetching this address
@@ -121,7 +121,7 @@ export default class NFDs extends BaseModule{
     return new Promise(async resolve => {
       // get cache
       if (this.cache) {
-        const cached = await this.cache.find('nfd/lookup', { nfds: domain });
+        const cached = await this.cache.find('nfd/lookup', { where: { nfds: domain }});
         if (cached?.address) return resolve(cached.address);
       }
   
@@ -172,7 +172,7 @@ export default class NFDs extends BaseModule{
     
     // get cache
     if (this.cache && !originalParams.refreshCache && !originalParams.noCache) {
-      const cached = await this.cache.find('nfd/search', { params });
+      const cached = await this.cache.find('nfd/search', { where: { params }});
       if (cached) return cached.data;
     }
 
@@ -196,7 +196,6 @@ export default class NFDs extends BaseModule{
     if (this.cache && !originalParams.noCache) {
       await this.cache.save('nfd/search', results, { params });
     }
-
 
     return results;
   }

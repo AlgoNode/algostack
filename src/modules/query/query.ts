@@ -50,7 +50,7 @@ export default class Query extends BaseModule {
 
     // get cached data
     if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
-      const cached = await this.cache.find(store, { params: originalParams });
+      const cached = await this.cache.find(store, { where: { params: originalParams }});
       if (cached) {
         data = cached.data
         return data;
@@ -473,11 +473,6 @@ export default class Query extends BaseModule {
   }
 
 
-
-
-
-
-
   /**
   * Custom queries
   * ==================================================
@@ -491,7 +486,7 @@ export default class Query extends BaseModule {
     let data: Payload;
     // get cached data
     if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
-      const cached = await this.cache.find(store, { params: originalParams });
+      const cached = await this.cache.find(store, { where: { params: originalParams }});
       if (cached) {
         data = cached.data
         return data;
