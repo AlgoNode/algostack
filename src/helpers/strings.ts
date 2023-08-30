@@ -1,6 +1,3 @@
-import escapeRegExp from 'lodash-es/escapeRegExp.js';
-
-
 
 // Integers
 export function isIntegers(str: string) {
@@ -114,12 +111,4 @@ export function getContentTypeFromUrl(url: string) {
     if (extensions.includes(ext)) mime = `${category}/${ext}`;
   });
   return mime;
-}
-
-
-// Make sure a string is safe for regexes. 
-// Can be ran multiple times on the same string.
-export function makeStrRegExpSafe(str?: string) {
-  if (!str) return '';
-  return escapeRegExp(str).replace(/\\(\\)./g, '\\');
 }

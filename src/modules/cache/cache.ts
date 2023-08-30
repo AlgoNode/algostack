@@ -1,8 +1,7 @@
 import { durationStringToMs } from '../../helpers/format.js';
-import { CacheConfigs, CacheEntry, CacheQuery, CacheWhere, CacheResults } from './types.js';
+import { CacheConfigs, CacheEntry, CacheQuery } from './types.js';
 import { BaseModule } from '../_baseModule.js';
 import { indexedDB, IDBKeyRange } from "fake-indexeddb";
-import { makeStrRegExpSafe } from '../../helpers/strings.js';
 import Dexie, { DexieError } from 'dexie';
 import objHash from 'object-hash';
 import AlgoStack from '../../index.js';
@@ -158,24 +157,6 @@ export default class Cache extends BaseModule {
     return await table
       .limit(query.limit)
       .toArray();
-  }
-
-
-  public async search(store: string, str: string, keys: string[]) {
-    if (!this.db[store]) return console.error(`Store not found (${store})`);
-    const regexSafeStr =  makeStrRegExpSafe();
-    const includesStr = new RegExp( regexSafeStr, 'i');
-    const results = await this.db[store].filter((entry) => (
-      Object.entries(entry.data)
-        .filter(([key]) => keys.includes(key))
-        .some(([, value]) => (
-          Array.isArray(value)
-            ? value.some(value => typeof value === 'string' && includesStr.test(value))
-            : typeof value === 'string' && includesStr.test(value)
-        ))
-    )).toArray();
-    const entries = results.map(entry => entry.data); 
-    return entries;
   }
 
 
