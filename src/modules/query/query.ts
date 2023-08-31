@@ -163,10 +163,10 @@ export default class Query extends BaseModule {
   * ==================================================
   */
   private shouldFetchNext(data: Payload, params: QueryParams) {
-    if (params.limit === -1 && data['next-token']) return true;
+    if (params.limit === -1 && data.nextToken) return true;
     if (params.filter 
       && params.limit 
-      && data['next-token']
+      && data.nextToken
       && this.getResultsQty(data) < params.limit
     ) return true;
     return false;
