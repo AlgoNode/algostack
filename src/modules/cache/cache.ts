@@ -138,12 +138,12 @@ export default class Cache extends BaseModule {
       return undefined;
     }
     
-    if (query.where) table = table.where( this.hashObjectProps(query.where) );
-    if (query.filter) table = table.filter( query.filter );
     if (query.orderBy) table = table.orderBy(query.orderBy);
     if (query.order && ['desc', 'DESC'].includes(query.order)) table = table.desc();
+    if (query.where) table = table.where( this.hashObjectProps(query.where) );
+    if (query.filter) table = table.filter( query.filter );
     if (!query.includeExpired) table = table.filter( (entry: CacheEntry) => !this.isExpired(store, entry));
-
+    
     //
     // Return a single entry object
     // if no limit param is defined 
@@ -154,9 +154,7 @@ export default class Cache extends BaseModule {
     //
     // Find multiple entries
     // --------------------------------------------------    
-    return await table
-      .limit(query.limit)
-      .toArray();
+    return await table.limit(query.limit).toArray();
   }
 
 
