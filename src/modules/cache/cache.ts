@@ -91,7 +91,7 @@ export default class Cache extends BaseModule {
     if (stack.nfds) {
       stores = { 
         ...stores, 
-        'nfd/lookup': '&address, *nfds',
+        'nfd/lookup': '&address, nfd',
         'nfd/search': '&params', 
       };
     }

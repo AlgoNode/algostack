@@ -4,7 +4,7 @@ import chunk from 'lodash-es/chunk.js';
 import AlgoStack from '../../index.js';
 import type Cache from '../cache/index.js';
 import { NFDConfigs, NFDProps, NFDQueryCallback } from './types.js';
-import { isAddress } from '../../helpers/strings.js';
+import { isAddress, isDomain } from '../../helpers/strings.js';
 import { QueryParams } from '../query/types.js';
 import { BaseModule } from '../_baseModule.js';
 import merge from 'lodash-es/merge.js';
@@ -17,11 +17,13 @@ import merge from 'lodash-es/merge.js';
 export default class NFDs extends BaseModule{
   private configs: NFDConfigs;
   protected cache?: Cache;
-  protected fetching: Record<string, NFDQueryCallback[]>;
+  protected lookupQueue: Record<string, NFDQueryCallback[]>;
+  protected whoisQueue: Record<string, NFDQueryCallback[]>;
 
   constructor(configs: NFDConfigs = {}) {
     super();
-    this.fetching = {};
+    this.lookupQueue = {};
+    this.whoisQueue = {};
     this.configs = merge({
       nfdApiUrl: 'https://api.nf.domains',
     }, configs);
@@ -35,77 +37,59 @@ export default class NFDs extends BaseModule{
 
 
   /**
-  * Get a single NFD data
-  * ==================================================
-  */
-  async getNFD (nfd: string): Promise<NFDProps|undefined> {
-    // TODO : add cache
-    if (!nfd) return undefined;
-    try {
-      const { data } = await axios.get(`${this.configs.nfdApiUrl}/nfd/${nfd.toLocaleLowerCase()}`, { 
-        params: { view: 'full' }
-      });
-      if (!data) return undefined;
-      const result = this.prepareResults([data]);
-      return result[0];
-    } catch {
-      return undefined
-    } 
-  }
-
-
-  /**
+  * LOOKUPS 
   * Get NFDs for a given address (batched lookup)
   * ==================================================
   */
-  async getNFDs <T extends boolean|undefined>(address: string, full?: T): Promise<T extends true ? NFDProps[] : string[] > {
+  async lookup <T extends boolean|undefined>(address: string, full?: T): Promise<(T extends true ? NFDProps : string)|undefined> {
     return new Promise(async resolve => {
-      if (!isAddress(address)) return resolve([]);
+      if (!isAddress(address)) return resolve(undefined);
       // get cache
       if (this.cache) {
         const cached = await this.cache.find('nfd/lookup', { where: { address }});
-        if (cached) return resolve(full ? cached.data : cached.nfds);
+        if (cached) return resolve(full ? cached.data : cached.nfd);
       }
       // check if a task is currently fetching this address
-      if (!this.fetching[address]) this.fetching[address] = [];  
-      this.fetching[address].push({ full, resolve });
+      if (!this.lookupQueue[address]) this.lookupQueue[address] = [];  
+      this.lookupQueue[address].push({ full, resolve });
       // trigger throttled fetch
-      this.batchFetchNFDs();
+      this.batchLookups();
     })
   }
 
+  // Legacy method
+  async getNFDs <T extends boolean|undefined>(address: string, full?: T): Promise<(T extends true ? NFDProps : string)[] > {
+    return new Promise(async resolve => {
+      const result = await this.lookup(address, full);
+      resolve(result ? [result] : []);
+    })
+  }
 
-  /**
-  * Fetch address batch
-  * ==================================================
-  */
-  private batchFetchNFDs = throttle( async () => {
-    const fetching: string[] = Object.keys(this.fetching)
-    const batches = chunk(fetching, 20);
+  // Run lookup batches
+  private batchLookups = throttle( async () => {
+    const queue: string[] = Object.keys(this.lookupQueue)
+    const batches: string[][] = chunk(queue, 20);
     batches.forEach( async addresses => {
-      let results: Record<string, NFDProps[]> = {}; 
+      let results: Record<string, NFDProps> = {}; 
       const addressesQueryString = `address=${addresses.join('&address=')}`;
       try {
-        const response = await axios.get(`${this.configs.nfdApiUrl}/nfd/v2/address?${addressesQueryString}`, { 
+        const response = await axios.get(`${this.configs.nfdApiUrl}/nfd/lookup?${addressesQueryString}`, { 
           params: { view: 'full' }
         });
         if (response?.data) results = response.data
       } catch {}
       // loop each address in batch to map it with results
       addresses.forEach( async address => {
-        const verified = this.prepareResults(results[address] || [], address)
-        // map domains only
-        const domains = verified
-          .filter(nfd => nfd?.name)
-          .map(nfd => nfd.name);
+        let nfd = results[address];
+        nfd = this.prepareResult(results[address])
         // trigger current stack
-        if (this.fetching[address]?.length) {
-          this.fetching[address].forEach(({full, resolve}) => resolve(full ? verified : domains));
-          delete this.fetching[address];
+        if (this.lookupQueue[address]?.length) {
+          this.lookupQueue[address].forEach(({full, resolve}) => resolve(full ? nfd : nfd?.name));
+          delete this.lookupQueue[address];
         }
         // save cache
         if (this.cache) {
-          await this.cache.save('nfd/lookup', verified, { address, nfds: domains });
+          await this.cache.save('nfd/lookup', nfd, { address, nfd: nfd?.name });
         }
       });
     });  
@@ -114,49 +98,61 @@ export default class NFDs extends BaseModule{
 
 
   /**
-  * Get Address
+  * WHOIS
+  * Reverse lookups
   * ==================================================
   */
-  async getAddress (domain: string): Promise<string|undefined> {
+
+
+  async whois (name: string): Promise<NFDProps|undefined> {
     return new Promise(async resolve => {
+      if (!isDomain(name)) return resolve(undefined);
       // get cache
       if (this.cache) {
-        const cached = await this.cache.find('nfd/lookup', { where: { nfds: domain }});
-        if (cached?.address) return resolve(cached.address);
+        const cached = await this.cache.find('nfd/lookup', { where: { nfd: name }});
+        if (cached) return resolve(cached.data);
+
       }
-  
       // check if a task is currently fetching this address
-      if (this.fetching[domain]) {
-        this.fetching[domain].push({ resolve, full: false });
-        return;
-      }
+      if (!this.whoisQueue[name]) this.whoisQueue[name] = [];  
+      this.whoisQueue[name].push({ resolve });
+      // trigger throttled fetch
+      this.batchWhois();
+    });
+  }
 
-      // get results
-      let results = [];
-      this.fetching[domain] = [];  
-      try {
-        const response = await axios.get(`${this.configs.nfdApiUrl}/nfd/${domain}`);
-        if (response?.data) results = [response.data]
-      } catch {}
-      
-      const address = results[0]?.depositAccount;
-
-      // trigger current stack
-      if (this.fetching[domain]) {
-        this.fetching[domain].forEach(({ resolve }) => resolve(address));
-        delete this.fetching[domain];
-      }
-  
-      // save cache 
-      // TODO : find a way to save a single nfd and maybe add more later
-      // if (this.cache && address) {
-      //   await this.cache.save('nfd/lookup', results, { address, nfds: domain });
-      // }
-
-      // resolve 
-      resolve(address);
+  // Legacy methods
+  async getNFD (nfd: string): Promise<NFDProps|undefined> {
+    return this.whois(nfd);
+  }
+  async getAddress (name: string): Promise<string|undefined> {
+    return new Promise(async resolve => {
+      const nfd = await this.whois(name);
+      resolve(nfd?.depositAccount);
     })
   }
+
+  // batch whois
+  private batchWhois = throttle( async () => {
+    const queue: string[] = Object.keys(this.whoisQueue)
+    const batches: string[] = chunk(queue, 20);
+    batches.forEach( async (name) => {
+      let nfd: NFDProps|undefined; 
+      try {
+        const { data } = await axios.get(`${this.configs.nfdApiUrl}/nfd/${name.toLocaleLowerCase()}`, { 
+          params: { view: 'full' }
+        });
+        nfd = this.prepareResult(data)
+      } catch {}
+
+      // trigger current stack
+      if (this.whoisQueue[name]?.length) {
+        this.whoisQueue[name].forEach(({ resolve }) => resolve( nfd ));
+        delete this.whoisQueue[name];
+      }
+    });  
+  }, 200);
+  
 
 
   /**
@@ -176,7 +172,6 @@ export default class NFDs extends BaseModule{
       if (cached) return cached.data;
     }
 
-
     let results = [];
     try {
       const response = await axios.get(`${this.configs.nfdApiUrl}/nfd/v2/search`, {
@@ -188,7 +183,7 @@ export default class NFDs extends BaseModule{
       })
       const nfds = response.data?.nfds;
       if (nfds.length) {
-        results = this.prepareResults(nfds);
+        results = nfds.map(this.prepareResult.bind(this));
       }
     } catch {}
 
@@ -205,35 +200,22 @@ export default class NFDs extends BaseModule{
   * Helpers
   * ==================================================
   */
-  private prepareResults(nfds: NFDProps[], address?: string) {
-    if (address) {
-      nfds = nfds.filter(nfd => (
-        nfd?.depositAccount === address
-        || nfd?.caAlgo?.includes(address)
-      ));
-    }
-    // add scores
-    nfds.forEach(nfd => nfd.score = this.getNFDScore(nfd, address));
-    // sort by avatar
-    nfds.sort((a, b) => ((b.score||0) - (a.score||0)));
-    // add avatars
-    nfds.forEach(nfd => {
-      if (!nfd.properties) return;
-      if (nfd.properties.verified) {
-        // verified doesnt get cleared up 
-        // so if both are there, take userdefined
-        nfd.avatar = nfd.properties?.userDefined?.avatar || nfd.properties.verified?.avatar;  
-        return;
-      }
+  private prepareResult(nfd?: NFDProps) {
+    if (!nfd) return undefined
+    // add score
+    nfd.score = this.getNFDScore(nfd);
+    // verified doesnt get cleared up 
+    // so if both are there, take userdefined
+    if (nfd.properties.verified) 
+      nfd.avatar = nfd.properties?.userDefined?.avatar || nfd.properties.verified?.avatar;  
+    else 
       nfd.avatar = nfd.properties?.userDefined?.avatar;
-    });
-    return nfds;
+    return nfd;
   }
 
-  private getNFDScore(nfd: NFDProps, address?: string) {
+  private getNFDScore(nfd: NFDProps) {
     let score = 0;
     const { properties: props } = nfd
-    if (address && address === nfd.depositAccount) score += 15;
     if (!props) return score;
     ['avatar', 'domain', 'email', 'twitter', 'discord'].forEach(contact => {
       if (props?.verified?.[contact]) score += 1.75;
@@ -242,7 +224,5 @@ export default class NFDs extends BaseModule{
     return score;
   }
   
-
-
 }
 

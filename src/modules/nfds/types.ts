@@ -47,6 +47,6 @@ export interface NFDProps {
 
 
 export type NFDQueryCallback = {
-  full: boolean,
   resolve: ((PromiseLike) => void)
+  full?: boolean,
 };
