@@ -240,5 +240,26 @@ export default class Cache extends BaseModule {
   private async clearAll() {
     await this.db.delete();
   }
+
+  /**
+  * Prune
+  * ==================================================
+  */
+  public async prune(stores?: string|string[]) {
+    const pruned = {}; 
+    if (stores === undefined) stores = this.db.tables.map(table => table.name);
+    else if (typeof stores === 'string') stores = [stores];
+    for (let i=0; i<stores.length; i++) {
+      const store = stores[i]
+      const table = this.db[store];
+      const expirationLimit = Date.now() - this.getExpiration(store);
+      const expired = await table
+        .filter(entry => entry.timestamp < expirationLimit)
+        .delete();
+      if (expired) pruned[store] = expired;
+    }
+    return pruned;
+  }
+
 }
 
