@@ -111,7 +111,6 @@ export default class NFDs extends BaseModule{
       if (this.cache) {
         const cached = await this.cache.find('nfd/lookup', { where: { nfd: name }});
         if (cached) return resolve(cached.data);
-
       }
       // check if a task is currently fetching this address
       if (!this.whoisQueue[name]) this.whoisQueue[name] = [];  
@@ -135,8 +134,7 @@ export default class NFDs extends BaseModule{
   // batch whois
   private batchWhois = throttle( async () => {
     const queue: string[] = Object.keys(this.whoisQueue)
-    const batches: string[] = chunk(queue, 20);
-    batches.forEach( async (name) => {
+    queue.forEach( async (name) => {
       let nfd: NFDProps|undefined; 
       try {
         const { data } = await axios.get(`${this.configs.nfdApiUrl}/nfd/${name.toLocaleLowerCase()}`, { 
