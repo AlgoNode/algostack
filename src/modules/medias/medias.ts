@@ -91,7 +91,6 @@ export default class Medias extends BaseModule {
     }
     else if (data.external_url) {
       const image = await this.rateLimit( () => this.files.getMeta(data.external_url));
-      console.log(data.external_url)
       if (image.type === MediaType.IMAGE) {
         arc3Files.push(image);
       }
