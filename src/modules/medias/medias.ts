@@ -8,6 +8,7 @@ import { BaseModule } from '../_baseModule.js';
 import AlgoStack from '../../index.js';
 import Files from '../files/index.js';
 import merge from 'lodash-es/merge.js';
+import { isDomainUrl } from '../../helpers/strings.js';
 
 
 /**
@@ -57,13 +58,17 @@ export default class Medias extends BaseModule {
         if (cached?.data) return resolve(cached.data);
       }
 
-      // get medias
-      let url = params.url as string;
-      if (String(params.url).startsWith('template-ipfs://')) {
-        const arc19Url = getIpfsFromAddress(params, url);
-        if (arc19Url) url = arc19Url;
-      }
-      files = await this.getMedias(url);
+      // only check if not a domain url
+      if (!isDomainUrl(params.url)) {
+        // get medias
+        let url = params.url as string;
+        if (String(params.url).startsWith('template-ipfs://')) {
+          const arc19Url = getIpfsFromAddress(params, url);
+          if (arc19Url) url = arc19Url;
+        }
+        files = await this.getMedias(url);
+      };
+
       
       // save cache
       if (this.cache) {
