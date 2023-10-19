@@ -108,10 +108,10 @@ export default class Cache extends BaseModule {
         if (typeof store === 'string') extraStores[store] = '&params';
         else extraStores[store.name] = store.index || '&params';
       });
-      stores = {
-        ...extraStores,
-        ...stores,
-      }
+      stores = Object.fromEntries(
+        Object.entries({ ...extraStores, ...stores })
+          .sort(([a],[b]) => a.localeCompare(b))
+      );      
     }
     
     // Init
