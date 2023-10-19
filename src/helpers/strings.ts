@@ -40,7 +40,7 @@ export function isTransaction(str: string) {
 // check if string is a valid url
 // https://www.freecodecamp.org/news/check-if-a-javascript-string-is-a-url/
 const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
-  '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // validate domain name
+  '(([a-z\\d-]*\\.)+[a-z]{2,}|'+ // validate domain name
   '((\\d{1,3}\\.){3}\\d{1,3}))'+ // validate OR ip (v4) address
   '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // validate port and path
   '(\\?[;&a-z\\d%_.~+=-]*)?'+ // validate query string
@@ -50,9 +50,7 @@ export function isUrl(str: string) {
 }
 
 // url is a domain base (no files at thte end)
-const domainPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
-  '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,})'+ // validate domain name
-  '(\/)?$','i'); // optionnal trailing slash
+const domainPattern = /^(https?:\/\/)?([a-z\d-]*\.)+[a-z]{2,}\/?$/i; // optionnal trailing slash
 export function isDomainUrl(str: string) {
   return domainPattern.test(str);
 }

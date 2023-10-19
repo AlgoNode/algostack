@@ -41,8 +41,6 @@ export default class Files extends BaseModule {
       thumbnail: undefined,
       content: undefined,
     }
-
-
     if (this.configs.transformUrl) file.url = await Promise.resolve(this.configs.transformUrl(url));
     if (!isUrl(file.url) && !isIpfsProtocol(file.url)) return file;
     file.cid = getIpfsCid(file.url);

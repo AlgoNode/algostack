@@ -1,5 +1,6 @@
 import type { Version as CIDVersion } from 'multiformats/dist/types/src/link/interface';
 import axios, { ResponseType } from 'axios';
+import { pRateLimit } from 'p-ratelimit';
 import { decodeAddress, encodeAddress } from 'algosdk';
 import { CID } from 'multiformats/cid';
 import * as mfsha2 from 'multiformats/hashes/sha2';
@@ -8,23 +9,18 @@ import { getContentTypeFromUrl, isDomainUrl, isIpfsSubdomain } from './strings.j
 
 
 
-
 /**
  * Get file content
  * ==================================================
  */
- export function getFileContent(url: string, responseType: ResponseType = 'text'): Promise<string|undefined> {
-  return new Promise(async resolve => {
-    try {
-      const response = await axios.get(url, { 
-        responseType
-      });
-      resolve(response.data);
-    } 
-    catch (e) {
-      resolve(undefined);
-    }
-  })
+ export async function getFileContent(url: string, responseType: ResponseType = 'text') {
+  try {
+    const response = await axios.get(url, { responseType });
+    return response.data;
+  } 
+  catch (e) {
+    return undefined;
+  }
 }
 
 
@@ -34,21 +30,18 @@ import { getContentTypeFromUrl, isDomainUrl, isIpfsSubdomain } from './strings.j
  * inspired by https://stackoverflow.com/questions/38679681/getting-a-file-type-from-url#answer-38679875
  * ==================================================
  */
- export function getFileType(url: string): Promise<string> {
-  return new Promise(async resolve => {
-    if (isDomainUrl(url) && !isIpfsSubdomain(url)) return resolve('text/html');
-    const contentType = getContentTypeFromUrl(url);
-    if (contentType) return resolve(contentType)
-    try {
-      const head = await axios.head(url, { maxRedirects: 0 });
-      const contentType = head.headers['content-type']; 
-      resolve(contentType);
-    } 
-    catch (e) {
-      // console.log(e)
-      resolve(undefined);
-    }
-  });
+ export async function getFileType(url: string) {
+  if (isDomainUrl(url) && !isIpfsSubdomain(url)) return 'text/html';
+  const contentType = getContentTypeFromUrl(url);
+  if (contentType) return contentType;
+  try {
+    const head = await axios.head(url, { maxRedirects: 0 });
+    const contentType = head.headers['content-type']; 
+    return contentType;
+  } 
+  catch (e) {
+    return undefined;
+  }
 }
 
 
