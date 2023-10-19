@@ -2,7 +2,7 @@ import { durationStringToMs } from '../../helpers/format.js';
 import { CacheConfigs, CacheEntry, CacheQuery } from './types.js';
 import { BaseModule } from '../_baseModule.js';
 import { indexedDB, IDBKeyRange } from "fake-indexeddb";
-import Dexie, { DexieError } from 'dexie';
+import Dexie, { Collection, DexieError } from 'dexie';
 import objHash from 'object-hash';
 import AlgoStack from '../../index.js';
 import merge from 'lodash-es/merge.js';
@@ -120,18 +120,11 @@ export default class Cache extends BaseModule {
   }  
 
 
-
   /**
-  * Find an entry based on its ID and the query
+  * Get a collection bvased on a query
   * ==================================================
   */
-
-
-  public async find<Q extends CacheQuery>(store: string, query: Q): Promise<
-    Q extends { limit: number }
-      ? CacheEntry[]|undefined
-      : CacheEntry|undefined
-  > {
+  private async getCollection(store: string, query: CacheQuery): Promise<Collection|undefined> {
     let table = this.db[store];
     if (!table) {
       console.error(`Store not found (${store})`);
@@ -143,18 +136,32 @@ export default class Cache extends BaseModule {
     if (query.where) table = table.where( this.hashObjectProps(query.where) );
     if (query.filter) table = table.filter( query.filter );
     if (!query.includeExpired) table = table.filter( (entry: CacheEntry) => !this.isExpired(store, entry));
-    
+    return table;
+  } 
+
+
+  /**
+  * Find an entry based on its ID and the query
+  * ==================================================
+  */
+  public async find<Q extends CacheQuery>(store: string, query: Q): Promise<
+    Q extends { limit: number }
+      ? CacheEntry[]|undefined
+      : CacheEntry|undefined
+  > {
+    const collection = await this.getCollection(store, query)
+    if (!collection) return undefined;
     //
     // Return a single entry object
     // if no limit param is defined 
     // Default behavior
     // --------------------------------------------------
-    if (query.limit === undefined) return await table.first();
+    if (query.limit === undefined) return await collection.first();
 
     //
     // Find multiple entries
     // --------------------------------------------------    
-    return await table.limit(query.limit).toArray();
+    return await collection.limit(query.limit).toArray();
   }
 
 
@@ -175,6 +182,16 @@ export default class Cache extends BaseModule {
     catch(e) {
       await this.handleError(e, store);
     }
+  }
+
+  /**
+  * Delete en entry
+  * ==================================================
+  */
+  public async delete(store: string, query: CacheQuery): Promise<number> {
+    const collection = await this.getCollection(store, query);
+    if (!collection) return 0;
+    return await collection.delete();
   }
 
 
