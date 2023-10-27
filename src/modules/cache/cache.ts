@@ -6,6 +6,7 @@ import Dexie, { Collection, DexieError } from 'dexie';
 import objHash from 'object-hash';
 import AlgoStack from '../../index.js';
 import merge from 'lodash-es/merge.js';
+import { config } from 'process';
 
 
 /**
@@ -19,6 +20,18 @@ export default class Cache extends BaseModule {
 
   constructor(configs: CacheConfigs = {}) {
     super();
+    this.setConfigs(configs);
+    this.db = new Dexie(
+      this.configs.namespace, 
+      typeof window !== 'undefined' && window.indexedDB 
+        ? undefined
+        : { indexedDB, IDBKeyRange }
+      );
+  }
+
+  public setConfigs(configs: CacheConfigs) {
+    super.setConfigs(configs);
+    this.v = this.stack?.configs?.version || 1; 
     this.configs = merge({
       namespace: 'algostack',
       stores: undefined,
@@ -39,19 +52,12 @@ export default class Cache extends BaseModule {
         'medias/asset': '1d',
       },
     }, configs);
-
-    this.db = new Dexie(
-      this.configs.namespace, 
-      typeof window !== 'undefined' && window.indexedDB 
-        ? undefined
-        : { indexedDB, IDBKeyRange }
-      );
+    if (this.stack) this.init(this.stack);
   }
 
 
   public init(stack: AlgoStack) {
     super.init(stack);
-    this.v = stack.configs.version; 
     let stores: Record<string, string> = {}
     // Query module
     if (stack.query) {

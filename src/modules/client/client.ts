@@ -24,16 +24,18 @@ export default class Client extends BaseModule {
 
   constructor(configs: ClientConfigs) {
     super();
+    this.setConfigs(configs);
+  }
+
+  public setConfigs(configs: ClientConfigs) {
     this.configs = merge({
       namespace: 'algostack',
       persistConnection: true,
     }, configs); 
-    
     this.storage = new Storage(this.configs.namespace)
     this.optionallyLoadPersisted();
   }
   
-
   public init(stack: AlgoStack) {
     super.init(stack);
     if (this.configs.mnemonic) this.connectMnemonic(this.configs.mnemonic);

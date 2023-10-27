@@ -12,7 +12,7 @@ import merge from 'lodash-es/merge.js';
  * ==================================================
  */
 export default class Files extends BaseModule {
-  private configs: FilesConfigs
+  protected configs: FilesConfigs
 
   /**
    * Constructor
@@ -20,13 +20,16 @@ export default class Files extends BaseModule {
    */
   constructor(configs: FilesConfigs = {}) {
     super();
+    this.setConfigs(configs);
+  }
+
+  public setConfigs(configs: FilesConfigs) {
+    super.setConfigs(configs);
     this.configs = merge({
       ipfsGatewayUrl: 'https://ipfs.algonode.xyz/ipfs',
       transformUrl: undefined,
     }, configs);
   }
-
-
   /**
    * load data from URL
    * ==================================================

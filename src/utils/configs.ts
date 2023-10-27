@@ -3,7 +3,9 @@
  * All configs available in AlgoStack
  * ==================================================
  */
-export interface Configs {
+export interface BaseConfigs {}
+
+export interface Configs extends BaseConfigs {
   version?: number,
   // Indexer and Node urls used to interact with the blockchain
   indexerUrl?: string,

@@ -22,11 +22,16 @@ export default class Medias extends BaseModule {
   protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
   constructor(configs: MediasConfigs) {
     super();
-    this.configs = merge({}, configs);
+    this.setConfigs(configs);
     this.rateLimit = pRateLimit({
       interval: 1000,
       rate: 100, 
     });
+  }
+
+  public setConfigs(configs: MediasConfigs) {
+    super.setConfigs(configs);
+    this.configs = merge({}, configs);
   }
  
   public init(stack: AlgoStack) {

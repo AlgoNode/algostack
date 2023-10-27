@@ -21,9 +21,14 @@ export default class Txns extends BaseModule {
 
   constructor(configs: TxnsConfigs = {}) {
     super();
+    this.setConfigs(configs);
+  }
+
+  public setConfigs(configs: TxnsConfigs) {
+    super.setConfigs(configs);
     this.configs = merge({
       wait: true,
-    }, configs); 
+    }, configs);
   }
 
   public init(stack: AlgoStack) {

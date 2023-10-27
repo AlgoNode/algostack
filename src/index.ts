@@ -1,5 +1,5 @@
 import type { Configs } from './utils/configs.js';
-import type { PlugableModules } from './types.js';
+import type { ModuleKey, ModulesConfigs, PlugableModules } from './types.js';
 import type { LookupMethods, SearchMethods } from './modules/query/index.js';
 import type Client from './modules/client/index.js';
 import type Txns from './modules/txns/index.js';
@@ -31,13 +31,11 @@ export default class AlgoStack {
   public search?: SearchMethods;
 
 
-  constructor (configs?: Configs, modules: PlugableModules = {}) {
-    
+  constructor (configs: Configs = {}, modules: PlugableModules = {}) {
     this.configs = merge(defaultConfigs, configs);
 
     // Add modules
     if (modules.cache) this.cache = modules.cache;
-
     if (modules.nfds) this.nfds = modules.nfds.init(this);
     if (modules.client) this.client = modules.client.init(this);
     if (modules.txns) this.txns = modules.txns.init(this);
@@ -52,5 +50,13 @@ export default class AlgoStack {
     // init cache after every other modules
     if (this.cache) this.cache.init(this);
 
+  }
+
+  public setConfigs(configs: ModulesConfigs) {
+    if (configs.global) this.configs =  merge(defaultConfigs, configs.global)
+    Object.entries(configs)
+      .forEach(([module, configs]) => {
+        if (this[module]) this[module].setConfigs(configs)
+      })
   }
 }

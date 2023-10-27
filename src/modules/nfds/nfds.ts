@@ -24,11 +24,15 @@ export default class NFDs extends BaseModule{
     super();
     this.lookupQueue = {};
     this.whoisQueue = {};
+    this.setConfigs(configs);
+  }
+  
+  public setConfigs(configs: NFDConfigs) {
     this.configs = merge({
       nfdApiUrl: 'https://api.nf.domains',
     }, configs);
   }
-  
+
   public init(stack: AlgoStack) {
     super.init(stack);
     this.cache = stack.cache;
