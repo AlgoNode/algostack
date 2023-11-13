@@ -10,6 +10,8 @@ export default class Pera extends BaseConnector {
     super();
     if (typeof window === 'undefined') return;
     this.connector = new PeraWalletConnect();
+    this.connector.connector?.on('disconnect', this.disconnect.bind(this))
+
     const persistedWC = JSON.parse(localStorage.getItem('walletconnect') || '{}');
     if (persistedWC.connected) {
       this.connector.reconnectSession();
@@ -27,7 +29,7 @@ export default class Pera extends BaseConnector {
       const addresses = await this.connector.connect();
       return addresses;
     } 
-    catch {
+    catch (e) {
       return undefined
     }
   }
@@ -72,5 +74,6 @@ export default class Pera extends BaseConnector {
   disconnect() {
     if (!this.connector) return;
     this.connector.disconnect();
+    localStorage.removeItem('walletconnect');
   }
 }
