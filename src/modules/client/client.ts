@@ -70,13 +70,13 @@ export default class Client extends BaseModule {
       return this._addresses;
     }
     else {
-      this.disconnect();
+      await this.disconnect();
       return undefined;
     }
   }
 
-  public disconnect() {
-    if (this._connector) this._connector.disconnect();
+  public async disconnect() {
+    if (this._connector) await this._connector.disconnect();
     this._connected = undefined;
     this._connector = undefined;
     this._addresses = [];

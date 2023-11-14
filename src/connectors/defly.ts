@@ -10,7 +10,6 @@ export default class Pera extends BaseConnector {
     super();
     if (typeof window === 'undefined') return;
     this.connector = new DeflyWalletConnect();
-    this.connector.connector?.on('disconnect', this.disconnect.bind(this))
 
     const persistedWC = JSON.parse(localStorage.getItem('walletconnect') || '{}');
     if (persistedWC.connected) {
@@ -27,6 +26,7 @@ export default class Pera extends BaseConnector {
     // connect
     try {
       const addresses = await this.connector.connect();
+      this.connector.connector?.on('disconnect', this.disconnect.bind(this))
       return addresses;
     } 
     catch (e){
@@ -40,7 +40,8 @@ export default class Pera extends BaseConnector {
   public async reconnect (): Promise<string[]|undefined> {
     if (!this.connector) return undefined;
     try {
-      const addresses = await this.connector.reconnectSession();;
+      const addresses = await this.connector.reconnectSession();
+      this.connector.connector?.on('disconnect', this.disconnect.bind(this))
       return addresses;
     } 
     catch {
@@ -71,9 +72,8 @@ export default class Pera extends BaseConnector {
   //
   // Disconnect
   // ----------------------------------------------
-  disconnect() {
+  public async disconnect() {
     if (!this.connector) return;
-    this.connector.disconnect();
-    localStorage.removeItem('walletconnect');
+    await this.connector.disconnect();
   }
 }
