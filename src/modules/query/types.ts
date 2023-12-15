@@ -11,14 +11,14 @@ export interface QueryOptions {
   endpoint: string, 
   store: string|null, 
   params: QueryParams, 
-  addons?: Addons,
+  addons?: AddonsList | AddonsMap,
 }
 
 export interface QueryParams {
   limit?: number,
   noCache?: boolean,
   refreshCache?: boolean,
-  addons?: Addons,
+  addons?: AddonsList | AddonsMap,
   filter?: (item: Payload) => boolean,
   [key: string]: string|number|boolean|Payload|undefined,
 }
@@ -29,4 +29,5 @@ export type Payload = Record<string, any>;
 
 export type FilterFn = (item: Payload) => boolean;
 export type AddonFn = (item: Payload) => void;
-export type Addons = AddonFn[] | Map<string, AddonFn[]>
+export type AddonsMap = Map<string, AddonFn[]>
+export type AddonsList = AddonFn[];

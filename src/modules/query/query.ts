@@ -1,5 +1,5 @@
 import type Cache from '../cache/index.js';
-import type { QueryParams, Payload, QueryOptions, FilterFn, AddonFn, Addons, QueryConfigs } from './types.js';
+import type { QueryParams, Payload, QueryOptions, FilterFn, AddonsList, AddonsMap } from './types.js';
 import type { AxiosHeaders, AxiosInstance } from 'axios';
 import { Buffer } from 'buffer'
 import { pRateLimit } from 'p-ratelimit';
@@ -59,7 +59,7 @@ export default class Query extends BaseModule {
     
     let { params, url } = this.mergeUrlAndParams(endpoint, originalParams);
     
-    const addons = params.addons as Addons|undefined;
+    const addons = params.addons as AddonsList | AddonsMap |undefined;
     if (addons) delete params.addons;
     const filter = params.filter;
     if (filter) delete params.filter;
@@ -113,7 +113,7 @@ export default class Query extends BaseModule {
   * Iterate throught results
   * ==================================================
   */
-  private async applyAddon(data: Payload|Payload[], addons: AddonFn[]) {
+  private async applyAddon(data: Payload|Payload[], addons: AddonsList) {
     if (!Array.isArray(data)) data = [data];
     await Promise.all(
       data.reduce((promises, dataset) => ([
@@ -122,10 +122,10 @@ export default class Query extends BaseModule {
       ]),[])
     )
   }
-  private async applyAddons(data: Payload|Payload[], addons: Addons ) {
+  private async applyAddons(data: Payload|Payload[], addons: AddonsList | AddonsMap ) {
     // addons are applied to all data
     if (Array.isArray(addons)) {
-      await this.applyAddon(data, addons as AddonFn[]);
+      await this.applyAddon(data, addons as AddonsList);
       return;
     }
     // addons are applied to specified props
