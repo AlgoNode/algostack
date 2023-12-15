@@ -138,7 +138,12 @@ export default class Cache extends BaseModule {
     
     if (query.orderBy) table = table.orderBy(query.orderBy);
     if (query.order && ['desc', 'DESC'].includes(query.order)) table = table.desc();
-    if (query.where) table = table.where( this.hashObjectProps(query.where) );
+    if (query.where) {
+      const where = this.hashObjectProps(query.where);
+      if (Object.keys(where).length) {
+        table = table.where( this.hashObjectProps(query.where) );
+      }
+    }
     if (query.filter) table = table.filter( query.filter );
     if (!query.includeExpired) table = table.filter( (entry: CacheEntry) => !this.isExpired(store, entry));
     return table;
@@ -210,10 +215,10 @@ export default class Cache extends BaseModule {
     const result = entry;
     Object.entries(result)
       .forEach(([key, value]) => {
-        if (typeof value === 'object' && !Array.isArray(value)){
-          result[key] = objHash(value)
-        }
-        if (value === null || value === undefined) delete result[key]; 
+        if (typeof value === 'object' && !Array.isArray(value))
+          return result[key] = objHash(value)
+        if (value === null || value === undefined)
+          return delete result[key];
       });
     return result;
   }
