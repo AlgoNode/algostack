@@ -54,20 +54,6 @@ export enum MediaType {
 
 
 /**
-* Available addons
-* ==================================================
-*/
-export enum Addon {
-  NFDS = 'nfds',
-  ICON = 'icon',
-  DECODENOTES = 'decodeNotes',
-  CATEGORY = 'category',
-  ARCS = 'arcs',
-  APPID = 'appId',
-}
-
-
-/**
 * Connectors
 * ==================================================
 */

@@ -129,12 +129,11 @@ export default class Query extends BaseModule {
       return;
     }
     // addons are applied to specified props
-    const addonsKeys = Object.keys(addons);
     const dataKeys = Object.keys(data)
-      .filter(key => addonsKeys.includes(key));
+      .filter(key => addons.has(key));
     if (!dataKeys.length) return;
     await Promise.all( 
-      dataKeys.map(key => this.applyAddon(data[key], addons[key]))
+      dataKeys.map(key => this.applyAddon(data[key], addons.get(key)))
     );
   }
   

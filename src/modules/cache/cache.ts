@@ -48,7 +48,6 @@ export default class Cache extends BaseModule {
         'node/teal': '6h',
         'nfd/lookup': '1h',
         'nfd/search': '1m',
-        'addons/icon': '1d',
         'medias/asset': '1d',
       },
     }, configs);

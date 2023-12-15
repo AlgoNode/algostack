@@ -29,4 +29,4 @@ export type Payload = Record<string, any>;
 
 export type FilterFn = (item: Payload) => boolean;
 export type AddonFn = (item: Payload) => void;
-export type Addons = AddonFn[] | Record<string, AddonFn[]>
+export type Addons = AddonFn[] | Map<string, AddonFn[]>
