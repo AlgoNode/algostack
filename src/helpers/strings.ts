@@ -1,4 +1,4 @@
-
+export { isValidAddress } from 'algosdk';
 // Integers
 export function isIntegers(str: string) {
   return /^\d+$/.test(str);
@@ -25,7 +25,7 @@ export function isDomain(str: string) {
 }
 
 // Base32 Hash (58 chars = account)
-// hhttps://github.com/algorand/js-algorand-sdk/blob/cfd5b8891e2e44f1c546e4db734f8287e9a6ef72/src/encoding/address.ts#L10
+// https://github.com/algorand/js-algorand-sdk/blob/cfd5b8891e2e44f1c546e4db734f8287e9a6ef72/src/encoding/address.ts#L10
 export function isAddress(str: string) {
   return /^([A-Z2-7]{58})+$/.test(str);
 }
