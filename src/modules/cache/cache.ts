@@ -120,7 +120,12 @@ export default class Cache extends BaseModule {
     }
     
     // Init
-    this.db.version(this.v).stores(stores);    
+    try {
+      this.db.version(this.v).stores(stores);    
+    }
+    catch (e) {
+      this.handleError(e);
+    }
     return this;
   }  
 
@@ -159,19 +164,24 @@ export default class Cache extends BaseModule {
       ? CacheEntry[]|undefined
       : CacheEntry|undefined
   > {
-    const collection = await this.getCollection(store, query)
-    if (!collection) return undefined;
-    //
-    // Return a single entry object
-    // if no limit param is defined 
-    // Default behavior
-    // --------------------------------------------------
-    if (query.limit === undefined) return await collection.first();
-
-    //
-    // Find multiple entries
-    // --------------------------------------------------    
-    return await collection.limit(query.limit).toArray();
+    try {
+      const collection = await this.getCollection(store, query)
+      if (!collection) return undefined;
+      //
+      // Return a single entry object
+      // if no limit param is defined 
+      // Default behavior
+      // --------------------------------------------------
+      if (query.limit === undefined) return await collection.first();
+  
+      //
+      // Find multiple entries
+      // --------------------------------------------------    
+      return await collection.limit(query.limit).toArray();
+    }
+    catch (e) {
+      await this.handleError(e, store);
+    }
   }
 
 
@@ -252,8 +262,9 @@ export default class Cache extends BaseModule {
   private async handleError(error: DexieError, store?: string) {
     const names: string[] = [error.name];
     if (error.inner?.name) names.push(error.inner.name);
-
-    if (names.includes(Dexie.errnames.Upgrade)) {
+    const shouldClearTables = names.includes(Dexie.errnames.Upgrade) 
+      || names.includes(Dexie.errnames.Version);
+    if (shouldClearTables) {
       console.warn('An error occured while upgrading IndexedDB tables. Clearing IndexedDB Cache.');
       await this.clearAll();
     }
