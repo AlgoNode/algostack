@@ -1,12 +1,12 @@
 import { durationStringToMs } from '../../helpers/format.js';
-import { CacheConfigs, CacheEntry, CacheQuery } from './types.js';
+import { CacheConfigs, CacheEntry, CacheQuery, IdbTxn } from './types.js';
 import { BaseModule } from '../_baseModule.js';
 import { indexedDB, IDBKeyRange } from "fake-indexeddb";
-import Dexie, { Collection, DexieError } from 'dexie';
+import Dexie, { Collection, DexieError, DexieEvent, GlobalDexieEvents, TransactionMode, Version } from 'dexie';
 import objHash from 'object-hash';
 import AlgoStack from '../../index.js';
 import merge from 'lodash-es/merge.js';
-import { config } from 'process';
+import intersection from 'lodash-es/intersection.js';
 
 
 /**
@@ -17,16 +17,28 @@ export default class Cache extends BaseModule {
   protected db: Dexie;
   protected v: number = 1;
   protected configs: CacheConfigs;
+  protected stores: Record<string,string> = {};
+  protected queue: IdbTxn<any>[] = [];
+  protected get currentStores() { return this.db?.tables.map(table => table.name) || [] };
+  protected _isReady: boolean = false;
+  protected get isReady() { return this._isReady };
+  protected set isReady(value: boolean) {
+    this._isReady = value;
+    if (value === true) this.runQueue();
+  }
 
   constructor(configs: CacheConfigs = {}) {
     super();
-    this.setConfigs(configs);
     this.db = new Dexie(
-      this.configs.namespace, 
+      configs.namespace, 
       typeof window !== 'undefined' && window.indexedDB 
         ? undefined
         : { indexedDB, IDBKeyRange }
       );
+    if (typeof window !== 'undefined') {
+      window.addEventListener('unhandledrejection', this.handleError.bind(this))
+    }
+    this.setConfigs(configs);
   }
 
   public setConfigs(configs: CacheConfigs) {
@@ -119,15 +131,55 @@ export default class Cache extends BaseModule {
       );      
     }
     
+    
     // Init
+    this.stores = stores;
     try {
-      this.db.version(this.v).stores(stores);    
+      this.isReady = false;
+      if (this.db.isOpen()) this.db.close();
+      this.db.version(this.v).stores(this.stores);
+      this.isReady = true;
     }
     catch (e) {
-      this.handleError(e);
+      this.resetDb();
     }
     return this;
   }  
+
+  /**
+  * Transaction Queue
+  * ==================================================
+  */
+  private async commit<T>(scope: TransactionMode, stores: string|string[], fn: () => Promise<T>): Promise<T> {
+    if (!Array.isArray(stores)) stores = [stores];
+    if (!this.isReady) {
+      this.queue.push({scope, stores, fn});
+      return;
+    }
+    const isMissingStores = intersection(stores, this.currentStores).length < stores.length;
+    if (isMissingStores) {
+      this.queue.push({scope, stores, fn});
+      console.warn('Stores are missing', stores);
+      return
+    }
+    try {
+      const results = await this.db.transaction(scope, stores, fn);
+      return results;
+    } catch (e) {
+      if (!this.db.isOpen) this.db.open();
+      this.queue.push({scope, stores, fn});
+      // console.warn('An error occured while commiting to IDB', e)
+      return
+    }
+  }
+ 
+  private runQueue() {
+    if (!this.isReady) return;
+    while (this.queue.length) {
+      const txn = this.queue.shift();
+      this.commit(txn.scope, txn.stores, txn.fn);
+    }
+  }
 
 
   /**
@@ -164,8 +216,8 @@ export default class Cache extends BaseModule {
       ? CacheEntry[]|undefined
       : CacheEntry|undefined
   > {
-    try {
-      const collection = await this.getCollection(store, query)
+    return this.commit('r', store, async () => {
+      const collection = await this.getCollection(store, query);
       if (!collection) return undefined;
       //
       // Return a single entry object
@@ -178,10 +230,7 @@ export default class Cache extends BaseModule {
       // Find multiple entries
       // --------------------------------------------------    
       return await collection.limit(query.limit).toArray();
-    }
-    catch (e) {
-      await this.handleError(e, store);
-    }
+    });
   }
 
 
@@ -196,12 +245,9 @@ export default class Cache extends BaseModule {
       data, 
       timestamp: Date.now(),
     }
-    try {
-      await this.db[store].put(entry);
-    }
-    catch(e) {
-      await this.handleError(e, store);
-    }
+    return this.commit('rw', store, async () => {
+      return await this.db[store].put(entry)
+    })
   }
 
   /**
@@ -209,9 +255,11 @@ export default class Cache extends BaseModule {
   * ==================================================
   */
   public async delete(store: string, query: CacheQuery): Promise<number> {
-    const collection = await this.getCollection(store, query);
-    if (!collection) return 0;
-    return await collection.delete();
+    return this.commit('rw', store, async () => {
+      const collection = await this.getCollection(store, query);
+      if (!collection) return 0;
+      return collection.delete();
+    }) 
   }
 
 
@@ -259,14 +307,23 @@ export default class Cache extends BaseModule {
   * Error handler
   * ==================================================
   */
-  private async handleError(error: DexieError, store?: string) {
-    const names: string[] = [error.name];
-    if (error.inner?.name) names.push(error.inner.name);
-    const shouldClearTables = names.includes(Dexie.errnames.Upgrade) 
-      || names.includes(Dexie.errnames.Version);
+  private async handleError(event: any) {
+    const error = event.reason as DexieError
+    const errorNames: string[] = [error.name];
+    if (error.inner?.name) errorNames.push(error.inner.name);
+    const fatal = [
+      Dexie.errnames.Upgrade,
+      Dexie.errnames.Version,
+      Dexie.errnames.Schema,
+    ];
+    const dbIsClosed = errorNames.includes(Dexie.errnames.DatabaseClosed)
+    if (dbIsClosed) this.db.open();
+
+    const shouldClearTables = intersection(errorNames, fatal)?.length
     if (shouldClearTables) {
-      console.warn('An error occured while upgrading IndexedDB tables. Clearing IndexedDB Cache.');
-      await this.clearAll();
+      // console.warn('An error occured while upgrading IndexedDB tables. Clearing IndexedDB Cache.');
+      await this.resetDb();
+      // if (typeof window.location !== 'undefined') window.location.reload();
     }
   }
 
@@ -276,7 +333,17 @@ export default class Cache extends BaseModule {
   * ==================================================
   */
   private async clearAll() {
+    const isOpen = this.db.isOpen();
+    if (isOpen) this.db.close();
     await this.db.delete();
+  }
+  private async resetDb() {
+    this.isReady = false;
+    await this.clearAll();
+    if (this.db.isOpen()) this.db.close();
+    this.db.version(this.v).stores(this.stores); 
+    this.db.open();
+    this.isReady = true;
   }
 
   /**
@@ -285,16 +352,18 @@ export default class Cache extends BaseModule {
   */
   public async prune(stores?: string|string[]) {
     const pruned = {}; 
-    if (stores === undefined) stores = this.db.tables.map(table => table.name);
+    if (stores === undefined) stores = this.currentStores;
     else if (typeof stores === 'string') stores = [stores];
     for (let i=0; i<stores.length; i++) {
       const store = stores[i]
       const table = this.db[store];
       const expirationLimit = Date.now() - this.getExpiration(store);
-      const expired = await table
-        .filter(entry => entry.timestamp < expirationLimit)
-        .delete();
-      if (expired) pruned[store] = expired;
+      await this.commit('rw', table, async () => {
+        const expired = await table
+          .filter(entry => entry.timestamp < expirationLimit)
+          .delete();
+        if (expired) pruned[store] = expired;
+      })
     }
     return pruned;
   }
