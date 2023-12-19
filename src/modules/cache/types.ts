@@ -1,3 +1,4 @@
+import { TransactionMode } from "dexie";
 
 export interface CacheConfigs {
   namespace?: string,
@@ -22,7 +23,6 @@ export interface CacheConfigs {
 
 export type DurationString = string;
 
-
 export type CacheEntry = Record<string, any>;
 export type CacheWhere = Record<string, any>; 
 export type CacheFilter = (entry: CacheEntry) => boolean;
@@ -33,4 +33,10 @@ export interface CacheQuery {
   orderBy?: string,
   order?: 'asc'|'ASC'|'desc'|'DESC',
   includeExpired?: boolean, 
+}
+
+export interface IdbTxn<T> {
+  scope: TransactionMode,
+  stores: string|string[],
+  fn: () => Promise<T>,
 }
