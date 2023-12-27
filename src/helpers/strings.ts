@@ -39,12 +39,15 @@ export function isTransaction(str: string) {
 
 // check if string is a valid url
 // https://www.freecodecamp.org/news/check-if-a-javascript-string-is-a-url/
+const queryStringPattern = '(\\?[;&a-z\\d%_.~+=-]*)?';
+const fragmentPattern = '(\\#[-a-z\\d_]*)?';
 const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
   '(([a-z\\d-]*\\.)+[a-z]{2,}|'+ // validate domain name
   '((\\d{1,3}\\.){3}\\d{1,3}))'+ // validate OR ip (v4) address
   '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // validate port and path
-  '(\\?[;&a-z\\d%_.~+=-]*)?'+ // validate query string
-  '(\\#[-a-z\\d_]*)?$','i'); // validate fragment locator
+  queryStringPattern + // validate query string
+  fragmentPattern +  // validate fragment locator
+  '$','i');
 export function isUrl(str: string) {
   return urlPattern.test(str);
 }
@@ -80,10 +83,10 @@ const allExtensions = [
   ...extensions.application,
 ];
 
-const imageUrlPattern = new RegExp(`\.(${extensions.image.join('|')})$`,'i');
-const videoUrlPattern = new RegExp(`\.(${extensions.video.join('|')})$`,'i');
-const audioUrlPattern = new RegExp(`\.(${extensions.audio.join('|')})$`,'i');
-const allMediasUrlPattern = new RegExp(`\.(${allExtensions.join('|')})$`,'i');
+const imageUrlPattern = new RegExp(`\.(${extensions.image.join('|')})${queryStringPattern}${fragmentPattern}$`,'i');
+const videoUrlPattern = new RegExp(`\.(${extensions.video.join('|')})${queryStringPattern}${fragmentPattern}$`,'i');
+const audioUrlPattern = new RegExp(`\.(${extensions.audio.join('|')})${queryStringPattern}${fragmentPattern}$`,'i');
+const allMediasUrlPattern = new RegExp(`\.(${allExtensions.join('|')})${queryStringPattern}${fragmentPattern}$`,'i');
 
 export function isImageFileUrl(str: string) {
   return isUrl(str) && imageUrlPattern.test(str);
