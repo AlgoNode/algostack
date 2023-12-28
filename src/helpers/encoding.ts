@@ -73,29 +73,44 @@ export async function decompileTeal(b64: string) {
  */
 export class B64Decoder {
   public readonly original: string;
-  public readonly parsed: Partial< Record< Encoding, string|Record<string, any> > >;
+  public readonly parsed: Partial< Record< Encoding, string|number|Record<string, any> > >;
   public encoding: Encoding;
   
   constructor (str: string) {
     this.original = str;
     this.encoding = Encoding.B64;
     const buffer = Buffer.from(str, 'base64');
-    const decoded = buffer.toString('utf8'); 
+    const decodedStr = buffer.toString('utf8'); 
+    const decodedHex = '0x'+buffer.toString('hex').toUpperCase()
+    const decodedNumber = parseInt(decodedHex, 16);
     this.parsed = {
       [Encoding.B64]: str,
-      [Encoding.HEX]: '0x'+buffer.toString('hex').toUpperCase(),
+      [Encoding.HEX]: decodedHex,
     };
     
     // UTF8 - Latin char only
-    if (/^[\x00-\x20\x2b\x2D\x2E\x30-\x39\x41-\x5A\x5F\x61-\x7A]+$/.test(decoded)) {
-      this.parsed[Encoding.UTF8] = decoded.replace(/[\x00-\x1F]/g, ' ');
+    if (/\p{L}+/gu.test(decodedStr)) {
+      this.parsed[Encoding.UTF8] = decodedStr.replace(/[\x00-\x1F]/g, ' ');
       this.encoding = Encoding.UTF8;
     }
 
+    // Number
+    if (!isNaN(decodedNumber) && decodedNumber < Number.MAX_SAFE_INTEGER) {
+      this.parsed[Encoding.NUMBER] = decodedNumber;
+      if (!/^[\a-zA-Z0-9\s\.-_]+$/i.test(decodedStr)){
+        this.encoding = Encoding.NUMBER;
+      }  
+      const hexBytesLength = decodedHex.length - 2; 
+      if (hexBytesLength <= 32 && new Date(decodedNumber * 1000).getFullYear() > 2000 ) {
+        this.parsed[Encoding.TIMESTAMP] = decodedNumber * 1000;
+      }
+    }
+    
+
     // JSON
-    if (decoded.startsWith('{')) {
+    if (decodedStr.startsWith('{')) {
       try {
-        this.parsed[Encoding.JSON] = JSON.parse(decoded);
+        this.parsed[Encoding.JSON] = JSON.parse(decodedStr);
         this.encoding = Encoding.JSON;
       } catch {}
     }

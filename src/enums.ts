@@ -35,6 +35,8 @@ export enum Encoding {
   HEX = 'hex',
   UTF8 = 'utf8',
   ADDRESS = 'address',
+  NUMBER = 'number',
+  TIMESTAMP = 'timestamp',
 }
 
 
