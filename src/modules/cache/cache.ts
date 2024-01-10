@@ -168,7 +168,6 @@ export default class Cache extends BaseModule {
     } catch (e) {
       if (!this.db.isOpen) this.db.open();
       this.queue.push({scope, stores, fn});
-      // console.warn('An error occured while commiting to IDB', e)
       return
     }
   }
