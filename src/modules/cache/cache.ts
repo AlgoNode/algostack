@@ -356,14 +356,15 @@ export default class Cache extends BaseModule {
     else if (typeof stores === 'string') stores = [stores];
     for (let i=0; i<stores.length; i++) {
       const store = stores[i]
-      const table = this.db[store];
       const expirationLimit = Date.now() - this.getExpiration(store);
-      await this.commit('rw', table, async () => {
+      const expired = await this.commit('rw', store, async () => {
+        const table = this.db[store];
         const expired = await table
           .filter(entry => entry.timestamp < expirationLimit)
-          .delete();
-        if (expired) pruned[store] = expired;
-      })
+          .delete()
+        return expired;
+      });
+      if (expired) pruned[store] = expired;
     }
     return pruned;
   }
