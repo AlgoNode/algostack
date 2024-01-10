@@ -250,6 +250,21 @@ export default class Cache extends BaseModule {
     })
   }
 
+  public async bulkSave(store: string, entries: { data: any, entry: CacheEntry }[] ) {
+    if (!this.db[store]) return console.error(`Store not found (${store})`);
+    if (!entries.length) return;
+    const timestamp = Date.now();
+    const rows = entries.map(row => ({
+        ...this.hashObjectProps(row.entry), 
+        data: row.data, 
+        timestamp,
+      }
+    ))
+    return this.commit('rw', store, async () => {
+      return await this.db[store].bulkPut(rows)
+    });
+  }
+
   /**
   * Delete en entry
   * ==================================================
