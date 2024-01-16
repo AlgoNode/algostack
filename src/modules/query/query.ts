@@ -75,10 +75,8 @@ export default class Query extends BaseModule {
       const hash = objHash({ endpoint, originalParams });
       this.pushToQueue(hash, resolve);
       if (this.queue.get(hash)?.length > 1) return;
-      console.log('reg query:', hash)
   
-      let { params, url } = this.mergeUrlAndParams(endpoint, originalParams);
-      
+      let { params, url } = this.mergeUrlAndParams(endpoint, originalParams);      
       const addons = params.addons as AddonsList | AddonsMap |undefined;
       if (addons) delete params.addons;
       const filter = params.filter;
@@ -524,7 +522,6 @@ export default class Query extends BaseModule {
       const hash = objHash({ apiUrl, originalParams });
       this.pushToQueue(hash, resolve);
       if (this.queue.get(hash)?.length > 1) return;
-      console.log('custom query:', hash)
       
       let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
       if (params.refreshCache !== undefined) delete params.refreshCache;
