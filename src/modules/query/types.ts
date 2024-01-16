@@ -4,7 +4,9 @@ import type Query from './query.js';
 export type LookupMethods = Query['lookup'];
 export type SearchMethods = Query['search'];
 
-export interface QueryConfigs { }
+export interface QueryConfigs { 
+  rps?: number,
+}
 
 export interface QueryOptions {
   base?: ApiUrl,

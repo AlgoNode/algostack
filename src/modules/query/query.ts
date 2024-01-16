@@ -1,5 +1,5 @@
 import type Cache from '../cache/index.js';
-import type { QueryParams, Payload, QueryOptions, FilterFn, AddonsList, AddonsMap } from './types.js';
+import type { QueryParams, Payload, QueryOptions, FilterFn, AddonsList, AddonsMap, QueryConfigs } from './types.js';
 import type { AxiosHeaders, AxiosInstance } from 'axios';
 import { Buffer } from 'buffer'
 import { pRateLimit } from 'p-ratelimit';
@@ -10,22 +10,34 @@ import camelcaseKeys from 'camelcase-keys';
 import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
 import axios from 'axios'; 
+import merge from 'lodash-es/merge.js';
+
 
 /**
  * Query class
  * ==================================================
  */
 export default class Query extends BaseModule {
+  private configs: QueryConfigs;
   protected cache?: Cache; 
+
   protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
   
-  constructor() {
+  constructor(configs: QueryConfigs = {}) {
     super();
+    this.setConfigs(configs);
+
     this.rateLimit = pRateLimit({
       interval: 1000,
-      rate: 50,
+      rate: this.configs.rps,
       concurrency: 25,
     });
+  }
+
+  public setConfigs(configs: QueryConfigs) {
+    this.configs = merge({
+      rps: 50,
+    }, configs);
   }
   
   public init(stack: AlgoStack) {
