@@ -25,9 +25,10 @@ export interface QueryParams {
   [key: string]: string|number|boolean|Payload|undefined,
 }
 
+export type PromiseResolver = (arg: unknown) => void;
+export type QueryQueue = Map<string, PromiseResolver[]>;
 
 export type Payload = Record<string, any>;
-
 
 export type FilterFn = (item: Payload) => boolean;
 export type AddonFn = (item: Payload) => void;

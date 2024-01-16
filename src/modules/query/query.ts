@@ -1,5 +1,5 @@
 import type Cache from '../cache/index.js';
-import type { QueryParams, Payload, QueryOptions, FilterFn, AddonsList, AddonsMap, QueryConfigs } from './types.js';
+import type { QueryParams, Payload, QueryOptions, FilterFn, AddonsList, AddonsMap, QueryConfigs, QueryQueue, PromiseResolver } from './types.js';
 import type { AxiosHeaders, AxiosInstance } from 'axios';
 import { Buffer } from 'buffer'
 import { pRateLimit } from 'p-ratelimit';
@@ -11,6 +11,7 @@ import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
 import axios from 'axios'; 
 import merge from 'lodash-es/merge.js';
+import objHash from 'object-hash';
 
 
 /**
@@ -19,6 +20,7 @@ import merge from 'lodash-es/merge.js';
  */
 export default class Query extends BaseModule {
   private configs: QueryConfigs;
+  private queue: QueryQueue = new Map();
   protected cache?: Cache; 
 
   protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
@@ -51,73 +53,81 @@ export default class Query extends BaseModule {
   * Query wrapper
   * ==================================================
   */
-  private async query(queryOptions: QueryOptions) {
-    const {
-      base = ApiUrl.INDEXER,
-      endpoint, 
-      store, 
-      params: originalParams = {}, 
-    } = queryOptions
-    let data: Payload;
-
-    // get cached data
-    if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
-      const cached = await this.cache.find(store, { where: { params: originalParams }});
-      if (cached) {
-        data = cached.data
-        return data;
+  private query(queryOptions: QueryOptions) {
+    return new Promise(async (resolve, reject) => {
+      const {
+        base = ApiUrl.INDEXER,
+        endpoint, 
+        store, 
+        params: originalParams = {}, 
+      } = queryOptions
+      let data: Payload;
+  
+      // get cached data
+      if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
+        const cached = await this.cache.find(store, { where: { params: originalParams }});
+        if (cached) {
+          data = cached.data
+          return resolve(data);
+        }
       }
-    }
-    
-    let { params, url } = this.mergeUrlAndParams(endpoint, originalParams);
-    
-    const addons = params.addons as AddonsList | AddonsMap |undefined;
-    if (addons) delete params.addons;
-    const filter = params.filter;
-    if (filter) delete params.filter;
-    
-    if (params.limit === -1) delete params.limit; 
-    if (params.refreshCache !== undefined) delete params.refreshCache;
-    if (params.noCache !== undefined) delete params.noCache;
+      
+      const hash = objHash({ endpoint, originalParams });
+      this.pushToQueue(hash, resolve);
+      if (this.queue.get(hash)?.length > 1) return;
+      console.log('reg query:', hash)
+  
+      let { params, url } = this.mergeUrlAndParams(endpoint, originalParams);
+      
+      const addons = params.addons as AddonsList | AddonsMap |undefined;
+      if (addons) delete params.addons;
+      const filter = params.filter;
+      if (filter) delete params.filter;
+      
+      if (params.limit === -1) delete params.limit; 
+      if (params.refreshCache !== undefined) delete params.refreshCache;
+      if (params.noCache !== undefined) delete params.noCache;
+        
+      const cleanParams = this.cleanParams(params)
+      const encodedParams = this.encodeParams(cleanParams);
+      const kebabcaseParams = kebabcaseKeys(encodedParams, { deep: true }); 
+  
+      data = await this.fetch(`${this.stack.configs[base]}${url}`, kebabcaseParams);
+      data = camelcaseKeys(data, { deep: true }); 
+      
+      if (addons) await this.applyAddons(data, addons);
+      if (filter) data = this.applyFilter(data, filter);
+      
+      // Loop
+      let i = 0;
+      while (this.shouldFetchNext(data, originalParams) && i < 20) {
+        i++;
+        let nextData: Payload = await this.fetch(
+          `${this.stack.configs[base]}${url}`, 
+          { ...kebabcaseParams, next: data.nextToken}
+        );
+        delete data.nextToken;
+        nextData = camelcaseKeys(nextData, { deep: true }); 
+        if (addons) await this.applyAddons(nextData, addons);
+        if (filter) nextData = this.applyFilter(nextData, filter);
+        // merge arrays, including possible new 'next-token'
+        Object.entries(nextData).forEach(([key, value]) => {
+          if (Array.isArray(value) && data[key])
+            data[key] = [ ...data[key], ...value ];
+          else 
+            data[key] = value;
+        });
+      }
+  
 
-    const cleanParams = this.cleanParams(params)
-    const encodedParams = this.encodeParams(cleanParams);
-    const kebabcaseParams = kebabcaseKeys(encodedParams, { deep: true }); 
-
-    data = await this.fetch(`${this.stack.configs[base]}${url}`, kebabcaseParams);
-    data = camelcaseKeys(data, { deep: true }); 
-    
-    if (addons) await this.applyAddons(data, addons);
-    if (filter) data = this.applyFilter(data, filter);
-    
-    // Loop
-    let i = 0;
-    while (this.shouldFetchNext(data, originalParams) && i < 20) {
-      i++;
-      let nextData: Payload = await this.fetch(
-        `${this.stack.configs[base]}${url}`, 
-        { ...kebabcaseParams, next: data.nextToken}
-      );
-      delete data.nextToken;
-      nextData = camelcaseKeys(nextData, { deep: true }); 
-      if (addons) await this.applyAddons(nextData, addons);
-      if (filter) nextData = this.applyFilter(nextData, filter);
-      // merge arrays, including possible new 'next-token'
-      Object.entries(nextData).forEach(([key, value]) => {
-        if (Array.isArray(value) && data[key])
-          data[key] = [ ...data[key], ...value ];
-        else 
-          data[key] = value;
-      });
-    }
-
-    
-    // cache result
-    if (this.cache && store && !originalParams.noCache && !data.error) {
-      // console.log('CACHING')
-      await this.cache.save(store, data, { params: originalParams });
-    }
-    return data;
+      // cache result
+      if (this.cache && store && !originalParams.noCache && !data.error) {
+        // console.log('CACHING')
+        await this.cache.save(store, data, { params: originalParams });
+      }
+      
+      this.resolveQueue(hash, data);
+    });
   }
 
 
@@ -149,8 +159,6 @@ export default class Query extends BaseModule {
     );
   }
   
-
-
   private applyFilter(data: Payload|Payload[], filterFn: FilterFn) {
     if (Array.isArray(data)) return data.filter(filterFn);
     Object.entries((data)).forEach(([key, value]) => {
@@ -168,11 +176,6 @@ export default class Query extends BaseModule {
       .reduce((total, value) => (Math.max(value.length, total)),  0);
   }
 
-
-  /**
-  * 
-  * ==================================================
-  */
   private shouldFetchNext(data: Payload, params: QueryParams) {
     if (params.limit === -1 && data.nextToken) return true;
     if (params.filter 
@@ -183,6 +186,11 @@ export default class Query extends BaseModule {
     return false;
   }
 
+
+  /**
+  *  PARAMS
+  * ==================================================
+  */
   private mergeUrlAndParams(url: string, params: Record<string, any>) {
     if (!url) return { url: '/', params }
     const unusedParams: Record<string, any> = {}   
@@ -200,26 +208,34 @@ export default class Query extends BaseModule {
     return { url, params: unusedParams };
   } 
 
-  /**
-  * Clean params
-  * ==================================================
-  */
-   private cleanParams(params: QueryParams) {
+  private cleanParams(params: QueryParams) {
     Object.entries(params).forEach(([key, value]) => {
       if (value === undefined) delete params[key];
     });
     return params;
   }
 
-  /**
-  * Encode params
-  * ==================================================
-  */
   private encodeParams(params: QueryParams) {
     if (typeof params.notePrefix === 'string') {
       params.notePrefix = utf8ToB64(params.notePrefix);
     }
     return params;
+  }
+
+  /**
+  * Queue
+  * ==================================================
+  */
+  private pushToQueue(hash: string, resolve: PromiseResolver) {
+    const resolvers = this.queue.get(hash) || [];
+    resolvers.push(resolve);
+    this.queue.set(hash, resolvers);
+  }
+
+  private resolveQueue(hash: string, data: Payload) {
+    const resolvers = this.queue.get(hash) || [];
+    resolvers.forEach(resolve => resolve(data));
+    this.queue.delete(hash); 
   }
 
   /**
@@ -412,7 +428,7 @@ export default class Query extends BaseModule {
       refreshCache: true,
       headers: { 'Content-Type': 'application/x-binary' },
       data: programBuffer,
-    });
+    }) as Payload;
     return response?.result;
   }
 
@@ -488,33 +504,40 @@ export default class Query extends BaseModule {
   * Custom queries
   * ==================================================
   */
-  public async custom(
+  public custom(
     apiUrl: string, 
     store: string|null, 
     originalParams: QueryParams = {},
     client?: AxiosInstance,
   ) {
-    let data: Payload;
-    // get cached data
-    if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
-      const cached = await this.cache.find(store, { where: { params: originalParams }});
-      if (cached) {
-        data = cached.data
-        return data;
+    return new Promise(async (resolve, reject) => {
+      let data: Payload;
+      // get cached data
+      if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
+        const cached = await this.cache.find(store, { where: { params: originalParams }});
+        if (cached) {
+          data = cached.data
+          return resolve(data);
+        }
       }
-    }
+      
+      const hash = objHash({ apiUrl, originalParams });
+      this.pushToQueue(hash, resolve);
+      if (this.queue.get(hash)?.length > 1) return;
+      console.log('custom query:', hash)
+      
+      let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
+      if (params.refreshCache !== undefined) delete params.refreshCache;
+      if (params.noCache !== undefined) delete params.noCache;
+      data = await this.fetch(url, params, client);
+      
+      // cache result
+      if (this.cache && store && !originalParams.noCache && !data.error) {
+        await this.cache.save(store, data, { params: originalParams });
+      }
     
-    let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
-    if (params.refreshCache !== undefined) delete params.refreshCache;
-    if (params.noCache !== undefined) delete params.noCache;
-    data = await this.fetch(url, params, client);
-    
-    // cache result
-    if (this.cache && store && !originalParams.noCache && !data.error) {
-      await this.cache.save(store, data, { params: originalParams });
-    }
-  
-    return data;
+      this.resolveQueue(hash, data);
+    })
   }
 
 }
