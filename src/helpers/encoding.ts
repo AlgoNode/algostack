@@ -3,7 +3,7 @@ import { decodeObj, encodeAddress } from 'algosdk';
 import { Encoding } from '../enums.js';
 import axios from 'axios';
 import { isAddress } from './strings.js';
-export { decodeAddress, encodeAddress, Transaction } from 'algosdk';
+export { decodeAddress, encodeAddress, getApplicationAddress, Transaction } from 'algosdk';
 
 export interface DecodedB64 {
   encoding: Encoding,
