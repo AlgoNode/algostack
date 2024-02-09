@@ -19,6 +19,8 @@ export interface CacheConfigs {
     [k:string]: DurationString,
   },
   
+  // A list of stores to persist when pruning
+  persist?: string[],
 }
 
 export type DurationString = string;

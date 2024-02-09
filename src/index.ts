@@ -33,7 +33,6 @@ export default class AlgoStack {
 
   constructor (configs: Configs = {}, modules: PlugableModules = {}) {
     this.configs = merge(defaultConfigs, configs);
-
     // Add modules
     if (modules.cache) this.cache = modules.cache;
     if (modules.nfds) this.nfds = modules.nfds.init(this);

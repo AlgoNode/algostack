@@ -7,6 +7,7 @@ import objHash from 'object-hash';
 import AlgoStack from '../../index.js';
 import merge from 'lodash-es/merge.js';
 import intersection from 'lodash-es/intersection.js';
+import cloneDeep from 'lodash-es/cloneDeep.js';
 
 
 /**
@@ -43,7 +44,6 @@ export default class Cache extends BaseModule {
 
   public setConfigs(configs: CacheConfigs) {
     super.setConfigs(configs);
-    this.v = this.stack?.configs?.version || 1; 
     this.configs = merge({
       namespace: 'algostack',
       stores: undefined,
@@ -69,6 +69,8 @@ export default class Cache extends BaseModule {
 
   public init(stack: AlgoStack) {
     super.init(stack);
+    this.v = this.stack?.configs?.version || 1; 
+
     let stores: Record<string, string> = {}
     // Query module
     if (stack.query) {
@@ -150,10 +152,11 @@ export default class Cache extends BaseModule {
   * Transaction Queue
   * ==================================================
   */
-  private async commit<T>(scope: TransactionMode, stores: string|string[], fn: () => Promise<T>): Promise<T> {
+  private async commit<T>(scope: TransactionMode, stores: string|string[], fn: () => Promise<T>, frontRun:boolean = false): Promise<T> {
     if (!Array.isArray(stores)) stores = [stores];
     if (!this.isReady) {
-      this.queue.push({scope, stores, fn});
+      if (!frontRun) this.queue.push({scope, stores, fn});
+      else this.queue.unshift({scope, stores, fn});
       return;
     }
     const isMissingStores = intersection(stores, this.currentStores).length < stores.length;
@@ -284,7 +287,7 @@ export default class Cache extends BaseModule {
   */
   private hashObjectProps (entry: CacheEntry = {}) {
     if (typeof entry !== 'object') return entry;
-    const result = entry;
+    const result = cloneDeep(entry);
     Object.entries(result)
       .forEach(([key, value]) => {
         if (typeof value === 'object' && !Array.isArray(value))
@@ -335,7 +338,7 @@ export default class Cache extends BaseModule {
 
     const shouldClearTables = intersection(errorNames, fatal)?.length
     if (shouldClearTables) {
-      // console.warn('An error occured while upgrading IndexedDB tables. Clearing IndexedDB Cache.');
+      console.log('An error occured while upgrading IndexedDB tables. Clearing IndexedDB Cache.');
       await this.resetDb();
       // if (typeof window.location !== 'undefined') window.location.reload();
     }
@@ -368,6 +371,9 @@ export default class Cache extends BaseModule {
     const pruned = {}; 
     if (stores === undefined) stores = this.currentStores;
     else if (typeof stores === 'string') stores = [stores];
+    if (this.configs.persist?.length) {
+      stores = stores.filter(store => !this.configs.persist.includes(store))
+    }
     for (let i=0; i<stores.length; i++) {
       const store = stores[i]
       const expirationLimit = Date.now() - this.getExpiration(store);
@@ -377,7 +383,7 @@ export default class Cache extends BaseModule {
           .filter(entry => entry.timestamp < expirationLimit)
           .delete()
         return expired;
-      });
+      }, true);
       if (expired) pruned[store] = expired;
     }
     return pruned;
