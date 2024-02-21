@@ -11,6 +11,7 @@ import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
 import axios from 'axios'; 
 import merge from 'lodash-es/merge.js';
+import omit from 'lodash-es/omit.js';
 import objHash from 'object-hash';
 
 
@@ -65,19 +66,22 @@ export default class Query extends BaseModule {
   
       // Prepare Params
       let { params, url } = this.mergeUrlAndParams(endpoint, originalParams);      
-      const addons = params.addons as AddonsList | AddonsMap |undefined;
-      if (addons) delete params.addons;
-      const filter = params.filter;
-      if (filter) delete params.filter;
       
       if (params.limit === -1) delete params.limit; 
       if (params.refreshCache !== undefined) delete params.refreshCache;
       if (params.noCache !== undefined) delete params.noCache;
-        
+      
+      const addons = params.addons as AddonsList | AddonsMap |undefined;
+      const filter = params.filter;
+      
       const cleanParams = this.cleanParams(params)
       const encodedParams = this.encodeParams(cleanParams);
       const reqParams = kebabcaseKeys(encodedParams, { deep: true });
       reqParams.url = url; 
+      
+      if (filter) delete params.filter;
+      if (addons) delete params.addons;
+
       // get cached data
       if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
         const cached = await this.cache.find(store, { where: { params: reqParams }});
@@ -252,12 +256,13 @@ export default class Query extends BaseModule {
         ? String(params.method).toUpperCase()
         : 'GET';
       if (params.method) delete params.method;
-      
+
       const headers = params.headers as AxiosHeaders;
       if (params.headers) delete params.headers
+      
+      if (params.url) delete params.url;
 
       const data = params?.data || params;
-
       const response = await this.rateLimit(
         () => client.request({
           url,
@@ -513,7 +518,7 @@ export default class Query extends BaseModule {
       let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
       if (params.refreshCache !== undefined) delete params.refreshCache;
       if (params.noCache !== undefined) delete params.noCache;
-      params.apiUrl = apiUrl;
+      params.url = apiUrl;
 
       // get cached data
       if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
