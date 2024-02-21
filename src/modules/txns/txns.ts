@@ -14,7 +14,7 @@ import merge from 'lodash-es/merge.js';
  * ==================================================
  */
 export default class Txns extends BaseModule {
-  private configs: TxnsConfigs;
+  private configs: TxnsConfigs = {};
   protected client: Client;
   public algosdk;
   public algod;
@@ -28,7 +28,7 @@ export default class Txns extends BaseModule {
     super.setConfigs(configs);
     this.configs = merge({
       wait: true,
-    }, configs);
+    }, this.configs, configs);
   }
 
   public init(stack: AlgoStack) {

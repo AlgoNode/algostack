@@ -16,7 +16,7 @@ import AlgoStack from '../../index.js';
  * ==================================================
  */
 export default class Client extends BaseModule {
-  protected configs: ClientConfigs;
+  protected configs: ClientConfigs = {};
   protected storage: Storage;
   private _connector?: MyAlgo | Pera | Defly | Mnemonic | undefined = undefined; 
   private _connected?: Connector = undefined;
@@ -31,7 +31,7 @@ export default class Client extends BaseModule {
     this.configs = merge({
       namespace: 'algostack',
       persistConnection: true,
-    }, configs); 
+    }, this.configs, configs); 
     this.storage = new Storage(this.configs.namespace)
     this.optionallyLoadPersisted();
   }

@@ -15,7 +15,7 @@ import merge from 'lodash-es/merge.js';
 * ==================================================
 */
 export default class NFDs extends BaseModule{
-  private configs: NFDConfigs;
+  private configs: NFDConfigs = {};
   protected cache?: Cache;
   protected lookupQueue: Record<string, NFDQueryCallback[]>;
   protected whoisQueue: Record<string, NFDQueryCallback[]>;
@@ -30,7 +30,7 @@ export default class NFDs extends BaseModule{
   public setConfigs(configs: NFDConfigs) {
     this.configs = merge({
       nfdApiUrl: 'https://api.nf.domains',
-    }, configs);
+    }, this.configs, configs);
   }
 
   public init(stack: AlgoStack) {

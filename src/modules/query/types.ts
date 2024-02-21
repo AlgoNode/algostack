@@ -1,3 +1,4 @@
+import type { AxiosInstance } from 'axios';
 import { ApiUrl } from './enums.js';
 import type Query from './query.js';
 
@@ -6,6 +7,7 @@ export type SearchMethods = Query['search'];
 
 export interface QueryConfigs { 
   rps?: number,
+  client?: AxiosInstance,
 }
 
 export interface QueryOptions {

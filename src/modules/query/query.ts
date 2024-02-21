@@ -19,7 +19,7 @@ import objHash from 'object-hash';
  * ==================================================
  */
 export default class Query extends BaseModule {
-  private configs: QueryConfigs;
+  private configs: QueryConfigs = {};
   private queue: QueryQueue = new Map();
   protected cache?: Cache; 
 
@@ -39,7 +39,7 @@ export default class Query extends BaseModule {
   public setConfigs(configs: QueryConfigs) {
     this.configs = merge({
       rps: 50,
-    }, configs);
+    }, this.configs, configs);
   }
   
   public init(stack: AlgoStack) {
@@ -240,7 +240,7 @@ export default class Query extends BaseModule {
   * Fetch data
   * ==================================================
   */
-  private async fetch(url: string, params: QueryParams = {}, client: AxiosInstance = axios) {
+  private async fetch(url: string, params: QueryParams = {}, client: AxiosInstance = this.configs.client || axios) {
     try {
       if (url.indexOf(':id') > -1) {
         return { error: { 

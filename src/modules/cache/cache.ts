@@ -17,7 +17,7 @@ import cloneDeep from 'lodash-es/cloneDeep.js';
 export default class Cache extends BaseModule {
   protected db: Dexie;
   protected v: number = 1;
-  protected configs: CacheConfigs;
+  protected configs: CacheConfigs = {};
   protected stores: Record<string,string> = {};
   protected queue: IdbTxn<any>[] = [];
   protected get currentStores() { return this.db?.tables.map(table => table.name) || [] };
@@ -62,7 +62,7 @@ export default class Cache extends BaseModule {
         'nfd/search': '1m',
         'medias/asset': '1d',
       },
-    }, configs);
+    }, this.configs, configs);
     if (this.stack) this.init(this.stack);
   }
 

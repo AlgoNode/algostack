@@ -16,7 +16,7 @@ import { isDomainUrl } from '../../helpers/strings.js';
  * ==================================================
  */
 export default class Medias extends BaseModule {
-  private configs: MediasConfigs;
+  private configs: MediasConfigs = {};
   protected cache?: Cache;
   protected files?: Files;
   protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
@@ -31,7 +31,7 @@ export default class Medias extends BaseModule {
 
   public setConfigs(configs: MediasConfigs) {
     super.setConfigs(configs);
-    this.configs = merge({}, configs);
+    this.configs = merge({}, this.configs, configs);
   }
  
   public init(stack: AlgoStack) {
