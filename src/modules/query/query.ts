@@ -63,19 +63,7 @@ export default class Query extends BaseModule {
       } = queryOptions
       let data: Payload;
   
-      // get cached data
-      if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
-        const cached = await this.cache.find(store, { where: { params: originalParams }});
-        if (cached) {
-          data = cached.data
-          return resolve(data);
-        }
-      }
-      
-      const hash = objHash({ endpoint, originalParams });
-      this.pushToQueue(hash, resolve);
-      if (this.queue.get(hash)?.length > 1) return;
-  
+      // Prepare Params
       let { params, url } = this.mergeUrlAndParams(endpoint, originalParams);      
       const addons = params.addons as AddonsList | AddonsMap |undefined;
       if (addons) delete params.addons;
@@ -88,9 +76,22 @@ export default class Query extends BaseModule {
         
       const cleanParams = this.cleanParams(params)
       const encodedParams = this.encodeParams(cleanParams);
-      const kebabcaseParams = kebabcaseKeys(encodedParams, { deep: true }); 
+      const reqParams = kebabcaseKeys(encodedParams, { deep: true });
+      reqParams.url = url; 
+      // get cached data
+      if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
+        const cached = await this.cache.find(store, { where: { params: reqParams }});
+        if (cached) {
+          data = cached.data
+          return resolve(data);
+        }
+      }
+      
+      const hash = objHash({ endpoint, originalParams });
+      this.pushToQueue(hash, resolve);
+      if (this.queue.get(hash)?.length > 1) return;
   
-      data = await this.fetch(`${this.stack.configs[base]}${url}`, kebabcaseParams);
+      data = await this.fetch(`${this.stack.configs[base]}${url}`, reqParams);
       data = camelcaseKeys(data, { deep: true }); 
       
       if (addons) await this.applyAddons(data, addons);
@@ -102,7 +103,7 @@ export default class Query extends BaseModule {
         i++;
         let nextData: Payload = await this.fetch(
           `${this.stack.configs[base]}${url}`, 
-          { ...kebabcaseParams, next: data.nextToken}
+          { ...reqParams, next: data.nextToken}
         );
         delete data.nextToken;
         nextData = camelcaseKeys(nextData, { deep: true }); 
@@ -120,8 +121,7 @@ export default class Query extends BaseModule {
 
       // cache result
       if (this.cache && store && !originalParams.noCache && !data.error) {
-        // console.log('CACHING')
-        await this.cache.save(store, data, { params: originalParams });
+        await this.cache.save(store, data, { params: reqParams });
       }
       
       this.resolveQueue(hash, data);
@@ -510,9 +510,14 @@ export default class Query extends BaseModule {
   ) {
     return new Promise(async (resolve, reject) => {
       let data: Payload;
+      let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
+      if (params.refreshCache !== undefined) delete params.refreshCache;
+      if (params.noCache !== undefined) delete params.noCache;
+      params.apiUrl = apiUrl;
+
       // get cached data
       if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
-        const cached = await this.cache.find(store, { where: { params: originalParams }});
+        const cached = await this.cache.find(store, { where: { params }});
         if (cached) {
           data = cached.data
           return resolve(data);
@@ -523,14 +528,12 @@ export default class Query extends BaseModule {
       this.pushToQueue(hash, resolve);
       if (this.queue.get(hash)?.length > 1) return;
       
-      let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
-      if (params.refreshCache !== undefined) delete params.refreshCache;
-      if (params.noCache !== undefined) delete params.noCache;
+      
       data = await this.fetch(url, params, client);
       
       // cache result
       if (this.cache && store && !originalParams.noCache && !data.error) {
-        await this.cache.save(store, data, { params: originalParams });
+        await this.cache.save(store, data, { params });
       }
     
       this.resolveQueue(hash, data);
