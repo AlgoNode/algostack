@@ -40,7 +40,7 @@
     "@types/lodash": "^4.14.165",
     "@types/node": "^18.7.14",
     "algosdk": "^2.7.0",
-    "axios": "^1.6.2",
+    "axios": "^1.6.7",
     "buffer": "^6.0.3",
     "camelcase-keys": "^7.0.2",
     "dexie": "^3.2.4",
