@@ -11,7 +11,7 @@ import kebabcaseKeys from 'kebabcase-keys';
 import AlgoStack from '../../index.js';
 import axios from 'axios'; 
 import merge from 'lodash-es/merge.js';
-import omit from 'lodash-es/omit.js';
+import cloneDeep from 'lodash-es/cloneDeep.js';
 import objHash from 'object-hash';
 
 
@@ -90,11 +90,10 @@ export default class Query extends BaseModule {
           return resolve(data);
         }
       }
-      
       const hash = objHash({ endpoint, originalParams });
       this.pushToQueue(hash, resolve);
       if (this.queue.get(hash)?.length > 1) return;
-  
+      
       data = await this.fetch(`${this.stack.configs[base]}${url}`, reqParams);
       data = camelcaseKeys(data, { deep: true }); 
       
@@ -252,6 +251,7 @@ export default class Query extends BaseModule {
           message: 'Url is invalid',
         } } 
       }
+      params = cloneDeep(params);
       const method: string = params.method 
         ? String(params.method).toUpperCase()
         : 'GET';
@@ -259,7 +259,6 @@ export default class Query extends BaseModule {
 
       const headers = params.headers as AxiosHeaders;
       if (params.headers) delete params.headers
-      
       if (params.url) delete params.url;
 
       const data = params?.data || params;
@@ -282,18 +281,16 @@ export default class Query extends BaseModule {
 
 
   /**
-  * Health
-  * ==================================================
-  */
-  public async health() {
-    return this.fetch(`${this.stack.configs.indexerUrl}/health`);
-  }
-
-
-  /**
   * Lookup methods
   * ==================================================
   */
+
+  // status
+  private async indexerHealth() {
+    const response = await this.fetch(`${this.stack.configs.indexerUrl}/health`);
+    return camelcaseKeys(response, { deep: true });
+  }
+
   // accounts
   private async indexerAccount(accountId: string, params: QueryParams = {}) {
     return await this.query({
@@ -391,6 +388,19 @@ export default class Query extends BaseModule {
   * Node queries (Algod API)
   * ==================================================
   */
+  private async nodeHealth() {
+    const response = await this.fetch(`${this.stack.configs.apiUrl}/health`);
+    return camelcaseKeys(response, { deep: true });
+  }
+  private async  nodeStatus() {
+    const response = await this.fetch(`${this.stack.configs.apiUrl}/v2/status`);
+    return camelcaseKeys(response, { deep: true });
+  }
+  private async  nodeStatusAfter(block: number) {
+    const response = await this.fetch(`${this.stack.configs.apiUrl}/v2/status/wait-for-block-after/${block}`);
+    return camelcaseKeys(response, { deep: true });
+  }
+
   private async nodeAccount(accountId: string, params: QueryParams = {}) {
     return await this.query({
       base: ApiUrl.NODE,
@@ -438,6 +448,7 @@ export default class Query extends BaseModule {
 
   // Wrap everything together
   public lookup = {
+    health: this.indexerHealth.bind(this),
     account: this.indexerAccount.bind(this),
     accountAssets: this.indexerAccountAssets.bind(this),
     accountApplications: this.indexerAccountApplications.bind(this),
@@ -452,6 +463,9 @@ export default class Query extends BaseModule {
     transaction: this.indexerTransaction.bind(this),
     
     node: {
+      health: this.nodeHealth.bind(this),
+      status: this.nodeStatus.bind(this),
+      statusAfter: this.nodeStatusAfter.bind(this),
       account: this.nodeAccount.bind(this),
       accountApplicaction: this.nodeAccountApplication.bind(this),
       accountAsset: this.nodeAccountAsset.bind(this),

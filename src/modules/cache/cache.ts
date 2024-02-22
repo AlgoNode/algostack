@@ -219,6 +219,7 @@ export default class Cache extends BaseModule {
       : CacheEntry|undefined
   > {
     return this.commit('r', store, async () => {
+
       const collection = await this.getCollection(store, query);
       if (!collection) return undefined;
       //
