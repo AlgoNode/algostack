@@ -77,7 +77,7 @@ export default class Query extends BaseModule {
       const cleanParams = this.cleanParams(params)
       const encodedParams = this.encodeParams(cleanParams);
       const reqParams = kebabcaseKeys(encodedParams, { deep: true });
-      reqParams.url = url; 
+      reqParams.url = `${base}${url}`; 
       
       if (filter) delete params.filter;
       if (addons) delete params.addons;
@@ -90,7 +90,7 @@ export default class Query extends BaseModule {
           return resolve(data);
         }
       }
-      const hash = objHash({ endpoint, originalParams });
+      const hash = objHash({ base, endpoint, originalParams });
       this.pushToQueue(hash, resolve);
       if (this.queue.get(hash)?.length > 1) return;
       
