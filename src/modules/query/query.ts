@@ -532,7 +532,7 @@ export default class Query extends BaseModule {
       let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
       if (params.refreshCache !== undefined) delete params.refreshCache;
       if (params.noCache !== undefined) delete params.noCache;
-      params.url = apiUrl;
+      params.url = url;
 
       // get cached data
       if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
