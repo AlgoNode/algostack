@@ -260,7 +260,8 @@ export default class Query extends BaseModule {
       const headers = params.headers as AxiosHeaders;
       if (params.headers) delete params.headers
       if (params.url) delete params.url;
-
+      if (params.addons) delete params.addons;
+      if (params.filter) delete params.filter;
       const data = params?.data || params;
       const response = await this.rateLimit(
         () => client.request({

@@ -53,7 +53,7 @@ export default class Cache extends BaseModule {
         'indexer/asset': '1w',
         'indexer/assetBalances': '2s',
         'indexer/assetTransactions': '2s',
-        'indexer/assets': '5m',
+        'indexer/assets': '1m',
         'indexer/block': '1w',
         'indexer/transaction': '1w',
         'node/account': '10s',
