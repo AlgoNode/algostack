@@ -1,3 +1,4 @@
+import { DurationString } from "../types";
 
 
 /**
@@ -5,7 +6,7 @@
  * '6h' = 21600000
  * ==================================================
  */
-export function durationStringToMs (duration: string) {
+export function durationStringToMs (duration: DurationString) {
   const [, amount, unit] = duration.match(/^(\d+)(ms|s|m|h|d|w)$/);
   if (!amount || !unit) return 0;
   

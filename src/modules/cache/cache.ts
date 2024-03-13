@@ -2,9 +2,9 @@ import { durationStringToMs } from '../../helpers/format.js';
 import { CacheConfigs, CacheEntry, CacheQuery, IdbTxn } from './types.js';
 import { BaseModule } from '../_baseModule.js';
 import { indexedDB, IDBKeyRange } from "fake-indexeddb";
-import Dexie, { Collection, DexieError, DexieEvent, GlobalDexieEvents, TransactionMode, Version } from 'dexie';
+import Dexie, { Collection, DexieError, TransactionMode } from 'dexie';
 import objHash from 'object-hash';
-import AlgoStack from '../../index.js';
+import AlgoStack, { PromiseResolver } from '../../index.js';
 import merge from 'lodash-es/merge.js';
 import intersection from 'lodash-es/intersection.js';
 import cloneDeep from 'lodash-es/cloneDeep.js';
@@ -15,15 +15,15 @@ import cloneDeep from 'lodash-es/cloneDeep.js';
  * ==================================================
  */
 export default class Cache extends BaseModule {
-  protected db: Dexie;
-  protected v: number = 1;
-  protected configs: CacheConfigs = {};
-  protected stores: Record<string,string> = {};
-  protected queue: IdbTxn<any>[] = [];
-  protected get currentStores() { return this.db?.tables.map(table => table.name) || [] };
-  protected _isReady: boolean = false;
-  protected get isReady() { return this._isReady };
-  protected set isReady(value: boolean) {
+  private db: Dexie;
+  private v: number = 1;
+  private configs: CacheConfigs = {};
+  private stores: Record<string,string> = {};
+  private queue: IdbTxn<any>[] = [];
+  private get currentStores() { return this.db?.tables.map(table => table.name) || [] };
+  private _isReady: boolean = false;
+  private get isReady() { return this._isReady };
+  private set isReady(value: boolean) {
     this._isReady = value;
     if (value === true) this.runQueue();
   }
@@ -47,9 +47,9 @@ export default class Cache extends BaseModule {
     this.configs = merge({
       namespace: 'algostack',
       stores: undefined,
-      logExpiration: false,
       expiration: {
         'default': '1h',
+        'db/state': 'never',
         'indexer/asset': '1w',
         'indexer/assetBalances': '2s',
         'indexer/assetTransactions': '2s',
@@ -62,6 +62,8 @@ export default class Cache extends BaseModule {
         'nfd/search': '1m',
         'medias/asset': '1d',
       },
+      pruningInterval: undefined,
+      logExpiration: false,
     }, this.configs, configs);
     if (this.stack) this.init(this.stack);
   }
@@ -69,9 +71,11 @@ export default class Cache extends BaseModule {
 
   public init(stack: AlgoStack) {
     super.init(stack);
-    this.v = this.stack?.configs?.version || 1; 
-
-    let stores: Record<string, string> = {}
+    const stackVersion = this.stack?.configs?.version || 1;
+    let stores: Record<string, string> = {
+      'db/state': '&key',
+      ...this.stores,
+    };
     // Query module
     if (stack.query) {
       stores = { 
@@ -133,53 +137,84 @@ export default class Cache extends BaseModule {
       );      
     }
     
-    
-    // Init
     this.stores = stores;
+    if (this.v > stackVersion) return;
+    this.v = stackVersion; 
+    
+    // Start it!
+    this.start();
+    return this;
+  } 
+
+
+  /**
+  * Start Db
+  * ==================================================
+  */
+  private async start() {
+    this.isReady = false;
+    let dbVersion = 0;
     try {
-      this.isReady = false;
-      if (this.db.isOpen()) this.db.close();
+      if ( !this.db.isOpen()) await this.db.open()
+      dbVersion = this.db.verno;
+      this.db.close();
+    } catch {}
+
+    if (this.v < dbVersion) return;
+    try{
       this.db.version(this.v).stores(this.stores);
+      await this.db.open();
       this.isReady = true;
+      // Auto prune
+      if (this.configs.pruningInterval) this.autoPrune();
     }
     catch (e) {
-      this.resetDb();
+      console.log(e)
+      // this.resetDb();
     }
-    return this;
-  }  
+
+
+  }
+
 
   /**
   * Transaction Queue
   * ==================================================
   */
-  private async commit<T>(scope: TransactionMode, stores: string|string[], fn: () => Promise<T>, frontRun:boolean = false): Promise<T> {
-    if (!Array.isArray(stores)) stores = [stores];
-    if (!this.isReady) {
-      if (!frontRun) this.queue.push({scope, stores, fn});
-      else this.queue.unshift({scope, stores, fn});
-      return;
-    }
-    const isMissingStores = intersection(stores, this.currentStores).length < stores.length;
-    if (isMissingStores) {
-      this.queue.push({scope, stores, fn});
-      console.warn('Stores are missing', stores);
-      return
-    }
-    try {
-      const results = await this.db.transaction(scope, stores, fn);
-      return results;
-    } catch (e) {
-      if (!this.db.isOpen) this.db.open();
-      this.queue.push({scope, stores, fn});
-      return
-    }
+  private commit<T>(scope: TransactionMode, stores: string|string[], txn: () => Promise<T>, frontRun:boolean = false): Promise<T> {
+    return new Promise((resolve, reject) => {
+      if (!Array.isArray(stores)) stores = [stores];
+      if (!this.isReady) {
+        if (!frontRun) this.queue.push({scope, stores, txn, resolve});
+        else this.queue.unshift({scope, stores, txn, resolve});
+        return;
+      }
+      const isMissingStores = intersection(stores, this.currentStores).length < stores.length;
+      if (isMissingStores) {
+        this.queue.push({scope, stores, txn, resolve});
+        console.warn('Stores are missing', stores);
+        return
+      }
+      return this.runTxn(scope, stores, txn, resolve);    
+    })
   }
  
   private runQueue() {
     if (!this.isReady) return;
     while (this.queue.length) {
       const txn = this.queue.shift();
-      this.commit(txn.scope, txn.stores, txn.fn);
+      this.runTxn(txn.scope, txn.stores, txn.txn, txn.resolve);
+    }
+  }
+
+  private async runTxn<T>(scope: TransactionMode, stores: string|string[], txn: () => Promise<T>, resolve: PromiseResolver): Promise<T> {
+    if (!Array.isArray(stores)) stores = [stores];
+    try {
+      const results = await this.db.transaction(scope, stores, txn);
+      resolve(results);
+    } catch (e) {
+      if (!this.db.isOpen) this.db.open();
+      this.queue.push({scope, stores, txn, resolve});
     }
   }
 
@@ -219,7 +254,6 @@ export default class Cache extends BaseModule {
       : CacheEntry|undefined
   > {
     return this.commit('r', store, async () => {
-
       const collection = await this.getCollection(store, query);
       if (!collection) return undefined;
       //
@@ -242,7 +276,7 @@ export default class Cache extends BaseModule {
   * ==================================================
   */
   public async save(store: string, data: any, entry: CacheEntry) {
-    if (!this.db[store]) return console.error(`Store not found (${store})`);
+    // if (!this.db[store]) return console.error(`Store not found (${store})`);
     entry = {
       ...this.hashObjectProps(entry), 
       data, 
@@ -254,7 +288,6 @@ export default class Cache extends BaseModule {
   }
 
   public async bulkSave(store: string, entries: { data: any, entry: CacheEntry }[] ) {
-    if (!this.db[store]) return console.error(`Store not found (${store})`);
     if (!entries.length) return;
     const timestamp = Date.now();
     const rows = entries.map(row => ({
@@ -307,6 +340,7 @@ export default class Cache extends BaseModule {
   * ==================================================
   */
   public isExpired(store: string, entry: CacheEntry) {
+    if (this.configs.expiration[store] === 'never') return false;
     const expiration = this.getExpiration(store);
     const isExpired = entry.timestamp + expiration < Date.now();
     if ( isExpired && this.configs.logExpiration) 
@@ -341,7 +375,6 @@ export default class Cache extends BaseModule {
     if (shouldClearTables) {
       console.log('An error occured while upgrading IndexedDB tables. Clearing IndexedDB Cache.');
       await this.resetDb();
-      // if (typeof window.location !== 'undefined') window.location.reload();
     }
   }
 
@@ -365,7 +398,7 @@ export default class Cache extends BaseModule {
   }
 
   /**
-  * Prune
+  * Pruning
   * ==================================================
   */
   public async prune(stores?: string|string[]) {
@@ -377,6 +410,8 @@ export default class Cache extends BaseModule {
     }
     for (let i=0; i<stores.length; i++) {
       const store = stores[i]
+      // continue to the next store if it never expires
+      if (this.configs.expiration[store] === 'never') continue;
       const expirationLimit = Date.now() - this.getExpiration(store);
       const expired = await this.commit('rw', store, async () => {
         const table = this.db[store];
@@ -388,6 +423,19 @@ export default class Cache extends BaseModule {
       if (expired) pruned[store] = expired;
     }
     return pruned;
+  }
+
+  private async autoPrune() {
+    if (!this.configs.pruningInterval) return;
+    const now = Date.now();
+    const lastTimestamp = await this.find('db/state', { where: { key: 'prunedAt' } });
+    const pruneAfter =  durationStringToMs(this.configs.pruningInterval);
+    const nextPruning = (lastTimestamp?.timestamp || 0 ) + pruneAfter;
+    if (now < nextPruning) return;
+
+    const pruned = await this.prune();
+    await this.save('db/state', null, {key: 'prunedAt'});
+    console.warn('Caches pruned: ', pruned);
   }
 
 }
