@@ -207,7 +207,7 @@ export default class Cache extends BaseModule {
     }
   }
 
-  private async runTxn<T>(scope: TransactionMode, stores: string|string[], txn: () => Promise<T>, resolve: PromiseResolver): Promise<T> {
+  private async runTxn<T>(scope: TransactionMode, stores: string|string[], txn: () => Promise<T>, resolve: PromiseResolver) {
     if (!Array.isArray(stores)) stores = [stores];
     try {
       const results = await this.db.transaction(scope, stores, txn);
