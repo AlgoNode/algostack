@@ -162,6 +162,7 @@ export default class Cache extends BaseModule {
 
     if (this.v < dbVersion) return;
     try{
+      if (this.db.isOpen()) this.db.close();
       this.db.version(this.v).stores(this.stores);
       await this.db.open();
       this.isReady = true;
