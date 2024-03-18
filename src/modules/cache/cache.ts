@@ -30,13 +30,14 @@ export default class Cache extends BaseModule {
 
   constructor(configs: CacheConfigs = {}) {
     super();
+    const isBrowser = typeof window !== 'undefined'; 
     this.db = new Dexie(
       configs.namespace, 
-      typeof window !== 'undefined' && window.indexedDB 
+      isBrowser && window.indexedDB 
         ? undefined
         : { indexedDB, IDBKeyRange }
       );
-    if (typeof window !== 'undefined') {
+    if (isBrowser) {
       window.addEventListener('unhandledrejection', this.handleError.bind(this))
     }
     this.setConfigs(configs);
@@ -158,8 +159,10 @@ export default class Cache extends BaseModule {
       if ( !this.db.isOpen()) await this.db.open()
       dbVersion = this.db.verno;
       this.db.close();
-    } catch {}
-
+    } catch (e) {
+      // console.log(e)
+    }
+    console.log(this.v, dbVersion)
     if (this.v < dbVersion) return;
     try{
       if (this.db.isOpen()) this.db.close();
@@ -171,10 +174,52 @@ export default class Cache extends BaseModule {
     }
     catch (e) {
       console.log(e)
+      this.handleError(e)
       // this.resetDb();
     }
+  }
 
 
+  /**
+  * Error handler
+  * ==================================================
+  */
+  private async handleError(event: any) {
+    const error = event.reason as DexieError
+    const errorNames: string[] = [error?.name];
+    if (error.inner?.name) errorNames.push(error.inner.name);
+    const fatal = [
+      Dexie.errnames.Upgrade,
+      Dexie.errnames.Version,
+      Dexie.errnames.Schema,
+    ];
+    const dbIsClosed = errorNames.includes(Dexie.errnames.DatabaseClosed)
+    if (dbIsClosed) await this.db.open();
+
+    const shouldClearTables = intersection(errorNames, fatal)?.length
+    if (shouldClearTables) {
+      console.log('An error occured while upgrading IndexedDB tables. Clearing IndexedDB Cache.');
+      await this.start();
+    }
+  }
+
+
+  /**
+  * Reset
+  * ==================================================
+  */
+  private async clearAll() {
+    const isOpen = this.db.isOpen();
+    if (isOpen) this.db.close();
+    await this.db.delete();
+  }
+  private async resetDb() {
+    this.isReady = false;
+    await this.clearAll();
+    if (this.db.isOpen()) this.db.close();
+    this.db.version(this.v).stores(this.stores); 
+    this.db.open();
+    this.isReady = true;
   }
 
 
@@ -356,47 +401,6 @@ export default class Cache extends BaseModule {
   }
 
 
-  /**
-  * Error handler
-  * ==================================================
-  */
-  private async handleError(event: any) {
-    const error = event.reason as DexieError
-    const errorNames: string[] = [error.name];
-    if (error.inner?.name) errorNames.push(error.inner.name);
-    const fatal = [
-      Dexie.errnames.Upgrade,
-      Dexie.errnames.Version,
-      Dexie.errnames.Schema,
-    ];
-    const dbIsClosed = errorNames.includes(Dexie.errnames.DatabaseClosed)
-    if (dbIsClosed) this.db.open();
-
-    const shouldClearTables = intersection(errorNames, fatal)?.length
-    if (shouldClearTables) {
-      console.log('An error occured while upgrading IndexedDB tables. Clearing IndexedDB Cache.');
-      await this.resetDb();
-    }
-  }
-
-
-  /**
-  * Reset
-  * ==================================================
-  */
-  private async clearAll() {
-    const isOpen = this.db.isOpen();
-    if (isOpen) this.db.close();
-    await this.db.delete();
-  }
-  private async resetDb() {
-    this.isReady = false;
-    await this.clearAll();
-    if (this.db.isOpen()) this.db.close();
-    this.db.version(this.v).stores(this.stores); 
-    this.db.open();
-    this.isReady = true;
-  }
 
   /**
   * Pruning
