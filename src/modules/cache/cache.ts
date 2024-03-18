@@ -185,9 +185,9 @@ export default class Cache extends BaseModule {
   * ==================================================
   */
   private async handleError(event: any) {
-    const error = event.reason as DexieError
+    const error = event?.reason as DexieError
     const errorNames: string[] = [error?.name];
-    if (error.inner?.name) errorNames.push(error.inner.name);
+    if (error?.inner?.name) errorNames.push(error.inner.name);
     const fatal = [
       Dexie.errnames.Upgrade,
       Dexie.errnames.Version,
