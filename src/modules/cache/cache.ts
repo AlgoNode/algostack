@@ -8,6 +8,7 @@ import AlgoStack, { PromiseResolver } from '../../index.js';
 import merge from 'lodash-es/merge.js';
 import intersection from 'lodash-es/intersection.js';
 import cloneDeep from 'lodash-es/cloneDeep.js';
+import { wait } from '../../utils/process.js';
 
 
 /**
@@ -162,10 +163,11 @@ export default class Cache extends BaseModule {
     } catch (e) {
       // console.log(e)
     }
-    console.log(this.v, dbVersion)
+    // console.log('starting attempt')
     if (this.v < dbVersion) return;
     try{
       if (this.db.isOpen()) this.db.close();
+      await wait(100);
       this.db.version(this.v).stores(this.stores);
       await this.db.open();
       this.isReady = true;
@@ -175,7 +177,6 @@ export default class Cache extends BaseModule {
     catch (e) {
       console.log(e)
       this.handleError(e)
-      // this.resetDb();
     }
   }
 
@@ -193,12 +194,17 @@ export default class Cache extends BaseModule {
       Dexie.errnames.Version,
       Dexie.errnames.Schema,
     ];
+
+    // Db is closed
     const dbIsClosed = errorNames.includes(Dexie.errnames.DatabaseClosed)
-    if (dbIsClosed) await this.db.open();
+    if (dbIsClosed) {
+      await this.db.open();
+    }
 
     const shouldClearTables = intersection(errorNames, fatal)?.length
     if (shouldClearTables) {
-      console.log('An error occured while upgrading IndexedDB tables. Clearing IndexedDB Cache.');
+      console.log('An error occured while upgrading IndexedDB tables.');
+      await wait(250);
       await this.start();
     }
   }
