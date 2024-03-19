@@ -260,11 +260,12 @@ export default class Cache extends BaseModule {
   }
 
   private async runTxn<T>(scope: TransactionMode, stores: string|string[], txn: () => Promise<T>, resolve: PromiseResolver) {
-    if (!Array.isArray(stores)) stores = [stores];
+    if (!Array.isArray(stores)) stores = [stores];   
     try {
       const results = await this.db.transaction(scope, stores, txn);
       resolve(results);
     } catch (e) {
+      console.log('Dexie Txn error', e)
       if (!this.db.isOpen) this.db.open();
       this.queue.push({scope, stores, txn, resolve});
     }
