@@ -45,11 +45,11 @@ export default class NFDs extends BaseModule{
   * Get NFDs for a given address (batched lookup)
   * ==================================================
   */
-  async lookup <T extends boolean|undefined>(address: string, full?: T): Promise<(T extends true ? NFDProps : string)|undefined> {
+  async lookup <T extends boolean|undefined>(address: string, full?: T, refreshCache?:boolean): Promise<(T extends true ? NFDProps : string)|undefined> {
     return new Promise(async resolve => {
       if (!isAddress(address)) return resolve(undefined);
       // get cache
-      if (this.cache) {
+      if (this.cache && !refreshCache) {
         const cached = await this.cache.find('nfd/lookup', { where: { address }});
         if (cached) return resolve(full ? cached.data : cached.nfd);
       }
@@ -78,7 +78,10 @@ export default class NFDs extends BaseModule{
       const addressesQueryString = `address=${addresses.join('&address=')}`;
       try {
         const response = await axios.get(`${this.configs.nfdApiUrl}/nfd/lookup?${addressesQueryString}`, { 
-          params: { view: 'full' }
+          params: { 
+            view: 'full',
+            // t: Date.now(),
+          },
         });
         if (response?.data) results = response.data
       } catch {}

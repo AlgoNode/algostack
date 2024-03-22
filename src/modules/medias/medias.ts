@@ -47,7 +47,7 @@ export default class Medias extends BaseModule {
   * uses the params object of an asset
   * ==================================================
   */
-  public async getAssetFiles(id: number, assetProps: Record<string, any>): Promise<AssetFiles> {
+  public async getAssetFiles(id: number, assetProps: Record<string, any>, refreshCache?: boolean): Promise<AssetFiles> {
     return new Promise(async resolve => {
       let files: AssetFiles =  {
         metadata: undefined,
@@ -58,11 +58,10 @@ export default class Medias extends BaseModule {
       id = Number(id);
 
       // get cache
-      if (this.cache) {
+      if (this.cache && !refreshCache) {
         const cached = await this.cache.find('medias/asset', { where: { id }});
         if (cached?.data) return resolve(cached.data);
       }
-
       // only check if not a domain url
       if (!isDomainUrl(params.url)) {
         // get medias
@@ -74,7 +73,6 @@ export default class Medias extends BaseModule {
         files = await this.getMedias(url);
       };
 
-      
       // save cache
       if (this.cache) {
         await this.cache.save('medias/asset', files, { id });
