@@ -1,6 +1,7 @@
 import type { AxiosInstance } from 'axios';
 import { ApiUrl } from './enums.js';
 import type Query from './query.js';
+import { CacheTable } from '../cache/enums.js';
 
 export type LookupMethods = Query['lookup'];
 export type SearchMethods = Query['search'];
@@ -13,13 +14,13 @@ export interface QueryConfigs {
 export interface QueryOptions {
   base?: ApiUrl,
   endpoint: string, 
-  store: string|null, 
   params: QueryParams, 
   addons?: AddonsList | AddonsMap,
 }
 
 export interface QueryParams {
   limit?: number,
+  cacheTable?: CacheTable|string,
   noCache?: boolean,
   refreshCache?: boolean,
   addons?: AddonsList | AddonsMap,

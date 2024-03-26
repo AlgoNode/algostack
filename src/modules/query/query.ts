@@ -60,17 +60,25 @@ export default class Query extends BaseModule {
       const {
         base = ApiUrl.INDEXER,
         endpoint, 
-        store, 
         params: originalParams = {}, 
       } = queryOptions
       let data: Payload;
   
+      // Prepare Cache
+      const cacheTable = originalParams.cacheTable;
+      const noCache = originalParams.noCache;
+      const refreshCache = originalParams.refreshCache;
+      if (originalParams.cacheTable !== undefined) delete originalParams.cacheTable;
+      if (originalParams.noCache !== undefined) delete originalParams.noCache;
+      if (originalParams.refreshCache !== undefined) delete originalParams.refreshCache;
+      
       // Prepare Params
       let { params, url } = this.mergeUrlAndParams(endpoint, originalParams);      
       
       if (params.limit === -1) delete params.limit; 
-      if (params.refreshCache !== undefined) delete params.refreshCache;
+      if (params.cacheTable !== undefined) delete params.cacheTable;
       if (params.noCache !== undefined) delete params.noCache;
+      if (params.refreshCache !== undefined) delete params.refreshCache;
       
       const addons = params.addons as AddonsList | AddonsMap |undefined;
       const filter = params.filter;
@@ -84,8 +92,8 @@ export default class Query extends BaseModule {
       if (addons) delete params.addons;
 
       // get cached data
-      if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
-        const cached = await this.cache.find(store, { where: { params: reqParams }});
+      if (this.cache && cacheTable && !refreshCache && !noCache) {
+        const cached = await this.cache.find(cacheTable, { where: { params: reqParams }});
         if (cached) {
           data = cached.data
           return resolve(data);
@@ -124,8 +132,8 @@ export default class Query extends BaseModule {
   
 
       // cache result
-      if (this.cache && store && !originalParams.noCache && !data.error) {
-        await this.cache.save(store, data, { params: reqParams });
+      if (this.cache && cacheTable && !noCache && !data.error) {
+        await this.cache.save(cacheTable, data, { params: reqParams });
       }
       
       this.resolveQueue(hash, data);
@@ -297,89 +305,125 @@ export default class Query extends BaseModule {
   private async indexerAccount(accountId: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/accounts/:id`, 
-      store: CacheTable.INDEXER_ACCOUNT, 
-      params: { ...params, id: accountId },
+      params: { 
+        cacheTable: CacheTable.INDEXER_ACCOUNT,
+        ...params, 
+        id: accountId
+      },
     });
   }
   private async indexerAccountTransactions(accountId: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/accounts/:id/transactions`, 
-      store: CacheTable.INDEXER_ACCOUNT_TRANSACTIONS, 
-      params: { ...params, id: accountId },
+      params: { 
+        cacheTable: CacheTable.INDEXER_ACCOUNT_TRANSACTIONS,
+        ...params, 
+        id: accountId
+      },
     });
   }
   private async indexerAccountAssets(accountId: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/accounts/:id/assets`, 
-      store: CacheTable.INDEXER_ACCOUNT_ASSETS, 
-      params: { ...params, id: accountId },
+      params: { 
+        cacheTable: CacheTable.INDEXER_ACCOUNT_ASSETS,
+        ...params, 
+        id: accountId
+      },
     });
   }
   private async indexerAccountApplications(accountId: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/accounts/:id/apps-local-state`, 
-      store: CacheTable.INDEXER_ACCOUNT_APPLICATIONS, 
-      params: { ...params, id: accountId },
+      params: { 
+        cacheTable: CacheTable.INDEXER_ACCOUNT_APPLICATIONS,
+        ...params, 
+        id: accountId
+      },
     });
   }
   // app
   private async indexerApplication(appId: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/applications/:id`, 
-      store: CacheTable.INDEXER_APPLICATION, 
-      params: { ...params, id: appId },
+      params: { 
+        cacheTable: CacheTable.INDEXER_APPLICATION,
+        ...params, 
+        id: appId
+      },
     });
   }
   private async indexerApplicationBox(appId: number, boxName: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/applications/:id/boxes`, 
-      store: CacheTable.INDEXER_APPLICATION_BOX, 
-      params: { ...params, id: appId, name: `b64:${boxName}` },
+      params: { 
+        cacheTable: CacheTable.INDEXER_APPLICATION_BOX,
+        ...params, 
+        id: appId, 
+        name: `b64:${boxName}`
+      },
     });
   }
   private async indexerApplicationBoxes(appId: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/applications/:id/boxes`, 
-      store: CacheTable.INDEXER_APPLICATION_BOXES, 
-      params: { ...params, id: appId },
+      params: { 
+        cacheTable: CacheTable.INDEXER_APPLICATION_BOXES,
+        ...params, 
+        id: appId
+      },
     });
   }
   // asset
   private async indexerAsset(assetId: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/assets/:id`, 
-      store: CacheTable.INDEXER_ASSET, 
-      params: { ...params, id: assetId },
+      params: { 
+        cacheTable: CacheTable.INDEXER_ASSET,
+        ...params, id: assetId
+      },
     });
   }
   private async indexerAssetBalances(assetId: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/assets/:id/balances`, 
-      store: CacheTable.INDEXER_ASSET_BALANCES, 
-      params: { ...params, id: assetId },
+      params: { 
+        cacheTable: CacheTable.INDEXER_ASSET_BALANCES,
+        ...params, 
+        id: assetId
+      },
     });
   }
   private async indexerAssetTransactions(assetId: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/assets/:id/transactions`, 
-      store: CacheTable.INDEXER_ASSET_TRANSACTIONS, 
-      params: { ...params, id: assetId },
+      params: { 
+        cacheTable: CacheTable.INDEXER_ASSET_TRANSACTIONS,
+        ...params, 
+        id: assetId
+      },
     });
   }
   // block
   private async indexerBlock(round: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/blocks/:id`, 
-      store: CacheTable.INDEXER_BLOCK, 
-      params: { ...params, id: round },
+      params: { 
+        cacheTable: CacheTable.INDEXER_BLOCK,
+        ...params, 
+        id: round
+      },
     });
   }
   // transaction
   private async indexerTransaction(id: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/transactions/:id`, 
-      store: CacheTable.INDEXER_TXN, 
-      params: { ...params, id: id },
+      params: { 
+        cacheTable: CacheTable.INDEXER_TXN,
+        ...params, 
+        id: id
+      },
     });
   }
 
@@ -407,32 +451,46 @@ export default class Query extends BaseModule {
     return await this.query({
       base: ApiUrl.NODE,
       endpoint: `/v2/accounts/:id`, 
-      store: CacheTable.NODE_ACCOUNT, 
-      params: { ...params, id: accountId },
+      params: { 
+        cacheTable: CacheTable.NODE_ACCOUNT,
+        ...params, 
+        id: accountId
+      },
     });
   }
   private async nodeAccountApplication(accountId: string, appId: number, params: QueryParams = {}) {
     return await this.query({
       base: ApiUrl.NODE,
       endpoint: `/v2/accounts/:id/applications/:appId`, 
-      store: CacheTable.NODE_ACCOUNT_APPLICATION, 
-      params: { ...params, id: accountId, appId, },
+      params: { 
+        cacheTable: CacheTable.NODE_ACCOUNT_APPLICATION,
+        ...params, 
+        id: accountId, 
+        appId,
+      },
     });
   }
   private async nodeAccountAsset(accountId: string, assetId: number, params: QueryParams = {}) {
     return await this.query({
       base: ApiUrl.NODE,
       endpoint: `/v2/accounts/:id/assets/:assetId`, 
-      store: CacheTable.NODE_ACCOUNT_ASSET, 
-      params: { ...params, id: accountId, assetId, },
+      params: { 
+        cacheTable: CacheTable.NODE_ACCOUNT_ASSET,
+        ...params, 
+        id: accountId, 
+        assetId,
+      },
     });
   }
   private async nodeBlock(round: number, params: QueryParams = {}) {
     return await this.query({
       base: ApiUrl.NODE,
       endpoint: `/v2/blocks/:id`, 
-      store: CacheTable.NODE_BLOCK, 
-      params: { ...params, id: round },
+      params: { 
+        cacheTable: CacheTable.NODE_BLOCK,
+        ...params, 
+        id: round
+      },
     });
   }
   private async nodeDisassembleTeal(b64: string) {
@@ -440,9 +498,9 @@ export default class Query extends BaseModule {
     const programBuffer = Buffer.from(b64, 'base64');
     const response = await this.custom(
       `${this.stack.configs[ApiUrl.NODE]}/v2/teal/disassemble`, 
-      CacheTable.NODE_TEAL, 
       {
         method: 'POST',
+        cacheTable: CacheTable.NODE_TEAL,
         refreshCache: true,
         headers: { 'Content-Type': 'application/x-binary' },
         data: programBuffer,
@@ -487,30 +545,38 @@ export default class Query extends BaseModule {
   */
   private async accounts(params: QueryParams = {}) {
     return await this.query({
-      endpoint: `/v2/accounts`, 
-      store: CacheTable.INDEXER_ACCOUNTS, 
-      params,
+      endpoint: `/v2/accounts`,
+      params: {
+        cacheTable: CacheTable.INDEXER_ACCOUNTS, 
+        ...params, 
+      },
     });
   }
   private async applications(params: QueryParams = {}) {
     return await this.query({
-      endpoint: `/v2/applications`, 
-      store: CacheTable.INDEXER_APPLICATIONS, 
-      params,
+      endpoint: `/v2/applications`,
+      params: {
+        cacheTable: CacheTable.INDEXER_APPLICATIONS, 
+        ...params, 
+      },
     });
   }
   private async assets(params: QueryParams = {}) {
     return await this.query({
-      endpoint: `/v2/assets`, 
-      store: CacheTable.INDEXER_ASSETS, 
-      params,
+      endpoint: `/v2/assets`,
+      params: {
+        cacheTable: CacheTable.INDEXER_ASSETS, 
+        ...params, 
+      },
     });
   }
   private async transactions(params: QueryParams = {}) {
     return await this.query({
-      endpoint: `/v2/transactions`, 
-      store: CacheTable.INDEXER_TXNS, 
-      params,
+      endpoint: `/v2/transactions`,
+      params: {
+        cacheTable: CacheTable.INDEXER_TXNS, 
+        ...params, 
+      },
     });
   }
 
@@ -529,20 +595,26 @@ export default class Query extends BaseModule {
   */
   public custom(
     apiUrl: string, 
-    store: string|null, 
     originalParams: QueryParams = {},
     client?: AxiosInstance,
   ) {
     return new Promise(async (resolve, reject) => {
       let data: Payload;
+
+       // Prepare Cache
+       const cacheTable = originalParams.cacheTable;
+       const noCache = originalParams.noCache;
+       const refreshCache = originalParams.refreshCache;
+       if (originalParams.cacheTable !== undefined) delete originalParams.cacheTable;
+       if (originalParams.noCache !== undefined) delete originalParams.noCache;
+       if (originalParams.refreshCache !== undefined) delete originalParams.refreshCache;
+
       let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
-      if (params.refreshCache !== undefined) delete params.refreshCache;
-      if (params.noCache !== undefined) delete params.noCache;
       params.url = url;
 
       // get cached data
-      if (this.cache && store && !originalParams.refreshCache && !originalParams.noCache) {
-        const cached = await this.cache.find(store, { where: { params }});
+      if (this.cache && cacheTable && !refreshCache && !noCache) {
+        const cached = await this.cache.find(cacheTable, { where: { params }});
         if (cached) {
           data = cached.data
           return resolve(data);
@@ -557,8 +629,8 @@ export default class Query extends BaseModule {
       data = await this.fetch(url, params, client);
       
       // cache result
-      if (this.cache && store && !originalParams.noCache && !data.error) {
-        await this.cache.save(store, data, { params });
+      if (this.cache && cacheTable && !noCache && !data.error) {
+        await this.cache.save(cacheTable, data, { params });
       }
     
       this.resolveQueue(hash, data);

@@ -1,3 +1,4 @@
+export * from './modules/cache/enums.js';
 export * from './modules/txns/enums.js';
 
 /**
