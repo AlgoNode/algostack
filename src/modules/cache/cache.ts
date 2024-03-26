@@ -293,7 +293,7 @@ export default class Cache extends BaseModule {
       }
     }
     if (query.filter) table = table.filter( query.filter );
-    if (!query.includeExpired) table = table.filter( (entry: CacheEntry) => !this.isExpired(table, entry));
+    if (!query.includeExpired) table = table.filter( (entry: CacheEntry) => !this.isExpired(tableName, entry));
     return table;
   } 
 
@@ -441,13 +441,13 @@ export default class Cache extends BaseModule {
   private async autoPrune() {
     if (!this.configs.pruningInterval) return;
     const now = Date.now();
-    const lastTimestamp = await this.find('db/state', { where: { key: 'prunedAt' } });
+    const lastTimestamp = await this.find(CacheTable.DB_STATE, { where: { key: 'prunedAt' } });
     const pruneAfter =  durationStringToMs(this.configs.pruningInterval);
     const nextPruning = (lastTimestamp?.timestamp || 0 ) + pruneAfter;
     if (now < nextPruning) return;
 
     const pruned = await this.prune();
-    await this.save('db/state', null, {key: 'prunedAt'});
+    await this.save(CacheTable.DB_STATE, null, {key: 'prunedAt'});
     console.warn('Caches pruned: ', pruned);
   }
 

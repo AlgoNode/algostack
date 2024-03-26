@@ -405,7 +405,8 @@ export default class Query extends BaseModule {
       endpoint: `/v2/assets/:id`, 
       params: { 
         cacheTable: CacheTable.INDEXER_ASSET,
-        ...params, id: assetId
+        ...params, 
+        id: assetId,
       },
     });
   }
@@ -415,7 +416,7 @@ export default class Query extends BaseModule {
       params: { 
         cacheTable: CacheTable.INDEXER_ASSET_BALANCES,
         ...params, 
-        id: assetId
+        id: assetId,
       },
     });
   }
@@ -425,7 +426,7 @@ export default class Query extends BaseModule {
       params: { 
         cacheTable: CacheTable.INDEXER_ASSET_TRANSACTIONS,
         ...params, 
-        id: assetId
+        id: assetId,
       },
     });
   }
@@ -436,7 +437,7 @@ export default class Query extends BaseModule {
       params: { 
         cacheTable: CacheTable.INDEXER_BLOCK,
         ...params, 
-        id: round
+        id: round,
       },
     });
   }
