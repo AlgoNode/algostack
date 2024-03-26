@@ -13,6 +13,7 @@ import axios from 'axios';
 import merge from 'lodash-es/merge.js';
 import cloneDeep from 'lodash-es/cloneDeep.js';
 import objHash from 'object-hash';
+import { CacheTable } from '../cache/index.js';
 
 
 /**
@@ -296,28 +297,28 @@ export default class Query extends BaseModule {
   private async indexerAccount(accountId: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/accounts/:id`, 
-      store: 'indexer/account', 
+      store: CacheTable.INDEXER_ACCOUNT, 
       params: { ...params, id: accountId },
     });
   }
   private async indexerAccountTransactions(accountId: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/accounts/:id/transactions`, 
-      store: 'indexer/accountTransactions', 
+      store: CacheTable.INDEXER_ACCOUNT_TRANSACTIONS, 
       params: { ...params, id: accountId },
     });
   }
   private async indexerAccountAssets(accountId: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/accounts/:id/assets`, 
-      store: 'indexer/accountAssets', 
+      store: CacheTable.INDEXER_ACCOUNT_ASSETS, 
       params: { ...params, id: accountId },
     });
   }
   private async indexerAccountApplications(accountId: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/accounts/:id/apps-local-state`, 
-      store: 'indexer/accountApplications', 
+      store: CacheTable.INDEXER_ACCOUNT_APPLICATIONS, 
       params: { ...params, id: accountId },
     });
   }
@@ -325,21 +326,21 @@ export default class Query extends BaseModule {
   private async indexerApplication(appId: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/applications/:id`, 
-      store: 'indexer/application', 
+      store: CacheTable.INDEXER_APPLICATION, 
       params: { ...params, id: appId },
     });
   }
   private async indexerApplicationBox(appId: number, boxName: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/applications/:id/boxes`, 
-      store: 'indexer/applicationBoxes', 
+      store: CacheTable.INDEXER_APPLICATION_BOX, 
       params: { ...params, id: appId, name: `b64:${boxName}` },
     });
   }
   private async indexerApplicationBoxes(appId: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/applications/:id/boxes`, 
-      store: 'indexer/applicationBoxes', 
+      store: CacheTable.INDEXER_APPLICATION_BOXES, 
       params: { ...params, id: appId },
     });
   }
@@ -347,21 +348,21 @@ export default class Query extends BaseModule {
   private async indexerAsset(assetId: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/assets/:id`, 
-      store: 'indexer/asset', 
+      store: CacheTable.INDEXER_ASSET, 
       params: { ...params, id: assetId },
     });
   }
   private async indexerAssetBalances(assetId: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/assets/:id/balances`, 
-      store: 'indexer/assetBalances', 
+      store: CacheTable.INDEXER_ASSET_BALANCES, 
       params: { ...params, id: assetId },
     });
   }
   private async indexerAssetTransactions(assetId: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/assets/:id/transactions`, 
-      store: 'indexer/assetTransactions', 
+      store: CacheTable.INDEXER_ASSET_TRANSACTIONS, 
       params: { ...params, id: assetId },
     });
   }
@@ -369,7 +370,7 @@ export default class Query extends BaseModule {
   private async indexerBlock(round: number, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/blocks/:id`, 
-      store: 'indexer/block', 
+      store: CacheTable.INDEXER_BLOCK, 
       params: { ...params, id: round },
     });
   }
@@ -377,7 +378,7 @@ export default class Query extends BaseModule {
   private async indexerTransaction(id: string, params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/transactions/:id`, 
-      store: 'indexer/txn', 
+      store: CacheTable.INDEXER_TXN, 
       params: { ...params, id: id },
     });
   }
@@ -406,7 +407,7 @@ export default class Query extends BaseModule {
     return await this.query({
       base: ApiUrl.NODE,
       endpoint: `/v2/accounts/:id`, 
-      store: 'node/account', 
+      store: CacheTable.NODE_ACCOUNT, 
       params: { ...params, id: accountId },
     });
   }
@@ -414,7 +415,7 @@ export default class Query extends BaseModule {
     return await this.query({
       base: ApiUrl.NODE,
       endpoint: `/v2/accounts/:id/applications/:appId`, 
-      store: 'node/accountApplication', 
+      store: CacheTable.NODE_ACCOUNT_APPLICATION, 
       params: { ...params, id: accountId, appId, },
     });
   }
@@ -422,7 +423,7 @@ export default class Query extends BaseModule {
     return await this.query({
       base: ApiUrl.NODE,
       endpoint: `/v2/accounts/:id/assets/:assetId`, 
-      store: 'node/accountAsset', 
+      store: CacheTable.NODE_ACCOUNT_ASSET, 
       params: { ...params, id: accountId, assetId, },
     });
   }
@@ -430,19 +431,23 @@ export default class Query extends BaseModule {
     return await this.query({
       base: ApiUrl.NODE,
       endpoint: `/v2/blocks/:id`, 
-      store: 'node/block', 
+      store: CacheTable.NODE_BLOCK, 
       params: { ...params, id: round },
     });
   }
   private async nodeDisassembleTeal(b64: string) {
     if (!b64?.length) return undefined;
     const programBuffer = Buffer.from(b64, 'base64');
-    const response = await this.custom(`${this.stack.configs[ApiUrl.NODE]}/v2/teal/disassemble`, 'node/teal', {
-      method: 'POST',
-      refreshCache: true,
-      headers: { 'Content-Type': 'application/x-binary' },
-      data: programBuffer,
-    }) as Payload;
+    const response = await this.custom(
+      `${this.stack.configs[ApiUrl.NODE]}/v2/teal/disassemble`, 
+      CacheTable.NODE_TEAL, 
+      {
+        method: 'POST',
+        refreshCache: true,
+        headers: { 'Content-Type': 'application/x-binary' },
+        data: programBuffer,
+      }
+    ) as Payload;
     return response?.result;
   }
 
@@ -483,28 +488,28 @@ export default class Query extends BaseModule {
   private async accounts(params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/accounts`, 
-      store: 'indexer/accounts', 
+      store: CacheTable.INDEXER_ACCOUNTS, 
       params,
     });
   }
   private async applications(params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/applications`, 
-      store: 'indexer/applications', 
+      store: CacheTable.INDEXER_APPLICATIONS, 
       params,
     });
   }
   private async assets(params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/assets`, 
-      store: 'indexer/assets', 
+      store: CacheTable.INDEXER_ASSETS, 
       params,
     });
   }
   private async transactions(params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/transactions`, 
-      store: 'indexer/txns', 
+      store: CacheTable.INDEXER_TXNS, 
       params,
     });
   }

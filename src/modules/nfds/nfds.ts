@@ -8,6 +8,7 @@ import { isAddress, isDomain } from '../../helpers/strings.js';
 import { QueryParams } from '../query/types.js';
 import { BaseModule } from '../_baseModule.js';
 import merge from 'lodash-es/merge.js';
+import { CacheTable } from '../cache/index.js';
 
 
 /**
@@ -50,7 +51,7 @@ export default class NFDs extends BaseModule{
       if (!isAddress(address)) return resolve(undefined);
       // get cache
       if (this.cache && !refreshCache) {
-        const cached = await this.cache.find('nfd/lookup', { where: { address }});
+        const cached = await this.cache.find(CacheTable.NFD_LOOKUP, { where: { address }});
         if (cached) return resolve(full ? cached.data : cached.nfd);
       }
       // check if a task is currently fetching this address
@@ -96,7 +97,7 @@ export default class NFDs extends BaseModule{
         }
         // save cache
         if (this.cache) {
-          await this.cache.save('nfd/lookup', nfd, { address, nfd: nfd?.name });
+          await this.cache.save(CacheTable.NFD_LOOKUP, nfd, { address, nfd: nfd?.name });
         }
       });
     });  
@@ -116,7 +117,7 @@ export default class NFDs extends BaseModule{
       if (!isDomain(name)) return resolve(undefined);
       // get cache
       if (this.cache) {
-        const cached = await this.cache.find('nfd/lookup', { where: { nfd: name }});
+        const cached = await this.cache.find(CacheTable.NFD_LOOKUP, { where: { nfd: name }});
         if (cached) return resolve(cached.data);
       }
       // check if a task is currently fetching this address
@@ -173,7 +174,7 @@ export default class NFDs extends BaseModule{
     
     // get cache
     if (this.cache && !originalParams.refreshCache && !originalParams.noCache) {
-      const cached = await this.cache.find('nfd/search', { where: { params }});
+      const cached = await this.cache.find(CacheTable.NFD_SEARCH, { where: { params }});
       if (cached) return cached.data;
     }
 
@@ -194,7 +195,7 @@ export default class NFDs extends BaseModule{
 
     // save cache
     if (this.cache && !originalParams.noCache) {
-      await this.cache.save('nfd/search', results, { params });
+      await this.cache.save(CacheTable.NFD_SEARCH, results, { params });
     }
 
     return results;

@@ -9,6 +9,7 @@ import AlgoStack from '../../index.js';
 import Files from '../files/index.js';
 import merge from 'lodash-es/merge.js';
 import { isDomainUrl } from '../../helpers/strings.js';
+import { CacheTable } from '../cache/index.js';
 
 
 /**
@@ -59,7 +60,7 @@ export default class Medias extends BaseModule {
 
       // get cache
       if (this.cache && !refreshCache) {
-        const cached = await this.cache.find('medias/asset', { where: { id }});
+        const cached = await this.cache.find(CacheTable.MEDIAS_ASSET, { where: { id }});
         if (cached?.data) return resolve(cached.data);
       }
       // only check if not a domain url
@@ -75,7 +76,7 @@ export default class Medias extends BaseModule {
 
       // save cache
       if (this.cache) {
-        await this.cache.save('medias/asset', files, { id });
+        await this.cache.save(CacheTable.MEDIAS_ASSET, files, { id });
       }
 
       resolve(files);

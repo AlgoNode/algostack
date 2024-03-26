@@ -9,6 +9,7 @@ import merge from 'lodash-es/merge.js';
 import intersection from 'lodash-es/intersection.js';
 import cloneDeep from 'lodash-es/cloneDeep.js';
 import { wait } from '../../utils/process.js';
+import { CacheTable } from './enums.js';
 
 
 /**
@@ -51,18 +52,18 @@ export default class Cache extends BaseModule {
       stores: undefined,
       expiration: {
         'default': '1h',
-        'db/state': 'never',
-        'indexer/asset': '1h',
-        'indexer/assetBalances': '2s',
-        'indexer/assetTransactions': '2s',
-        'indexer/assets': '1m',
-        'indexer/block': '1w',
-        'indexer/transaction': '1w',
-        'node/account': '10s',
-        'node/teal': '1h',
-        'nfd/lookup': '1h',
-        'nfd/search': '1m',
-        'medias/asset': '4h',
+        [CacheTable.DB_STATE]: 'never',
+        [CacheTable.INDEXER_ASSET]: '1h',
+        [CacheTable.INDEXER_ASSET_BALANCES]: '2s',
+        [CacheTable.INDEXER_ASSET_TRANSACTIONS]: '2s',
+        [CacheTable.INDEXER_ASSETS]: '1m',
+        [CacheTable.INDEXER_BLOCK]: '1w',
+        [CacheTable.INDEXER_TXN]: '1w',
+        [CacheTable.NODE_ACCOUNT]: '10s',
+        [CacheTable.NODE_TEAL]: '1h',
+        [CacheTable.NFD_LOOKUP]: '1h',
+        [CacheTable.NFD_SEARCH]: '1m',
+        [CacheTable.MEDIAS_ASSET]: '4h',
       },
       pruningInterval: undefined,
       logExpiration: false,
@@ -75,7 +76,7 @@ export default class Cache extends BaseModule {
     super.init(stack);
     const stackVersion = this.stack?.configs?.version || 1;
     let stores: Record<string, string> = {
-      'db/state': '&key',
+      [CacheTable.DB_STATE]: '&key',
       ...this.stores,
     };
     // Query module
@@ -83,48 +84,48 @@ export default class Cache extends BaseModule {
       stores = { 
         ...stores, 
         // indexer
-        'indexer/account': '&params',
-        'indexer/accountAssets': '&params',
-        'indexer/accountApplications': '&params',
-        'indexer/accountTransactions': '&params',
-        'indexer/application': '&params',
-        'indexer/applicationBox': '&params',
-        'indexer/applicationBoxes': '&params',
-        'indexer/asset': '&params',
-        'indexer/assetBalances': '&params',
-        'indexer/assetTransactions': '&params',
-        'indexer/block': '&params',
-        'indexer/txn': '&params',
+        [CacheTable.INDEXER_ACCOUNT]: '&params',
+        [CacheTable.INDEXER_ACCOUNT_ASSETS]: '&params',
+        [CacheTable.INDEXER_ACCOUNT_APPLICATIONS]: '&params',
+        [CacheTable.INDEXER_ACCOUNT_TRANSACTIONS]: '&params',
+        [CacheTable.INDEXER_APPLICATION]: '&params',
+        [CacheTable.INDEXER_APPLICATION_BOX]: '&params',
+        [CacheTable.INDEXER_APPLICATION_BOXES]: '&params',
+        [CacheTable.INDEXER_ASSET]: '&params',
+        [CacheTable.INDEXER_ASSET_BALANCES]: '&params',
+        [CacheTable.INDEXER_ASSET_TRANSACTIONS]: '&params',
+        [CacheTable.INDEXER_BLOCK]: '&params',
+        [CacheTable.INDEXER_TXN]: '&params',
 
         // node
-        'node/account': '&params',
-        'node/accountApplication': '&params',
-        'node/accountAsset': '&params',
-        'node/block': '&params',
-        'node/blockProof': '&params',
-        'node/blockTransactionProof': '&params',
-        'node/teal': '&params',
+        [CacheTable.NODE_ACCOUNT]: '&params',
+        [CacheTable.NODE_ACCOUNT_APPLICATION]: '&params',
+        [CacheTable.NODE_ACCOUNT_ASSET]: '&params',
+        [CacheTable.NODE_BLOCK]: '&params',
+        [CacheTable.NODE_BLOCK_PROOF]: '&params',
+        [CacheTable.NODE_BLOCK_TRANSACTION_PROOF]: '&params',
+        [CacheTable.NODE_TEAL]: '&params',
 
         // search
-        'indexer/applications': '&params',
-        'indexer/accounts': '&params',
-        'indexer/assets': '&params',
-        'indexer/txns': '&params',
+        [CacheTable.INDEXER_APPLICATIONS]: '&params',
+        [CacheTable.INDEXER_ACCOUNTS]: '&params',
+        [CacheTable.INDEXER_ASSETS]: '&params',
+        [CacheTable.INDEXER_TXNS]: '&params',
       };
     }
     // NFDs
     if (stack.nfds) {
       stores = { 
         ...stores, 
-        'nfd/lookup': '&address, nfd',
-        'nfd/search': '&params', 
+        [CacheTable.NFD_LOOKUP]: '&address, nfd',
+        [CacheTable.NFD_SEARCH]: '&params', 
       };
     }
     // Medias
     if (stack.medias) {
       stores = { 
         ...stores, 
-        'medias/asset': '&id' 
+        [CacheTable.MEDIAS_ASSET]: '&id' 
       };
     }
     if (this.configs.stores?.length) {
