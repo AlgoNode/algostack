@@ -7,8 +7,9 @@ export type LookupMethods = Query['lookup'];
 export type SearchMethods = Query['search'];
 
 export interface QueryConfigs { 
-  rps?: number,
   client?: AxiosInstance,
+  rateLimiter?: RateLimiterConfig,
+  rateLimiters?: Record<string, RateLimiterConfig>,
 }
 
 export interface QueryOptions {
@@ -23,6 +24,7 @@ export interface QueryParams {
   cacheTable?: CacheTable|string,
   noCache?: boolean,
   refreshCache?: boolean,
+  rateLimiter?: string,
   addons?: AddonsList | AddonsMap,
   filter?: (item: Payload) => boolean,
   [key: string]: string|number|boolean|Payload|undefined,
@@ -37,3 +39,10 @@ export type FilterFn = (item: Payload) => boolean;
 export type AddonFn = (item: Payload) => void;
 export type AddonsMap = Map<string, AddonFn[]>
 export type AddonsList = AddonFn[];
+
+export type RateLimiter = <T>(fn: () => Promise<T>) => Promise<T>;
+export interface RateLimiterConfig {
+  interval?: number,
+  rate?: number,
+  concurrency?: number,
+}

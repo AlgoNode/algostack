@@ -1,5 +1,5 @@
 import type Cache from '../cache/index.js';
-import type { QueryParams, Payload, QueryOptions, FilterFn, AddonsList, AddonsMap, QueryConfigs, QueryQueue, PromiseResolver } from './types.js';
+import type { QueryParams, Payload, QueryOptions, FilterFn, AddonsList, AddonsMap, QueryConfigs, QueryQueue, PromiseResolver, RateLimiter, RateLimiterConfig } from './types.js';
 import type { AxiosHeaders, AxiosInstance } from 'axios';
 import { Buffer } from 'buffer'
 import { pRateLimit } from 'p-ratelimit';
@@ -24,24 +24,22 @@ export default class Query extends BaseModule {
   private configs: QueryConfigs = {};
   private queue: QueryQueue = new Map();
   protected cache?: Cache; 
+  protected rateLimiters: Map<string, RateLimiter> = new Map();
 
-  protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
-  
   constructor(configs: QueryConfigs = {}) {
     super();
     this.setConfigs(configs);
-
-    this.rateLimit = pRateLimit({
-      interval: 1000,
-      rate: this.configs.rps,
-      concurrency: 25,
-    });
   }
 
   public setConfigs(configs: QueryConfigs) {
     this.configs = merge({
-      rps: 50,
+      rateLimiter: {
+        interval: 1000,
+        rate: 50,
+        concurrency: 25
+      },
     }, this.configs, configs);
+    this.initRateLimiters();
   }
   
   public init(stack: AlgoStack) {
@@ -50,7 +48,30 @@ export default class Query extends BaseModule {
     return this;
   }
 
- 
+  /**
+  * Rate Limiters
+  * ==================================================
+  */
+  private initRateLimiters(){
+    const defaultConfigs = {
+      interval: 1000,
+      rate: 50,
+      concurrency: 25,
+      ...(this.configs.rateLimiter || {}),
+    };
+
+    this.rateLimiters.set('default', pRateLimit(defaultConfigs));
+    if (!this.configs.rateLimiters) return;
+    Object.entries(this.configs.rateLimiters)
+      .forEach(([key, configs]) => {
+        this.rateLimiters.set(key, pRateLimit({
+          ...defaultConfigs,
+          ...configs,
+        }))
+      });
+  }
+
+
   /**
   * Query wrapper
   * ==================================================
@@ -103,7 +124,7 @@ export default class Query extends BaseModule {
       this.pushToQueue(hash, resolve);
       if (this.queue.get(hash)?.length > 1) return;
       
-      data = await this.fetch(`${this.stack.configs[base]}${url}`, reqParams);
+      data = await this.fetchData(`${this.stack.configs[base]}${url}`, reqParams);
       data = camelcaseKeys(data, { deep: true }); 
       
       if (addons) await this.applyAddons(data, addons);
@@ -113,7 +134,7 @@ export default class Query extends BaseModule {
       let i = 0;
       while (this.shouldFetchNext(data, originalParams) && i < 20) {
         i++;
-        let nextData: Payload = await this.fetch(
+        let nextData: Payload = await this.fetchData(
           `${this.stack.configs[base]}${url}`, 
           { ...reqParams, next: data.nextToken}
         );
@@ -252,7 +273,7 @@ export default class Query extends BaseModule {
   * Fetch data
   * ==================================================
   */
-  private async fetch(url: string, params: QueryParams = {}, client: AxiosInstance = this.configs.client || axios) {
+  private async fetchData(url: string, params: QueryParams = {}, client: AxiosInstance = this.configs.client || axios) {
     try {
       if (url.indexOf(':id') > -1) {
         return { error: { 
@@ -264,15 +285,19 @@ export default class Query extends BaseModule {
       const method: string = params.method 
         ? String(params.method).toUpperCase()
         : 'GET';
-      if (params.method) delete params.method;
-
       const headers = params.headers as AxiosHeaders;
+      const data = params?.data || params;
+      const rateLimiterKey = params.rateLimiter || 'default';
+      if (params.method) delete params.method;
       if (params.headers) delete params.headers
       if (params.url) delete params.url;
       if (params.addons) delete params.addons;
       if (params.filter) delete params.filter;
-      const data = params?.data || params;
-      const response = await this.rateLimit(
+      if (params.filter) delete params.filter;
+      if (params.rateLimiter) delete params.rateLimiter;
+
+      const rateLimiter = this.rateLimiters.get(rateLimiterKey);
+      const response = await rateLimiter(
         () => client.request({
           url,
           method,
@@ -297,7 +322,7 @@ export default class Query extends BaseModule {
 
   // status
   private async indexerHealth() {
-    const response = await this.fetch(`${this.stack.configs.indexerUrl}/health`);
+    const response = await this.fetchData(`${this.stack.configs.indexerUrl}/health`);
     return camelcaseKeys(response, { deep: true });
   }
 
@@ -435,15 +460,15 @@ export default class Query extends BaseModule {
   * ==================================================
   */
   private async nodeHealth() {
-    const response = await this.fetch(`${this.stack.configs.apiUrl}/health`);
+    const response = await this.fetchData(`${this.stack.configs.apiUrl}/health`);
     return camelcaseKeys(response, { deep: true });
   }
   private async  nodeStatus() {
-    const response = await this.fetch(`${this.stack.configs.apiUrl}/v2/status`);
+    const response = await this.fetchData(`${this.stack.configs.apiUrl}/v2/status`);
     return camelcaseKeys(response, { deep: true });
   }
   private async  nodeStatusAfter(block: number) {
-    const response = await this.fetch(`${this.stack.configs.apiUrl}/v2/status/wait-for-block-after/${block}`);
+    const response = await this.fetchData(`${this.stack.configs.apiUrl}/v2/status/wait-for-block-after/${block}`);
     return camelcaseKeys(response, { deep: true });
   }
 
@@ -496,7 +521,7 @@ export default class Query extends BaseModule {
   private async nodeDisassembleTeal(b64: string) {
     if (!b64?.length) return undefined;
     const programBuffer = Buffer.from(b64, 'base64');
-    const response = await this.custom(
+    const response = await this.fetch(
       `${this.stack.configs[ApiUrl.NODE]}/v2/teal/disassemble`, 
       {
         method: 'POST',
@@ -590,10 +615,10 @@ export default class Query extends BaseModule {
 
 
   /**
-  * Custom queries
+  * Custom fetch queries
   * ==================================================
   */
-  public custom(
+  public fetch(
     apiUrl: string, 
     originalParams: QueryParams = {},
     client?: AxiosInstance,
@@ -626,7 +651,7 @@ export default class Query extends BaseModule {
       if (this.queue.get(hash)?.length > 1) return;
       
       
-      data = await this.fetch(url, params, client);
+      data = await this.fetchData(url, params, client);
       
       // cache result
       if (this.cache && cacheTable && !noCache && !data.error) {
