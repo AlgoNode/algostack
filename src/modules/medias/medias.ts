@@ -20,19 +20,21 @@ export default class Medias extends BaseModule {
   private configs: MediasConfigs = {};
   protected cache?: Cache;
   protected files?: Files;
-  protected rateLimit: <T>(fn: () => Promise<T>) => Promise<T>;
+  protected rateLimiter: <T>(fn: () => Promise<T>) => Promise<T>;
   constructor(configs: MediasConfigs) {
     super();
     this.setConfigs(configs);
-    this.rateLimit = pRateLimit({
+    this.rateLimiter = pRateLimit({
       interval: 1000,
-      rate: 100, 
+      rate: 10,
+      concurrency: 2,
     });
   }
 
   public setConfigs(configs: MediasConfigs) {
     super.setConfigs(configs);
     this.configs = merge({}, this.configs, configs);
+    this.initRateLimiter();
   }
  
   public init(stack: AlgoStack) {
@@ -41,6 +43,20 @@ export default class Medias extends BaseModule {
     this.files = stack.files;
     if (!this.files) throw new Error('Files module is required.')
     return this;
+  }
+
+  /**
+  * Rate Limiters
+  * ==================================================
+  */
+  private initRateLimiter(){
+    const defaultConfigs = {
+      interval: 1000,
+      rate: 50,
+      concurrency: 25,
+      ...(this.configs.rateLimiter || {}),
+    };
+    this.rateLimiter = pRateLimit(defaultConfigs);
   }
 
   /**
@@ -93,13 +109,13 @@ export default class Medias extends BaseModule {
     let arc3Files: File[] = [];
     // check for image
     if (data.image) {
-      const media = await this.rateLimit( () => this.files.getMeta(data.image) );
+      const media = await this.rateLimiter( () => this.files.getMeta(data.image) );
       if (media.type === MediaType.IMAGE || media.type === MediaType.VIDEO) {
         arc3Files.push(media);
       }
     }
     else if (data.external_url) {
-      const image = await this.rateLimit( () => this.files.getMeta(data.external_url));
+      const image = await this.rateLimiter( () => this.files.getMeta(data.external_url));
       if (image.type === MediaType.IMAGE) {
         arc3Files.push(image);
       }
@@ -107,7 +123,7 @@ export default class Medias extends BaseModule {
     // check for video {
     if (data.animation_url) {
       // const animation = await new File(data.animation_url).check();
-      const animation = await this.rateLimit( () => this.files.getMeta(data.animation_url) );
+      const animation = await this.rateLimiter( () => this.files.getMeta(data.animation_url) );
       arc3Files.push(animation);
     }
     return arc3Files;
@@ -124,7 +140,7 @@ export default class Medias extends BaseModule {
       metadata: undefined,
       medias: [],
     };
-    const media = await this.rateLimit( () => this.files.getMeta(url) );
+    const media = await this.rateLimiter( () => this.files.getMeta(url) );
     // media is json file (metadata)
     if (media.type === MediaType.JSON) {
       assetFiles.metadata = media;
