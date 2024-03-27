@@ -24,11 +24,6 @@ export default class Medias extends BaseModule {
   constructor(configs: MediasConfigs) {
     super();
     this.setConfigs(configs);
-    this.rateLimiter = pRateLimit({
-      interval: 1000,
-      rate: 10,
-      concurrency: 2,
-    });
   }
 
   public setConfigs(configs: MediasConfigs) {
