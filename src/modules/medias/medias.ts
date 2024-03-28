@@ -59,14 +59,21 @@ export default class Medias extends BaseModule {
   * uses the params object of an asset
   * ==================================================
   */
-  public async getAssetFiles(id: number, assetProps: Record<string, any>, refreshCache?: boolean): Promise<AssetFiles> {
+  public async getAssetFiles(id: number, assetProps?: Record<string, any>, refreshCache?: boolean): Promise<AssetFiles> {
     return new Promise(async resolve => {
       let files: AssetFiles =  {
         metadata: undefined,
         medias: [],
       };
-      const params = assetProps?.params; 
-      if (!id || !params.url) return resolve(files);
+
+      if (!assetProps && this.stack.query) {
+        const assetData = await this.stack.query.lookup.asset(id, { includeAll: true });
+        assetProps = assetData?.asset;
+      }
+
+      const params = assetProps?.params;
+       
+      if (!id || !params?.url) return resolve(files);
       id = Number(id);
 
       // get cache
