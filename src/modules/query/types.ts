@@ -27,6 +27,7 @@ export interface QueryParams {
   rateLimiter?: string,
   addons?: AddonsList | AddonsMap,
   filter?: (item: Payload) => boolean,
+  headers?: Payload,
   [key: string]: string|number|boolean|Payload|undefined,
 }
 

@@ -73,6 +73,23 @@ export default class Query extends BaseModule {
 
 
   /**
+  * Get request headers
+  * ==================================================
+  */
+  private getReqHeaders (api: ApiUrl, params: QueryParams) {
+    const token = this.stack.configs.apiToken;
+    if (!token) return params?.headers;
+    let tokenHeader: string|undefined = undefined
+    if (api === ApiUrl.INDEXER) tokenHeader = 'X-Indexer-API-Token';
+    else if (api === ApiUrl.NODE) tokenHeader = 'X-Algo-API-Token';
+    if (!tokenHeader) return params;
+    return { 
+      ...(params.headers || {}),
+      [tokenHeader]: token,
+    }
+  }
+
+  /**
   * Query wrapper
   * ==================================================
   */
@@ -108,6 +125,7 @@ export default class Query extends BaseModule {
       const encodedParams = this.encodeParams(cleanParams);
       const reqParams = kebabcaseKeys(encodedParams, { deep: true });
       reqParams.url = `${base}${url}`; 
+      reqParams.headers = this.getReqHeaders(base, reqParams);
       
       if (filter) delete params.filter;
       if (addons) delete params.addons;
@@ -124,6 +142,7 @@ export default class Query extends BaseModule {
       this.pushToQueue(hash, resolve);
       if (this.queue.get(hash)?.length > 1) return;
       
+
       data = await this.fetchData(`${this.stack.configs[base]}${url}`, reqParams);
       data = camelcaseKeys(data, { deep: true }); 
       
@@ -295,7 +314,6 @@ export default class Query extends BaseModule {
       if (params.filter) delete params.filter;
       if (params.filter) delete params.filter;
       if (params.rateLimiter) delete params.rateLimiter;
-
       const rateLimiter = this.rateLimiters.get(rateLimiterKey);
       const response = await rateLimiter(
         () => client.request({

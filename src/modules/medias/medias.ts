@@ -68,6 +68,7 @@ export default class Medias extends BaseModule {
 
       if (!assetProps && this.stack.query) {
         const assetData = await this.stack.query.lookup.asset(id, { includeAll: true });
+        console.log(assetData)
         assetProps = assetData?.asset;
       }
 
