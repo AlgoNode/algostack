@@ -46,8 +46,10 @@ export default class NFDs extends BaseModule{
   * Get NFDs for a given address (batched lookup)
   * ==================================================
   */
-  async lookup <T extends boolean|undefined>(address: string, full?: T, refreshCache?:boolean): Promise<(T extends true ? NFDProps : string)|undefined> {
+  public async lookup <T extends boolean|undefined>(address: string, full?: T, refreshCache?:boolean): Promise<(T extends true ? NFDProps : string)|undefined> {
     return new Promise(async resolve => {
+      if (!this.initiated) await this.waitForInit();
+
       if (!isAddress(address)) return resolve(undefined);
       // get cache
       if (this.cache && !refreshCache) {
@@ -63,8 +65,9 @@ export default class NFDs extends BaseModule{
   }
 
   // Legacy method
-  async getNFDs <T extends boolean|undefined>(address: string, full?: T): Promise<(T extends true ? NFDProps : string)[] > {
+  public async getNFDs <T extends boolean|undefined>(address: string, full?: T): Promise<(T extends true ? NFDProps : string)[] > {
     return new Promise(async resolve => {
+      if (!this.initiated) await this.waitForInit();
       const result = await this.lookup(address, full);
       resolve(result ? [result] : []);
     })
@@ -112,8 +115,10 @@ export default class NFDs extends BaseModule{
   */
 
 
-  async whois (name: string): Promise<NFDProps|undefined> {
+  public async whois (name: string): Promise<NFDProps|undefined> {
     return new Promise(async resolve => {
+      if (!this.initiated) await this.waitForInit();
+
       if (!isDomain(name)) return resolve(undefined);
       // get cache
       if (this.cache) {
@@ -129,10 +134,10 @@ export default class NFDs extends BaseModule{
   }
 
   // Legacy methods
-  async getNFD (nfd: string): Promise<NFDProps|undefined> {
+  public async getNFD (nfd: string): Promise<NFDProps|undefined> {
     return this.whois(nfd);
   }
-  async getAddress (name: string): Promise<string|undefined> {
+  public async getAddress (name: string): Promise<string|undefined> {
     return new Promise(async resolve => {
       const nfd = await this.whois(name);
       resolve(nfd?.depositAccount);
@@ -165,7 +170,9 @@ export default class NFDs extends BaseModule{
   * Search
   * ==================================================
   */
-  async search(str: string, originalParams: QueryParams): Promise<NFDProps[]> {
+  public async search(str: string, originalParams: QueryParams): Promise<NFDProps[]> {
+    if (!this.initiated) await this.waitForInit();
+
     const params = { ...originalParams };
     if ( params.refreshCache !== undefined ) delete params.refreshCache;
     if ( params.noCache !== undefined ) delete params.noCache;

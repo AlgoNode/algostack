@@ -61,6 +61,8 @@ export default class Medias extends BaseModule {
   */
   public async getAssetFiles(id: number, assetProps?: Record<string, any>, refreshCache?: boolean): Promise<AssetFiles> {
     return new Promise(async resolve => {
+      if (!this.initiated) await this.waitForInit();
+
       let files: AssetFiles =  {
         metadata: undefined,
         medias: [],
@@ -138,6 +140,8 @@ export default class Medias extends BaseModule {
   * ==================================================
   */
   public async getMedias(url: string) {
+    if (!this.initiated) await this.waitForInit();
+
     const assetFiles: AssetFiles =  {
       metadata: undefined,
       medias: [],

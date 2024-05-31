@@ -1,5 +1,6 @@
 import type Cache from '../cache/index.js';
-import type { QueryParams, Payload, QueryOptions, FilterFn, AddonsList, AddonsMap, QueryConfigs, QueryQueue, PromiseResolver, RateLimiter, RateLimiterConfig } from './types.js';
+import type { QueryParams, Payload, QueryOptions, FilterFn, AddonsList, AddonsMap, QueryConfigs, QueryQueue, RateLimiter } from './types.js';
+import type { PromiseResolver } from '../../types.js';
 import type { AxiosHeaders, AxiosInstance } from 'axios';
 import { Buffer } from 'buffer'
 import { pRateLimit } from 'p-ratelimit';
@@ -95,6 +96,8 @@ export default class Query extends BaseModule {
   */
   private query(queryOptions: QueryOptions) {
     return new Promise(async (resolve, reject) => {
+      if (!this.initiated) await this.waitForInit();
+
       const {
         base = ApiUrl.INDEXER,
         endpoint, 
@@ -340,6 +343,7 @@ export default class Query extends BaseModule {
 
   // status
   private async indexerHealth() {
+    if (!this.initiated) await this.waitForInit();
     const response = await this.fetchData(`${this.stack.configs.indexerUrl}/health`);
     return camelcaseKeys(response, { deep: true });
   }
@@ -479,14 +483,17 @@ export default class Query extends BaseModule {
   * ==================================================
   */
   private async nodeHealth() {
+    if (!this.initiated) await this.waitForInit();
     const response = await this.fetchData(`${this.stack.configs.apiUrl}/health`);
     return camelcaseKeys(response, { deep: true });
   }
   private async  nodeStatus() {
+    if (!this.initiated) await this.waitForInit();
     const response = await this.fetchData(`${this.stack.configs.apiUrl}/v2/status`);
     return camelcaseKeys(response, { deep: true });
   }
   private async  nodeStatusAfter(block: number) {
+    if (!this.initiated) await this.waitForInit();
     const response = await this.fetchData(`${this.stack.configs.apiUrl}/v2/status/wait-for-block-after/${block}`);
     return camelcaseKeys(response, { deep: true });
   }
@@ -539,6 +546,7 @@ export default class Query extends BaseModule {
   }
   private async nodeDisassembleTeal(b64: string) {
     if (!b64?.length) return undefined;
+    if (!this.initiated) await this.waitForInit();
     const programBuffer = Buffer.from(b64, 'base64');
     const response = await this.fetch(
       `${this.stack.configs[ApiUrl.NODE]}/v2/teal/disassemble`, 
@@ -643,15 +651,17 @@ export default class Query extends BaseModule {
     client?: AxiosInstance,
   ) {
     return new Promise(async (resolve, reject) => {
+      if (!this.initiated) await this.waitForInit();
+
       let data: Payload;
 
-       // Prepare Cache
-       const cacheTable = originalParams.cacheTable;
-       const noCache = originalParams.noCache;
-       const refreshCache = originalParams.refreshCache;
-       if (originalParams.cacheTable !== undefined) delete originalParams.cacheTable;
-       if (originalParams.noCache !== undefined) delete originalParams.noCache;
-       if (originalParams.refreshCache !== undefined) delete originalParams.refreshCache;
+      // Prepare Cache
+      const cacheTable = originalParams.cacheTable;
+      const noCache = originalParams.noCache;
+      const refreshCache = originalParams.refreshCache;
+      if (originalParams.cacheTable !== undefined) delete originalParams.cacheTable;
+      if (originalParams.noCache !== undefined) delete originalParams.noCache;
+      if (originalParams.refreshCache !== undefined) delete originalParams.refreshCache;
 
       let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
       params.url = url;

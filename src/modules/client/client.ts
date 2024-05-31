@@ -60,6 +60,7 @@ export default class Client extends BaseModule {
   // Connect
   // ----------------------------------------------
   public async connect(connector: Connector, options?: any) {
+    if (!this.initiated) await this.waitForInit();
     this.useConnector(connector);
     
     if (!this._connector) return undefined;
@@ -97,6 +98,7 @@ export default class Client extends BaseModule {
   // Mnemonic
   // ----------------------------------------------
   public async connectMnemonic(mnemonic: string = '') {
+    if (!this.initiated) await this.waitForInit();
     const connected = await this.connect(Connector.MNEMONIC, mnemonic);
     return connected;
   }
@@ -110,6 +112,7 @@ export default class Client extends BaseModule {
   // MYALGO
   // ----------------------------------------------
   public async connectMyAlgo(options: Record<string, any> = {}) {
+    if (!this.initiated) await this.waitForInit();
     const connected = await this.connect(Connector.MYALGO, options as ConnectionSettings);
     return connected;
   }
@@ -123,6 +126,7 @@ export default class Client extends BaseModule {
   // PERA
   // ----------------------------------------------
   public async connectPera() {
+    if (!this.initiated) await this.waitForInit();
     const connected = await this.connect(Connector.PERA);
     return connected;
   }
@@ -135,6 +139,7 @@ export default class Client extends BaseModule {
   // DEFLY
   // ----------------------------------------------
   public async connectDefly() {
+    if (!this.initiated) await this.waitForInit();
     const connected = await this.connect(Connector.DEFLY);
     return connected;
   }

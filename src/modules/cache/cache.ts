@@ -5,7 +5,7 @@ import { indexedDB, IDBKeyRange } from "fake-indexeddb";
 import Dexie, { Collection, DexieError, TransactionMode } from 'dexie';
 import objHash from 'object-hash';
 import AlgoStack, { PromiseResolver } from '../../index.js';
-import merge from 'lodash-es/merge.js';
+import defaultsDeep from 'lodash-es/defaultsDeep.js';
 import intersection from 'lodash-es/intersection.js';
 import cloneDeep from 'lodash-es/cloneDeep.js';
 import { wait } from '../../utils/process.js';
@@ -17,9 +17,29 @@ import { CacheTable } from './enums.js';
  * ==================================================
  */
 export default class Cache extends BaseModule {
+  private configs: CacheConfigs = {
+    namespace: 'algostack',
+    tables: undefined,
+    expiration: {
+      'default': '1h',
+      [CacheTable.DB_STATE]: 'never',
+      [CacheTable.INDEXER_ASSET]: '1h',
+      [CacheTable.INDEXER_ASSET_BALANCES]: '2s',
+      [CacheTable.INDEXER_ASSET_TRANSACTIONS]: '2s',
+      [CacheTable.INDEXER_ASSETS]: '1m',
+      [CacheTable.INDEXER_BLOCK]: '1w',
+      [CacheTable.INDEXER_TXN]: '1w',
+      [CacheTable.NODE_ACCOUNT]: '10s',
+      [CacheTable.NODE_TEAL]: '1h',
+      [CacheTable.NFD_LOOKUP]: '1h',
+      [CacheTable.NFD_SEARCH]: '1m',
+      [CacheTable.MEDIAS_ASSET]: '4h',
+    },
+    pruningInterval: undefined,
+    logExpiration: false,
+  };
   private db: Dexie;
   private v: number = 1;
-  private configs: CacheConfigs = {};
   private tables: Record<string,string> = {};
   private queue: IdbTxn<any>[] = [];
   private get currentTables() { return this.db?.tables.map(table => table.name) || [] };
@@ -47,87 +67,92 @@ export default class Cache extends BaseModule {
 
   public setConfigs(configs: CacheConfigs) {
     super.setConfigs(configs);
-    this.configs = merge({
-      namespace: 'algostack',
-      tables: undefined,
-      expiration: {
-        'default': '1h',
-        [CacheTable.DB_STATE]: 'never',
-        [CacheTable.INDEXER_ASSET]: '1h',
-        [CacheTable.INDEXER_ASSET_BALANCES]: '2s',
-        [CacheTable.INDEXER_ASSET_TRANSACTIONS]: '2s',
-        [CacheTable.INDEXER_ASSETS]: '1m',
-        [CacheTable.INDEXER_BLOCK]: '1w',
-        [CacheTable.INDEXER_TXN]: '1w',
-        [CacheTable.NODE_ACCOUNT]: '10s',
-        [CacheTable.NODE_TEAL]: '1h',
-        [CacheTable.NFD_LOOKUP]: '1h',
-        [CacheTable.NFD_SEARCH]: '1m',
-        [CacheTable.MEDIAS_ASSET]: '4h',
-      },
-      pruningInterval: undefined,
-      logExpiration: false,
-    }, this.configs, configs);
-    if (this.stack) this.init(this.stack);
+    configs.tables = [
+      ...(this.configs.tables || []),
+      ...(configs.tables || [])
+    ];
+    this.configs = defaultsDeep( configs, this.configs );
   }
 
 
   public init(stack: AlgoStack) {
     super.init(stack);
     const stackVersion = this.stack?.configs?.version || 1;
+    if (this.v > stackVersion) return;
+    this.v = stackVersion;
+    try {
+      this.initTables();
+      this.db.version(this.v).stores(this.tables);
+      this.isReady = true;
+      // Auto prune
+      if (this.configs.pruningInterval) this.autoPrune();
+    }
+    catch (e) {
+      console.log(e)
+      this.handleError(e)
+    }
+    return this;
+  } 
+
+  private initTables() {
     let tables: Record<string, string> = {
       [CacheTable.DB_STATE]: '&key',
       ...this.tables,
     };
-    // Query module
-    if (stack.query) {
-      tables = { 
-        ...tables, 
-        // indexer
-        [CacheTable.INDEXER_ACCOUNT]: '&params',
-        [CacheTable.INDEXER_ACCOUNT_ASSETS]: '&params',
-        [CacheTable.INDEXER_ACCOUNT_APPLICATIONS]: '&params',
-        [CacheTable.INDEXER_ACCOUNT_TRANSACTIONS]: '&params',
-        [CacheTable.INDEXER_APPLICATION]: '&params',
-        [CacheTable.INDEXER_APPLICATION_BOX]: '&params',
-        [CacheTable.INDEXER_APPLICATION_BOXES]: '&params',
-        [CacheTable.INDEXER_ASSET]: '&params',
-        [CacheTable.INDEXER_ASSET_BALANCES]: '&params',
-        [CacheTable.INDEXER_ASSET_TRANSACTIONS]: '&params',
-        [CacheTable.INDEXER_BLOCK]: '&params',
-        [CacheTable.INDEXER_TXN]: '&params',
 
-        // node
-        [CacheTable.NODE_ACCOUNT]: '&params',
-        [CacheTable.NODE_ACCOUNT_APPLICATION]: '&params',
-        [CacheTable.NODE_ACCOUNT_ASSET]: '&params',
-        [CacheTable.NODE_BLOCK]: '&params',
-        [CacheTable.NODE_BLOCK_PROOF]: '&params',
-        [CacheTable.NODE_BLOCK_TRANSACTION_PROOF]: '&params',
-        [CacheTable.NODE_TEAL]: '&params',
 
-        // search
-        [CacheTable.INDEXER_APPLICATIONS]: '&params',
-        [CacheTable.INDEXER_ACCOUNTS]: '&params',
-        [CacheTable.INDEXER_ASSETS]: '&params',
-        [CacheTable.INDEXER_TXNS]: '&params',
-      };
+    if (this.stack) {
+      // Query module
+      if (this.stack.query) {
+        tables = { 
+          ...tables, 
+          // indexer
+          [CacheTable.INDEXER_ACCOUNT]: '&params',
+          [CacheTable.INDEXER_ACCOUNT_ASSETS]: '&params',
+          [CacheTable.INDEXER_ACCOUNT_APPLICATIONS]: '&params',
+          [CacheTable.INDEXER_ACCOUNT_TRANSACTIONS]: '&params',
+          [CacheTable.INDEXER_APPLICATION]: '&params',
+          [CacheTable.INDEXER_APPLICATION_BOX]: '&params',
+          [CacheTable.INDEXER_APPLICATION_BOXES]: '&params',
+          [CacheTable.INDEXER_ASSET]: '&params',
+          [CacheTable.INDEXER_ASSET_BALANCES]: '&params',
+          [CacheTable.INDEXER_ASSET_TRANSACTIONS]: '&params',
+          [CacheTable.INDEXER_BLOCK]: '&params',
+          [CacheTable.INDEXER_TXN]: '&params',
+  
+          // node
+          [CacheTable.NODE_ACCOUNT]: '&params',
+          [CacheTable.NODE_ACCOUNT_APPLICATION]: '&params',
+          [CacheTable.NODE_ACCOUNT_ASSET]: '&params',
+          [CacheTable.NODE_BLOCK]: '&params',
+          [CacheTable.NODE_BLOCK_PROOF]: '&params',
+          [CacheTable.NODE_BLOCK_TRANSACTION_PROOF]: '&params',
+          [CacheTable.NODE_TEAL]: '&params',
+  
+          // search
+          [CacheTable.INDEXER_APPLICATIONS]: '&params',
+          [CacheTable.INDEXER_ACCOUNTS]: '&params',
+          [CacheTable.INDEXER_ASSETS]: '&params',
+          [CacheTable.INDEXER_TXNS]: '&params',
+        };
+      }
+      // NFDs
+      if (this.stack.nfds) {
+        tables = { 
+          ...tables, 
+          [CacheTable.NFD_LOOKUP]: '&address, nfd',
+          [CacheTable.NFD_SEARCH]: '&params', 
+        };
+      }
+      // Medias
+      if (this.stack.medias) {
+        tables = { 
+          ...tables, 
+          [CacheTable.MEDIAS_ASSET]: '&id' 
+        };
+      }
     }
-    // NFDs
-    if (stack.nfds) {
-      tables = { 
-        ...tables, 
-        [CacheTable.NFD_LOOKUP]: '&address, nfd',
-        [CacheTable.NFD_SEARCH]: '&params', 
-      };
-    }
-    // Medias
-    if (stack.medias) {
-      tables = { 
-        ...tables, 
-        [CacheTable.MEDIAS_ASSET]: '&id' 
-      };
-    }
+
     if (this.configs.tables?.length) {
       const extraStores: Record<string, string> = {} 
       this.configs.tables.forEach(table => {
@@ -137,49 +162,13 @@ export default class Cache extends BaseModule {
       tables = Object.fromEntries(
         Object.entries({ ...extraStores, ...tables })
           .sort(([a],[b]) => a.localeCompare(b))
-      );      
+      );  
     }
-    
+
     this.tables = tables;
-    if (this.v > stackVersion) return;
-    this.v = stackVersion; 
-    
-    // Start it!
-    this.start();
-    return this;
-  } 
-
-
-  /**
-  * Start Db
-  * ==================================================
-  */
-  private async start() {
-    this.isReady = false;
-    let dbVersion = 0;
-    try {
-      if ( !this.db.isOpen()) await this.db.open()
-      dbVersion = this.db.verno;
-      this.db.close();
-    } catch (e) {
-      // console.log(e)
-    }
-    // console.log('starting attempt')
-    if (this.v < dbVersion) return;
-    try{
-      if (this.db.isOpen()) this.db.close();
-      await wait(100);
-      this.db.version(this.v).stores(this.tables);
-      await this.db.open();
-      this.isReady = true;
-      // Auto prune
-      if (this.configs.pruningInterval) this.autoPrune();
-    }
-    catch (e) {
-      console.log(e)
-      this.handleError(e)
-    }
   }
+
+
 
 
   /**
@@ -205,8 +194,8 @@ export default class Cache extends BaseModule {
     const shouldClearTables = intersection(errorNames, fatal)?.length
     if (shouldClearTables) {
       console.log('An error occured while upgrading IndexedDB tables.');
-      await wait(250);
-      await this.start();
+      // await wait(250);
+      // this.init(this.stack);
     }
   }
 
@@ -265,8 +254,10 @@ export default class Cache extends BaseModule {
     try {
       const results = await this.db.transaction(scope, tables, txn);
       resolve(results);
-    } catch (e) {
+    } 
+    catch (e) {
       console.log('Dexie Txn error', e)
+      console.log('scope:', scope, 'tables:', tables)
       if (!this.db.isOpen) this.db.open();
       this.queue.push({scope, tables, txn, resolve});
     }
@@ -307,6 +298,7 @@ export default class Cache extends BaseModule {
       ? CacheEntry[]|undefined
       : CacheEntry|undefined
   > {
+    if (!this.initiated) await this.waitForInit();
     return this.commit('r', tableName, async () => {
       const collection = await this.getCollection(tableName, query);
       if (!collection) return undefined;
@@ -330,7 +322,7 @@ export default class Cache extends BaseModule {
   * ==================================================
   */
   public async save(tableName: string, data: any, entry: CacheEntry) {
-    // if (!this.db[tableName]) return console.error(`Table not found (${tableName})`);
+    if (!this.initiated) await this.waitForInit();
     entry = {
       ...this.hashObjectProps(entry), 
       data, 
@@ -342,6 +334,7 @@ export default class Cache extends BaseModule {
   }
 
   public async bulkSave(tableName: string, entries: { data: any, entry: CacheEntry }[] ) {
+    if (!this.initiated) await this.waitForInit();
     if (!entries.length) return;
     const timestamp = Date.now();
     const rows = entries.map(row => ({
@@ -360,6 +353,7 @@ export default class Cache extends BaseModule {
   * ==================================================
   */
   public async delete(tableName: string, query: CacheQuery): Promise<number> {
+    if (!this.initiated) await this.waitForInit();
     return this.commit('rw', tableName, async () => {
       const collection = await this.getCollection(tableName, query);
       if (!collection) return 0;
@@ -415,6 +409,7 @@ export default class Cache extends BaseModule {
   * ==================================================
   */
   public async prune(tables?: string|string[]) {
+    if (!this.initiated) await this.waitForInit();
     const pruned = {}; 
     if (tables === undefined) tables = this.currentTables;
     else if (typeof tables === 'string') tables = [tables];
@@ -439,6 +434,7 @@ export default class Cache extends BaseModule {
   }
 
   private async autoPrune() {
+    if (!this.initiated) await this.waitForInit();
     if (!this.configs.pruningInterval) return;
     const now = Date.now();
     const lastTimestamp = await this.find(CacheTable.DB_STATE, { where: { key: 'prunedAt' } });

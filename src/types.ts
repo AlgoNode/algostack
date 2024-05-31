@@ -1,4 +1,4 @@
-import type { Configs } from './utils/configs.js';
+import type { GlobalConfigs } from './utils/configs.js';
 import type Client from './modules/client/index.js';
 import type Txns from './modules/txns/index.js';
 import type NFDs from './modules/nfds/index.js';
@@ -15,7 +15,7 @@ import { MediasConfigs } from './modules/medias/index.js';
 import { FilesConfigs } from './modules/files/types.js';
 
 
-export type { Configs } from './utils/configs.js';
+export type { GlobalConfigs } from './utils/configs.js';
 export * from './enums.js';
 export * from './modules/client/types.js';
 export * from './modules/txns/types.js';
@@ -36,7 +36,7 @@ export interface PlugableModules {
 }  
 
 export interface ModulesConfigs {
-  global?: Configs,
+  global?: GlobalConfigs,
   cache?: CacheConfigs,
   client?: ClientConfigs,
   txns?: TxnsConfigs,
@@ -47,3 +47,6 @@ export interface ModulesConfigs {
 }  
 
 export type ModuleKey = keyof ModulesConfigs;
+
+
+export type PromiseResolver = (arg?: unknown) => void;

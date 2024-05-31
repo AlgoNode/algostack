@@ -1,5 +1,5 @@
 import { TransactionMode } from "dexie";
-import { PromiseResolver } from "../query";
+import { PromiseResolver } from "../../types.js";
 
 export interface CacheConfigs {
   namespace?: string,

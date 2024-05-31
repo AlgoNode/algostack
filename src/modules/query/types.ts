@@ -2,6 +2,7 @@ import type { AxiosInstance } from 'axios';
 import { ApiUrl } from './enums.js';
 import type Query from './query.js';
 import { CacheTable } from '../cache/enums.js';
+import { PromiseResolver } from '../../types.js';
 
 export type LookupMethods = Query['lookup'];
 export type SearchMethods = Query['search'];
@@ -31,7 +32,6 @@ export interface QueryParams {
   [key: string]: string|number|boolean|Payload|undefined,
 }
 
-export type PromiseResolver = (arg: unknown) => void;
 export type QueryQueue = Map<string, PromiseResolver[]>;
 
 export type Payload = Record<string, any>;
