@@ -22,6 +22,10 @@ export interface CacheConfigs {
 
   // A list of stores to persist when pruning
   persist?: string[],
+
+  // Batch transactions sequences that have the same tables and scope
+  maxTxnsBatch?: number,
+
   
   // logs
   logExpiration?: boolean,
@@ -43,7 +47,7 @@ export interface CacheQuery {
 
 export interface IdbTxn<T> {
   scope: TransactionMode,
-  tables: string|string[],
+  tables: string[],
   txn: () => Promise<T>,
   resolve: PromiseResolver,
 }

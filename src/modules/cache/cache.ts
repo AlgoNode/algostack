@@ -4,13 +4,12 @@ import { BaseModule } from '../_baseModule.js';
 import { indexedDB, IDBKeyRange } from "fake-indexeddb";
 import Dexie, { Collection, DexieError, TransactionMode } from 'dexie';
 import objHash from 'object-hash';
-import AlgoStack, { PromiseResolver } from '../../index.js';
+import AlgoStack from '../../index.js';
 import defaultsDeep from 'lodash-es/defaultsDeep.js';
 import intersection from 'lodash-es/intersection.js';
+import isEqual from 'lodash-es/isEqual.js';
 import cloneDeep from 'lodash-es/cloneDeep.js';
-import { wait } from '../../utils/process.js';
 import { CacheTable } from './enums.js';
-
 
 /**
  * Cache module
@@ -36,6 +35,7 @@ export default class Cache extends BaseModule {
       [CacheTable.MEDIAS_ASSET]: '4h',
     },
     pruningInterval: undefined,
+    maxTxnsBatch: 100,
     logExpiration: false,
   };
   private db: Dexie;
@@ -43,12 +43,8 @@ export default class Cache extends BaseModule {
   private tables: Record<string,string> = {};
   private queue: IdbTxn<any>[] = [];
   private get currentTables() { return this.db?.tables.map(table => table.name) || [] };
-  private _isReady: boolean = false;
-  private get isReady() { return this._isReady };
-  private set isReady(value: boolean) {
-    this._isReady = value;
-    if (value === true) this.runQueue();
-  }
+  private isBusy: boolean = false;
+
 
   constructor(configs: CacheConfigs = {}) {
     super();
@@ -83,7 +79,6 @@ export default class Cache extends BaseModule {
     try {
       this.initTables();
       this.db.version(this.v).stores(this.tables);
-      this.isReady = true;
       // Auto prune
       if (this.configs.pruningInterval) this.autoPrune();
     }
@@ -194,8 +189,6 @@ export default class Cache extends BaseModule {
     const shouldClearTables = intersection(errorNames, fatal)?.length
     if (shouldClearTables) {
       console.log('An error occured while upgrading IndexedDB tables.');
-      // await wait(250);
-      // this.init(this.stack);
     }
   }
 
@@ -210,12 +203,10 @@ export default class Cache extends BaseModule {
     await this.db.delete();
   }
   private async resetDb() {
-    this.isReady = false;
     await this.clearAll();
     if (this.db.isOpen()) this.db.close();
     this.db.version(this.v).stores(this.tables); 
     this.db.open();
-    this.isReady = true;
   }
 
 
@@ -223,43 +214,57 @@ export default class Cache extends BaseModule {
   * Transaction Queue
   * ==================================================
   */
-  private commit<T>(scope: TransactionMode, tables: string|string[], txn: () => Promise<T>, frontRun:boolean = false): Promise<T> {
-    return new Promise((resolve, reject) => {
-      if (!Array.isArray(tables)) tables = [tables];
-      if (!this.isReady) {
-        if (!frontRun) this.queue.push({scope, tables, txn, resolve});
-        else this.queue.unshift({scope, tables, txn, resolve});
-        return;
-      }
-      const isMissingStores = intersection(tables, this.currentTables).length < tables.length;
-      if (isMissingStores) {
-        this.queue.push({scope, tables, txn, resolve});
-        console.warn('Stores are missing', tables);
-        return
-      }
-      return this.runTxn(scope, tables, txn, resolve);    
-    })
+  private commit<T>(scope: TransactionMode, table: string|string[], txn: () => Promise<T>): Promise<T> {
+    const tables = Array.isArray(table) ? table : [table];
+    const isMissingStores = intersection(tables, this.currentTables).length < tables.length;
+    if (isMissingStores) {
+      console.warn('Stores are missing', tables);
+      return;
+    }
+    return new Promise((resolve) => {
+      this.queue.push({scope, tables, txn, resolve});
+      if (!this.isBusy) this.runQueue();   
+    });
   }
  
-  private runQueue() {
-    if (!this.isReady) return;
+  private async runQueue() {
+    if (this.isBusy) return;
+    if (!this.queue.length) return;
+    this.isBusy = true;
     while (this.queue.length) {
-      const txn = this.queue.shift();
-      this.runTxn(txn.scope, txn.tables, txn.txn, txn.resolve);
+      await this.runBatch();
     }
+    this.isBusy = false;
   }
+  
 
-  private async runTxn<T>(scope: TransactionMode, tables: string|string[], txn: () => Promise<T>, resolve: PromiseResolver) {
-    if (!Array.isArray(tables)) tables = [tables];   
+  private async runBatch() {
+    if (!this.queue.length) return;
+    const refTxn = this.queue[0];
+    const scope = refTxn.scope;
+    const tables = refTxn.tables;
+    const batch: IdbTxn<any>[] = [];
+    for( let i=0; i<this.configs.maxTxnsBatch && i<this.queue.length; i++) {
+      const txn = this.queue[i];
+      const isSimilar = txn.scope === scope
+        && isEqual(txn.tables, tables);
+      if (isSimilar) batch.push(txn);
+      else break;
+    }
+
     try {
-      const results = await this.db.transaction(scope, tables, txn);
-      resolve(results);
+      this.queue.splice(0, batch.length);
+      await this.db.transaction(scope, tables, async () => {
+        for (const txn of batch) {
+          const results = await txn.txn();
+          txn.resolve(results);
+        }
+      });
     } 
     catch (e) {
       console.log('Dexie Txn error', e)
       console.log('scope:', scope, 'tables:', tables)
       if (!this.db.isOpen) this.db.open();
-      this.queue.push({scope, tables, txn, resolve});
     }
   }
 
@@ -427,7 +432,7 @@ export default class Cache extends BaseModule {
           .filter(entry => entry.timestamp < expirationLimit)
           .delete()
         return expired;
-      }, true);
+      });
       if (expired) pruned[tableName] = expired;
     }
     return pruned;
