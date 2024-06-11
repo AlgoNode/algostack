@@ -80,7 +80,7 @@ export default class Cache extends BaseModule {
       this.initTables();
       this.db.version(this.v).stores(this.tables);
       // Auto prune
-      if (this.configs.pruningInterval) this.autoPrune();
+      if (this.configs.pruningInterval) this.initAutoPrune();
     }
     catch (e) {
       console.log(e)
@@ -439,8 +439,6 @@ export default class Cache extends BaseModule {
   }
 
   private async autoPrune() {
-    if (!this.initiated) await this.waitForInit();
-    if (!this.configs.pruningInterval) return;
     const now = Date.now();
     const lastTimestamp = await this.find(CacheTable.DB_STATE, { where: { key: 'prunedAt' } });
     const pruneAfter =  durationStringToMs(this.configs.pruningInterval);
@@ -450,6 +448,14 @@ export default class Cache extends BaseModule {
     const pruned = await this.prune();
     await this.save(CacheTable.DB_STATE, null, {key: 'prunedAt'});
     console.warn('Caches pruned: ', pruned);
+  }
+
+  private async initAutoPrune() {
+    if (!this.initiated) await this.waitForInit();
+    if (!this.configs.pruningInterval) return;
+    const interval = durationStringToMs(this.configs.pruningInterval);
+    setInterval(this.autoPrune.bind(this), interval);
+    
   }
 
 }
