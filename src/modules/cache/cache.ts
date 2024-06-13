@@ -51,10 +51,13 @@ export default class Cache extends BaseModule {
     const isBrowser = typeof window !== 'undefined'; 
     this.db = new Dexie(
       configs.namespace, 
-      isBrowser && window.indexedDB 
-        ? undefined
-        : { indexedDB, IDBKeyRange }
-      );
+      {
+        cache: 'disabled',
+        ...isBrowser && window.indexedDB 
+          ? {}
+          : { indexedDB, IDBKeyRange }
+      }
+    )
     if (isBrowser) {
       window.addEventListener('unhandledrejection', this.handleError.bind(this))
     }
