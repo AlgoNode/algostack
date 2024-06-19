@@ -3,7 +3,7 @@ import type { File } from '../files/index.js'
 import { getIpfsFromAddress } from '../../helpers/files.js';
 import { Arc, Encoding, MediaType } from '../../enums.js';
 import { pRateLimit } from 'p-ratelimit';
-import { AssetFiles, AssetFilesOptions, MediasConfigs } from './types.js';
+import { AssetFiles, AssetFilesOptions, AssetProperties, AssetTraits, MediasConfigs } from './types.js';
 import { BaseModule } from '../_baseModule.js';
 import AlgoStack, { AssetPayload, Payload } from '../../index.js';
 import Files from '../files/index.js';
@@ -88,7 +88,7 @@ export default class Medias extends BaseModule {
     }
 
     // get cache
-    if (this.cache && !refreshCache) {
+    if (false && this.cache && !refreshCache) {
       const cached = await this.cache.find(CacheTable.MEDIAS_ASSET, { where: { id }});
       if (cached?.data) return cached.data;
     }
@@ -119,6 +119,9 @@ export default class Medias extends BaseModule {
       if (arc69Files.metadata) files.arcs.push(Arc.ARC69);
       files = this.mergeFiles(files, arc69Files);
     }
+
+    // Extract Traits and Properties
+    files = this.extractTraitAndProperties(files);
     
     // save cache
     if (this.cache) {
@@ -195,10 +198,10 @@ export default class Medias extends BaseModule {
 
 
 
-/**
- * Arc69
- * ==================================================
- */
+  /**
+  * Arc69
+  * ==================================================
+  */
   public async getArc69(assetId: number) {
     const assetFiles: AssetFiles =  {
       arcs: [],
@@ -235,7 +238,10 @@ export default class Medias extends BaseModule {
   }
 
 
-
+  /**
+  * Helpers
+  * ==================================================
+  */
   private mergeFiles(baseFiles: AssetFiles, newFiles: AssetFiles, arcs?: Arc[]) {
     return {
       arcs: [
@@ -251,6 +257,45 @@ export default class Medias extends BaseModule {
     }
   }
 
+
+  private extractTraitAndProperties(files: AssetFiles) {
+    if (!files.metadata) return files;
+    let traits: AssetTraits|undefined;
+    let properties: AssetProperties|undefined;
+    // properties
+    if(files.metadata.properties) {
+      properties = files.metadata.properties;
+    }
+
+
+    // arc 3
+    if (properties?.traits) {
+      traits = properties.traits
+      delete properties.traits;
+    }
+
+    // Dartroom  x_x
+    if (properties?.arc69?.attributes) {
+      traits = properties.arc69.attributes
+      delete properties.arc69.attributes;
+    }
+
+    // arc 69
+    if (files.metadata.attributes) {
+      traits = files.metadata.attributes
+    }
+
+    // convert traits array to object
+    if (Array.isArray(traits)) {
+      traits = Object.fromEntries(
+        traits.map(trait => ([trait.trait_type, trait.value]))
+      )
+    }
+  
+    files.traits = traits;
+    files.properties = properties;
+    return files
+  }
 
 }
 

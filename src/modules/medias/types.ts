@@ -10,6 +10,8 @@ export interface AssetFiles {
   arcs: Arc[],
   medias: File[],
   metadata?: Payload,
+  properties?: AssetProperties,
+  traits?: AssetTraits,
 }
 
 export interface AssetFilesOptions {
@@ -20,3 +22,6 @@ export interface AssetFilesOptions {
     arc69?: boolean,
   },
 }
+
+export type AssetProperties = Record<string, any>;
+export type AssetTraits = Record<string, string|number>;
