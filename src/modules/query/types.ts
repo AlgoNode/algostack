@@ -1,8 +1,16 @@
+import type { 
+  Asset,
+  Account,
+  Application,
+  Transaction,
+  Block,
+} from 'algosdk/src/client/v2/indexer/models/types.js'
 import type { AxiosInstance } from 'axios';
-import { ApiUrl } from './enums.js';
 import type Query from './query.js';
+import { ApiUrl } from './enums.js';
 import { CacheTable } from '../cache/enums.js';
 import { PromiseResolver } from '../../types.js';
+
 
 export type LookupMethods = Query['lookup'];
 export type SearchMethods = Query['search'];
@@ -47,3 +55,10 @@ export interface RateLimiterConfig {
   rate?: number,
   concurrency?: number,
 }
+
+export type PayloadWithAddons = { addons: Payload }
+export type AssetPayload = Asset & PayloadWithAddons;
+export type AccountPayload = Account & PayloadWithAddons;
+export type ApplicationPayload = Application & PayloadWithAddons;
+export type TransactionPayload = Transaction & PayloadWithAddons;
+export type BlockPayload = Block & PayloadWithAddons; 

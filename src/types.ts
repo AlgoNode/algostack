@@ -48,5 +48,4 @@ export interface ModulesConfigs {
 
 export type ModuleKey = keyof ModulesConfigs;
 
-
 export type PromiseResolver = (arg?: unknown) => void;

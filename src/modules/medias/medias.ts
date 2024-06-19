@@ -1,15 +1,18 @@
 import type Cache from '../cache/index.js';
 import type { File } from '../files/index.js'
 import { getIpfsFromAddress } from '../../helpers/files.js';
-import { MediaType } from '../../enums.js';
+import { Arc, Encoding, MediaType } from '../../enums.js';
 import { pRateLimit } from 'p-ratelimit';
-import { AssetFiles, MediasConfigs } from './types.js';
+import { AssetFiles, AssetFilesOptions, MediasConfigs } from './types.js';
 import { BaseModule } from '../_baseModule.js';
-import AlgoStack from '../../index.js';
+import AlgoStack, { AssetPayload, Payload } from '../../index.js';
 import Files from '../files/index.js';
 import merge from 'lodash-es/merge.js';
 import { isDomainUrl } from '../../helpers/strings.js';
 import { CacheTable } from '../cache/index.js';
+import { defaultsDeep } from 'lodash-es';
+import { AssetParams } from 'algosdk/dist/types/client/v2/indexer/models/types.js';
+import { B64Decoder } from '../../helpers/encoding.js';
 
 
 /**
@@ -59,106 +62,195 @@ export default class Medias extends BaseModule {
   * uses the params object of an asset
   * ==================================================
   */
-  public async getAssetFiles(id: number, assetProps?: Record<string, any>, refreshCache?: boolean): Promise<AssetFiles> {
-    return new Promise(async resolve => {
-      if (!this.initiated) await this.waitForInit();
-
-      let files: AssetFiles =  {
-        metadata: undefined,
-        medias: [],
-      };
-
-      if (!assetProps && this.stack.query) {
-        const assetData = await this.stack.query.lookup.asset(id, { includeAll: true });
-        assetProps = assetData?.asset;
-      }
-
-      const params = assetProps?.params;
-       
-      if (!id || !params?.url) return resolve(files);
-      id = Number(id);
-
-      // get cache
-      if (this.cache && !refreshCache) {
-        const cached = await this.cache.find(CacheTable.MEDIAS_ASSET, { where: { id }});
-        if (cached?.data) return resolve(cached.data);
-      }
-      // only check if not a domain url
-      if (!isDomainUrl(params.url)) {
-        // get medias
-        let url = params.url as string;
-        if (String(params.url).startsWith('template-ipfs://')) {
-          const arc19Url = getIpfsFromAddress(params, url);
-          if (arc19Url) url = arc19Url;
-        }
-        files = await this.getMedias(url);
-      };
-
-      // save cache
-      if (this.cache) {
-        await this.cache.save(CacheTable.MEDIAS_ASSET, files, { id });
-      }
-
-      resolve(files);
-    });
-  }
-
-
-
-  /**
-  * ARC3
-  * ==================================================
-  */
-  private async getArc3(data: Record<string, any>) {
-    let arc3Files: File[] = [];
-    // check for image
-    if (data.image) {
-      const media = await this.rateLimiter( () => this.files.getMeta(data.image) );
-      if (media.type === MediaType.IMAGE || media.type === MediaType.VIDEO) {
-        arc3Files.push(media);
-      }
-    }
-    else if (data.external_url) {
-      const image = await this.rateLimiter( () => this.files.getMeta(data.external_url));
-      if (image.type === MediaType.IMAGE) {
-        arc3Files.push(image);
-      }
-    }
-    // check for video {
-    if (data.animation_url) {
-      // const animation = await new File(data.animation_url).check();
-      const animation = await this.rateLimiter( () => this.files.getMeta(data.animation_url) );
-      arc3Files.push(animation);
-    }
-    return arc3Files;
-  }
-
-
-
-  /**
-  * Get media
-  * ==================================================
-  */
-  public async getMedias(url: string) {
-    if (!this.initiated) await this.waitForInit();
-
-    const assetFiles: AssetFiles =  {
+  public async getAssetFiles(id: number, options: AssetFilesOptions = {}, refreshCache?: boolean): Promise<AssetFiles> {
+    let files: AssetFiles =  {
+      arcs: [],
       metadata: undefined,
       medias: [],
+    };
+    if (!id) return files;
+
+    if (!this.initiated) await this.waitForInit();
+    id = Number(id);
+    options = defaultsDeep(options, {
+      arcs: {
+        arc3: true,
+        arc19: true,
+        arc69: false,
+      }
+    });
+
+    let params:AssetParams = options.asset?.params;
+
+    if (!params && this.stack.query) {
+      const assetResponse = await this.stack.query.lookup.asset(id, { includeAll: true });
+      params = assetResponse?.asset?.params as AssetParams|undefined;
+    }
+
+    // get cache
+    if (this.cache && !refreshCache) {
+      const cached = await this.cache.find(CacheTable.MEDIAS_ASSET, { where: { id }});
+      if (cached?.data) return cached.data;
+    }
+    
+    // ARC3 & ARC19
+    if (params?.url && !isDomainUrl(params.url)) {
+      let url = params.url as string;
+      const isTemplateUrl = String(url).startsWith('template-ipfs://');
+      if (options.arcs.arc19 && isTemplateUrl) {
+        const arc19Url = getIpfsFromAddress(params, url);
+        if (arc19Url) url = arc19Url;
+        const arc19Files = await this.getFiles(url)
+        const isArc = arc19Files.metadata;
+        if (isArc) files.arcs.push(Arc.ARC19, Arc.ARC3);
+        files = this.mergeFiles(files, arc19Files);
+      }
+      else if (options.arcs.arc3) {
+        const arc3Files = await this.getFiles(url);
+        const isArc = arc3Files.metadata;
+        if (isArc) files.arcs.push(Arc.ARC3);
+        files = this.mergeFiles(files, arc3Files);
+      }
+    }
+    
+    // ARC69
+    if (options.arcs.arc69) {
+      const arc69Files = await this.getArc69(id)
+      if (arc69Files.metadata) files.arcs.push(Arc.ARC69);
+      files = this.mergeFiles(files, arc69Files);
+    }
+    
+    // save cache
+    if (this.cache) {
+      await this.cache.save(CacheTable.MEDIAS_ASSET, files, { id });
+    }
+
+    return files;
+   
+  }
+
+
+
+
+  /**
+  * Files
+  * ==================================================
+  */
+  public async getFiles(url: string) {
+    if (!this.initiated) await this.waitForInit();
+    const assetFiles: AssetFiles =  {
+      arcs: [],
+      medias: [],
+      metadata: undefined,
     };
     const media = await this.rateLimiter( () => this.files.getMeta(url) );
     // media is json file (metadata)
     if (media.type === MediaType.JSON) {
-      assetFiles.metadata = media;
-      const arc3Files = await this.getArc3(media.content as Record<string, any>);
+      assetFiles.metadata = media.content as Payload;
+      const arc3Files = await this.getMedias(media.content as Record<string, any>);
       assetFiles.medias.push(...arc3Files);
     }
-    else {
+    else if (media.type === MediaType.IMAGE || media.type === MediaType.VIDEO) {
       assetFiles.medias.push(media);
     }
 
     return assetFiles;
   }
+  /**
+  * Medias
+  * ==================================================
+  */
+  private async getMedias(data: Record<string, any>) {
+    let mediaFiles: File[] = [];
+    // check for image
+    if (data.image) {
+      const media = await this.rateLimiter( () => this.files.getMeta(data.image) );
+      if (media.type === MediaType.IMAGE || media.type === MediaType.VIDEO) {
+        mediaFiles.push(media);
+      }
+    }
+    else if (data.external_url) {
+      const image = await this.rateLimiter( () => this.files.getMeta(data.external_url));
+      if (image.type === MediaType.IMAGE) {
+        mediaFiles.push(image);
+      }
+    }
+    // check for video 
+    if (data.animation_url) {
+      const animation = await this.rateLimiter( () => this.files.getMeta(data.animation_url) );
+      mediaFiles.push(animation);
+    }
+    // check for other medias
+    if (data.media_url) {
+      const media = await this.rateLimiter( () => this.files.getMeta(data.media_url) );
+      if (media.type === MediaType.IMAGE || media.type === MediaType.VIDEO) {
+        mediaFiles.push(media);
+      }
+    }
+    return mediaFiles;
+  }
+
+
+
+
+
+
+/**
+ * Arc69
+ * ==================================================
+ */
+  public async getArc69(assetId: number) {
+    const assetFiles: AssetFiles =  {
+      arcs: [],
+      medias: [],
+      metadata: undefined,
+    };
+    if (!assetId) return assetFiles;
+    if (!this.stack?.query) return assetFiles;
+    const response = await this.stack.query.lookup!.assetTransactions(assetId,{ 
+      txType: 'acfg', notePrefix: '{', 
+      limit: -1,
+    });
+    if (!response.transactions) return assetFiles;
+
+    // // ARC69
+    const arc69Txns = response.transactions
+      .map((txn: Payload) => {
+        if (!txn.note) return txn;
+        if (!txn.addons) txn.addons = {};
+        txn.addons.note = new B64Decoder(txn.note);
+        return txn;
+      })
+      .filter((txn: Record<string, any>) => (
+        txn.addons?.note.encoding === Encoding.JSON
+        && String(txn.addons?.note.parsed?.json?.standard).toUpperCase() === Arc.ARC69
+      ))
+      .sort((a: any,b: any) => (b.confirmedRound - a.confirmedRound))
+    // found arc69 
+    const config = arc69Txns?.[0]?.addons?.note?.parsed?.json;
+    if(!config) return assetFiles; 
+    assetFiles.metadata = config;
+    assetFiles.medias = await this.getMedias(config);
+    return assetFiles
+  }
+
+
+
+  private mergeFiles(baseFiles: AssetFiles, newFiles: AssetFiles, arcs?: Arc[]) {
+    return {
+      arcs: [
+        ...baseFiles.arcs || [],
+        ...newFiles.arcs || [],
+        ...arcs || [],
+      ],
+      metadata: merge(baseFiles?.metadata, newFiles?.metadata),
+      medias: [
+        ...baseFiles.medias,
+        ...newFiles.medias,
+      ],
+    }
+  }
+
 
 }
 

@@ -6,6 +6,7 @@ import { CID } from 'multiformats/cid';
 import * as mfsha2 from 'multiformats/hashes/sha2';
 import * as digest from 'multiformats/hashes/digest';
 import { getContentTypeFromUrl, isDomainUrl, isIpfsSubdomain } from './strings.js';
+import { AssetParams } from 'algosdk/dist/types/client/v2/indexer/models/types.js';
 
 
 
@@ -68,7 +69,7 @@ import { getContentTypeFromUrl, isDomainUrl, isIpfsSubdomain } from './strings.j
  * ==================================================
  */
 
-export function getIpfsFromAddress(params: Record<string, string| number>|string, url: string = 'template-ipfs://{ipfscid:1:raw:reserve:sha2-256}') {  
+export function getIpfsFromAddress(params: Partial<AssetParams>|string, url: string = 'template-ipfs://{ipfscid:1:raw:reserve:sha2-256}') {  
   if (typeof params === 'string') params = { reserve: params };   
   const matches = url.match(/^template-ipfs:\/\/\{ipfscid:([0-9]+):([a-z\-]+):([a-z]+):([a-z0-9\-]+)}(.+)?$/);
   if (!matches) return;
