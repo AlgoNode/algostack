@@ -88,8 +88,10 @@ export default class Medias extends BaseModule {
     }
 
     // get cache
-    if (false && this.cache && !refreshCache) {
-      const cached = await this.cache.find(CacheTable.MEDIAS_ASSET, { where: { id }});
+    if (this.cache && !refreshCache) {
+      const cached = await this.cache.find(CacheTable.MEDIAS_ASSET, { 
+        where: { id, options },
+      });
       if (cached?.data) return cached.data;
     }
     
@@ -125,7 +127,9 @@ export default class Medias extends BaseModule {
     
     // save cache
     if (this.cache) {
-      await this.cache.save(CacheTable.MEDIAS_ASSET, files, { id });
+      await this.cache.save(CacheTable.MEDIAS_ASSET, files, 
+        { id, options }
+      );
     }
 
     return files;
@@ -159,6 +163,8 @@ export default class Medias extends BaseModule {
 
     return assetFiles;
   }
+
+  
   /**
   * Medias
   * ==================================================

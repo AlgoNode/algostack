@@ -146,7 +146,7 @@ export default class Cache extends BaseModule {
       if (this.stack.medias) {
         tables = { 
           ...tables, 
-          [CacheTable.MEDIAS_ASSET]: '&id' 
+          [CacheTable.MEDIAS_ASSET]: '&id, options' 
         };
       }
     }
