@@ -369,6 +369,22 @@ export default class Cache extends BaseModule {
     }) 
   }
 
+  /**
+  * Clear a table
+  * ==================================================
+  */
+  public async clear(tableName: string): Promise<void> {
+    if (!this.initiated) await this.waitForInit();
+    return this.commit('rw', tableName, async () => {
+      const table = this.db[tableName];
+      if (!table) {
+        console.error(`Table not found (${tableName})`);
+        return;
+      }
+      await table.clear();
+    }) 
+  }
+
 
 
   /**

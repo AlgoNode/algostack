@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "tslib": "^2.6.0",
-    "typescript": "^5.1.5"
+    "typescript": "^5.5.3"
   },
   "dependencies": {
     "@blockshake/defly-connect": "^1.1.6",

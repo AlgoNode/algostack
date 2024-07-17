@@ -1,6 +1,5 @@
 import type { Version as CIDVersion } from 'multiformats/dist/types/src/link/interface';
 import axios, { ResponseType } from 'axios';
-import { pRateLimit } from 'p-ratelimit';
 import { decodeAddress, encodeAddress } from 'algosdk';
 import { CID } from 'multiformats/cid';
 import * as mfsha2 from 'multiformats/hashes/sha2';

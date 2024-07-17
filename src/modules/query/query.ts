@@ -1,21 +1,30 @@
-import type Cache from '../cache/index.js';
-import type { QueryParams, Payload, QueryOptions, FilterFn, AddonsList, AddonsMap, QueryConfigs, QueryQueue, RateLimiter } from './types.js';
-import type { PromiseResolver } from '../../types.js';
-import type { AxiosHeaders, AxiosInstance } from 'axios';
-import { Buffer } from 'buffer'
-import { pRateLimit } from 'p-ratelimit';
-import { utf8ToB64 } from '../../helpers/encoding.js';
-import { ApiUrl } from './enums.js';
-import { BaseModule } from '../_baseModule.js';
-import camelcaseKeys from 'camelcase-keys';
-import kebabcaseKeys from 'kebabcase-keys';
-import AlgoStack from '../../index.js';
-import axios from 'axios'; 
-import merge from 'lodash-es/merge.js';
-import cloneDeep from 'lodash-es/cloneDeep.js';
-import objHash from 'object-hash';
-import { CacheTable } from '../cache/index.js';
-
+import type Cache from "../cache/index.js";
+import type {
+  QueryParams,
+  Payload,
+  QueryOptions,
+  FilterFn,
+  AddonsList,
+  AddonsMap,
+  QueryConfigs,
+  QueryQueue,
+  RateLimiter,
+} from "./types.js";
+import type { PromiseResolver } from "../../types.js";
+import type { AxiosHeaders, AxiosInstance } from "axios";
+import { Buffer } from "buffer";
+import { pRateLimit } from "p-ratelimit";
+import { utf8ToB64 } from "../../helpers/encoding.js";
+import { ApiUrl } from "./enums.js";
+import { BaseModule } from "../_baseModule.js";
+import camelcaseKeys from "camelcase-keys";
+import kebabcaseKeys from "kebabcase-keys";
+import AlgoStack from "../../index.js";
+import axios from "axios";
+import merge from "lodash-es/merge.js";
+import cloneDeep from "lodash-es/cloneDeep.js";
+import objHash from "object-hash";
+import { CacheTable } from "../cache/index.js";
 
 /**
  * Query class
@@ -24,7 +33,7 @@ import { CacheTable } from '../cache/index.js';
 export default class Query extends BaseModule {
   private configs: QueryConfigs = {};
   private queue: QueryQueue = new Map();
-  protected cache?: Cache; 
+  protected cache?: Cache;
   protected rateLimiters: Map<string, RateLimiter> = new Map();
 
   constructor(configs: QueryConfigs = {}) {
@@ -33,16 +42,20 @@ export default class Query extends BaseModule {
   }
 
   public setConfigs(configs: QueryConfigs) {
-    this.configs = merge({
-      rateLimiter: {
-        interval: 1000,
-        rate: 50,
-        concurrency: 25
+    this.configs = merge(
+      {
+        rateLimiter: {
+          interval: 1000,
+          rate: 50,
+          concurrency: 25,
+        },
       },
-    }, this.configs, configs);
+      this.configs,
+      configs
+    );
     this.initRateLimiters();
   }
-  
+
   public init(stack: AlgoStack) {
     super.init(stack);
     this.cache = stack.cache;
@@ -50,10 +63,10 @@ export default class Query extends BaseModule {
   }
 
   /**
-  * Rate Limiters
-  * ==================================================
-  */
-  private initRateLimiters(){
+   * Rate Limiters
+   * ==================================================
+   */
+  private initRateLimiters() {
     const defaultConfigs = {
       interval: 1000,
       rate: 50,
@@ -61,205 +74,212 @@ export default class Query extends BaseModule {
       ...(this.configs.rateLimiter || {}),
     };
 
-    this.rateLimiters.set('default', pRateLimit(defaultConfigs));
+    this.rateLimiters.set("default", pRateLimit(defaultConfigs));
     if (!this.configs.rateLimiters) return;
-    Object.entries(this.configs.rateLimiters)
-      .forEach(([key, configs]) => {
-        this.rateLimiters.set(key, pRateLimit({
+    Object.entries(this.configs.rateLimiters).forEach(([key, configs]) => {
+      this.rateLimiters.set(
+        key,
+        pRateLimit({
           ...defaultConfigs,
           ...configs,
-        }))
-      });
+        })
+      );
+    });
   }
 
-
   /**
-  * Get request headers
-  * ==================================================
-  */
-  private getReqHeaders (api: ApiUrl, params: QueryParams) {
+   * Get request headers
+   * ==================================================
+   */
+  private getReqHeaders(api: ApiUrl, params: QueryParams) {
     const token = this.stack.configs.apiToken;
     if (!token) return params?.headers;
-    let tokenHeader: string|undefined = undefined
-    if (api === ApiUrl.INDEXER) tokenHeader = 'X-Indexer-API-Token';
-    else if (api === ApiUrl.NODE) tokenHeader = 'X-Algo-API-Token';
+    let tokenHeader: string | undefined = undefined;
+    if (api === ApiUrl.INDEXER) tokenHeader = "X-Indexer-API-Token";
+    else if (api === ApiUrl.NODE) tokenHeader = "X-Algo-API-Token";
     if (!tokenHeader) return params;
-    return { 
+    return {
       ...(params.headers || {}),
       [tokenHeader]: token,
-    }
+    };
   }
 
   /**
-  * Query wrapper
-  * ==================================================
-  */
+   * Query wrapper
+   * ==================================================
+   */
   private query(queryOptions: QueryOptions) {
     return new Promise(async (resolve, reject) => {
       if (!this.initiated) await this.waitForInit();
-
       const {
         base = ApiUrl.INDEXER,
-        endpoint, 
-        params: originalParams = {}, 
-      } = queryOptions
+        endpoint,
+        params: originalParams = {},
+      } = queryOptions;
       let data: Payload;
-  
+
       // Prepare Cache
       const cacheTable = originalParams.cacheTable;
       const noCache = originalParams.noCache;
       const refreshCache = originalParams.refreshCache;
-      if (originalParams.cacheTable !== undefined) delete originalParams.cacheTable;
+      if (originalParams.cacheTable !== undefined)
+        delete originalParams.cacheTable;
       if (originalParams.noCache !== undefined) delete originalParams.noCache;
-      if (originalParams.refreshCache !== undefined) delete originalParams.refreshCache;
-      
+      if (originalParams.refreshCache !== undefined)
+        delete originalParams.refreshCache;
+
       // Prepare Params
-      let { params, url } = this.mergeUrlAndParams(endpoint, originalParams);      
-      
-      if (params.limit === -1) delete params.limit; 
+      let { params, url } = this.mergeUrlAndParams(endpoint, originalParams);
+
+      if (params.limit === -1) delete params.limit;
       if (params.cacheTable !== undefined) delete params.cacheTable;
       if (params.noCache !== undefined) delete params.noCache;
       if (params.refreshCache !== undefined) delete params.refreshCache;
-      
-      const addons = params.addons as AddonsList | AddonsMap |undefined;
+
+      const addons = params.addons as AddonsList | AddonsMap | undefined;
       const filter = params.filter;
-      
-      const cleanParams = this.cleanParams(params)
+
+      const cleanParams = this.cleanParams(params);
       const encodedParams = this.encodeParams(cleanParams);
       const reqParams = kebabcaseKeys(encodedParams, { deep: true });
-      reqParams.url = `${base}${url}`; 
+      reqParams.url = `${base}${url}`;
       reqParams.headers = this.getReqHeaders(base, reqParams);
-      
+
       if (filter) delete params.filter;
       if (addons) delete params.addons;
 
       // get cached data
       if (this.cache && cacheTable && !refreshCache && !noCache) {
-        const cached = await this.cache.find(cacheTable, { where: { params: reqParams }});
+        const cached = await this.cache.find(cacheTable, {
+          where: { params: reqParams },
+        });
         if (cached) {
-          data = cached.data
+          data = cached.data;
           return resolve(data);
         }
       }
       const hash = objHash({ base, endpoint, originalParams });
       this.pushToQueue(hash, resolve);
       if (this.queue.get(hash)?.length > 1) return;
-      
 
-      data = await this.fetchData(`${this.stack.configs[base]}${url}`, reqParams);
-      data = camelcaseKeys(data, { deep: true }); 
-      
+      data = await this.fetchData(
+        `${this.stack.configs[base]}${url}`,
+        reqParams
+      );
+      data = camelcaseKeys(data, { deep: true });
+
       if (addons) await this.applyAddons(data, addons);
       if (filter) data = this.applyFilter(data, filter);
-      
+
       // Loop
       let i = 0;
       while (this.shouldFetchNext(data, originalParams) && i < 20) {
         i++;
         let nextData: Payload = await this.fetchData(
-          `${this.stack.configs[base]}${url}`, 
-          { ...reqParams, next: data.nextToken}
+          `${this.stack.configs[base]}${url}`,
+          { ...reqParams, next: data.nextToken }
         );
         delete data.nextToken;
-        nextData = camelcaseKeys(nextData, { deep: true }); 
+        nextData = camelcaseKeys(nextData, { deep: true });
         if (addons) await this.applyAddons(nextData, addons);
         if (filter) nextData = this.applyFilter(nextData, filter);
         // merge arrays, including possible new 'next-token'
         Object.entries(nextData).forEach(([key, value]) => {
           if (Array.isArray(value) && data[key])
-            data[key] = [ ...data[key], ...value ];
-          else 
-            data[key] = value;
+            data[key] = [...data[key], ...value];
+          else data[key] = value;
         });
       }
-  
 
       // cache result
       if (this.cache && cacheTable && !noCache && !data.error) {
         await this.cache.save(cacheTable, data, { params: reqParams });
       }
-      
+
       this.resolveQueue(hash, data);
     });
   }
 
-
   /**
-  * Iterate throught results
-  * ==================================================
-  */
-  private async applyAddon(data: Payload|Payload[], addons: AddonsList) {
+   * Iterate throught results
+   * ==================================================
+   */
+  private async applyAddon(data: Payload | Payload[], addons: AddonsList) {
     if (!Array.isArray(data)) data = [data];
     await Promise.all(
-      data.reduce((promises, dataset) => ([
-        ...promises,
-        ...addons.map(addon => addon(dataset)),
-      ]),[])
-    )
+      data.reduce(
+        (promises, dataset) => [
+          ...promises,
+          ...addons.map((addon) => addon(dataset)),
+        ],
+        []
+      )
+    );
   }
-  private async applyAddons(data: Payload|Payload[], addons: AddonsList | AddonsMap ) {
+  private async applyAddons(
+    data: Payload | Payload[],
+    addons: AddonsList | AddonsMap
+  ) {
     // addons are applied to all data
     if (Array.isArray(addons)) {
       await this.applyAddon(data, addons as AddonsList);
       return;
     }
     // addons are applied to specified props
-    const dataKeys = Object.keys(data)
-      .filter(key => addons.has(key));
+    const dataKeys = Object.keys(data).filter((key) => addons.has(key));
     if (!dataKeys.length) return;
-    await Promise.all( 
-      dataKeys.map(key => this.applyAddon(data[key], addons.get(key)))
+    await Promise.all(
+      dataKeys.map((key) => this.applyAddon(data[key], addons.get(key)))
     );
   }
-  
-  private applyFilter(data: Payload|Payload[], filterFn: FilterFn) {
+
+  private applyFilter(data: Payload | Payload[], filterFn: FilterFn) {
     if (Array.isArray(data)) return data.filter(filterFn);
-    Object.entries((data)).forEach(([key, value]) => {
+    Object.entries(data).forEach(([key, value]) => {
       if (Array.isArray(value)) data[key] = value.filter(filterFn);
     });
     return data;
   }
 
-  private getResultsQty(data: Payload|Payload[]) {
+  private getResultsQty(data: Payload | Payload[]) {
     if (Array.isArray(data)) {
       return data.length;
-    }    
+    }
     return Object.values(data)
-      .filter(value => Array.isArray(value))
-      .reduce((total, value) => (Math.max(value.length, total)),  0);
+      .filter((value) => Array.isArray(value))
+      .reduce((total, value) => Math.max(value.length, total), 0);
   }
 
   private shouldFetchNext(data: Payload, params: QueryParams) {
     if (params.limit === -1 && data.nextToken) return true;
-    if (params.filter 
-      && params.limit 
-      && data.nextToken
-      && this.getResultsQty(data) < params.limit
-    ) return true;
+    if (
+      params.filter &&
+      params.limit &&
+      data.nextToken &&
+      this.getResultsQty(data) < params.limit
+    )
+      return true;
     return false;
   }
 
-
   /**
-  *  PARAMS
-  * ==================================================
-  */
+   *  PARAMS
+   * ==================================================
+   */
   private mergeUrlAndParams(url: string, params: Record<string, any>) {
-    if (!url) return { url: '/', params }
-    const unusedParams: Record<string, any> = {}   
+    if (!url) return { url: "/", params };
+    const unusedParams: Record<string, any> = {};
     if (params) {
-      Object.entries(params)
-        .forEach(([key, value]) => {
-        if (url && url.indexOf(':'+ key) > -1) {
-          url = url.replace(':'+ key, String(value));
-        }
-        else {
+      Object.entries(params).forEach(([key, value]) => {
+        if (url && url.indexOf(":" + key) > -1) {
+          url = url.replace(":" + key, String(value));
+        } else {
           unusedParams[key] = value;
         }
       });
     }
     return { url, params: unusedParams };
-  } 
+  }
 
   private cleanParams(params: QueryParams) {
     Object.entries(params).forEach(([key, value]) => {
@@ -269,16 +289,16 @@ export default class Query extends BaseModule {
   }
 
   private encodeParams(params: QueryParams) {
-    if (typeof params.notePrefix === 'string') {
+    if (typeof params.notePrefix === "string") {
       params.notePrefix = utf8ToB64(params.notePrefix);
     }
     return params;
   }
 
   /**
-  * Queue
-  * ==================================================
-  */
+   * Queue
+   * ==================================================
+   */
   private pushToQueue(hash: string, resolve: PromiseResolver) {
     const resolvers = this.queue.get(hash) || [];
     resolvers.push(resolve);
@@ -287,167 +307,194 @@ export default class Query extends BaseModule {
 
   private resolveQueue(hash: string, data: Payload) {
     const resolvers = this.queue.get(hash) || [];
-    resolvers.forEach(resolve => resolve(data));
-    this.queue.delete(hash); 
+    resolvers.forEach((resolve) => resolve(data));
+    this.queue.delete(hash);
   }
 
   /**
-  * Fetch data
-  * ==================================================
-  */
-  private async fetchData(url: string, params: QueryParams = {}, client: AxiosInstance = this.configs.client || axios) {
+   * Fetch data
+   * ==================================================
+   */
+  private async fetchData(
+    url: string,
+    params: QueryParams = {},
+    client: AxiosInstance = this.configs.client || axios
+  ) {
     try {
-      if (url.indexOf(':id') > -1) {
-        return { error: { 
-          url,
-          message: 'Url is invalid',
-        } } 
+      if (url.indexOf(":id") > -1) {
+        return {
+          error: {
+            url,
+            message: "Url is invalid",
+          },
+        };
       }
       params = cloneDeep(params);
-      const method: string = params.method 
+      const method: string = params.method
         ? String(params.method).toUpperCase()
-        : 'GET';
+        : "GET";
       const headers = params.headers as AxiosHeaders;
       const data = params?.data || params;
-      const rateLimiterKey = params.rateLimiter || 'default';
+      const rateLimiterKey = params.rateLimiter || "default";
       if (params.method) delete params.method;
-      if (params.headers) delete params.headers
+      if (params.headers) delete params.headers;
       if (params.url) delete params.url;
       if (params.addons) delete params.addons;
       if (params.filter) delete params.filter;
       if (params.filter) delete params.filter;
       if (params.rateLimiter) delete params.rateLimiter;
       const rateLimiter = this.rateLimiters.get(rateLimiterKey);
-      const response = await rateLimiter(
-        () => client.request({
+      const response = await rateLimiter(() =>
+        client.request({
           url,
           method,
           headers,
-          params: method === 'GET' ? data : undefined, 
-          data: method !== 'GET' ? data : undefined,
+          params: method === "GET" ? data : undefined,
+          data: method !== "GET" ? data : undefined,
         })
       );
       return response.data;
-    }
-    catch (e: any) {
-      return { error: e.toJSON ? e.toJSON() : e};
+    } catch (e: any) {
+      return { error: e.toJSON ? e.toJSON() : e };
     }
   }
 
-
-
   /**
-  * Lookup methods
-  * ==================================================
-  */
+   * Lookup methods
+   * ==================================================
+   */
 
   // status
   private async indexerHealth() {
     if (!this.initiated) await this.waitForInit();
-    const response = await this.fetchData(`${this.stack.configs.indexerUrl}/health`);
+    const response = await this.fetchData(
+      `${this.stack.configs.indexerUrl}/health`
+    );
     return camelcaseKeys(response, { deep: true });
   }
 
   // accounts
   private async indexerAccount(accountId: string, params: QueryParams = {}) {
     return await this.query({
-      endpoint: `/v2/accounts/:id`, 
-      params: { 
+      endpoint: `/v2/accounts/:id`,
+      params: {
         cacheTable: CacheTable.INDEXER_ACCOUNT,
-        ...params, 
-        id: accountId
+        ...params,
+        id: accountId,
       },
     });
   }
-  private async indexerAccountTransactions(accountId: string, params: QueryParams = {}) {
+  private async indexerAccountTransactions(
+    accountId: string,
+    params: QueryParams = {}
+  ) {
     return await this.query({
-      endpoint: `/v2/accounts/:id/transactions`, 
-      params: { 
+      endpoint: `/v2/accounts/:id/transactions`,
+      params: {
         cacheTable: CacheTable.INDEXER_ACCOUNT_TRANSACTIONS,
-        ...params, 
-        id: accountId
+        ...params,
+        id: accountId,
       },
     });
   }
-  private async indexerAccountAssets(accountId: string, params: QueryParams = {}) {
+  private async indexerAccountAssets(
+    accountId: string,
+    params: QueryParams = {}
+  ) {
     return await this.query({
-      endpoint: `/v2/accounts/:id/assets`, 
-      params: { 
+      endpoint: `/v2/accounts/:id/assets`,
+      params: {
         cacheTable: CacheTable.INDEXER_ACCOUNT_ASSETS,
-        ...params, 
-        id: accountId
+        ...params,
+        id: accountId,
       },
     });
   }
-  private async indexerAccountApplications(accountId: string, params: QueryParams = {}) {
+  private async indexerAccountApplications(
+    accountId: string,
+    params: QueryParams = {}
+  ) {
     return await this.query({
-      endpoint: `/v2/accounts/:id/apps-local-state`, 
-      params: { 
+      endpoint: `/v2/accounts/:id/apps-local-state`,
+      params: {
         cacheTable: CacheTable.INDEXER_ACCOUNT_APPLICATIONS,
-        ...params, 
-        id: accountId
+        ...params,
+        id: accountId,
       },
     });
   }
   // app
   private async indexerApplication(appId: number, params: QueryParams = {}) {
     return await this.query({
-      endpoint: `/v2/applications/:id`, 
-      params: { 
+      endpoint: `/v2/applications/:id`,
+      params: {
         cacheTable: CacheTable.INDEXER_APPLICATION,
-        ...params, 
-        id: appId
+        ...params,
+        id: appId,
       },
     });
   }
-  private async indexerApplicationBox(appId: number, boxName: string, params: QueryParams = {}) {
+  private async indexerApplicationBox(
+    appId: number,
+    boxName: string,
+    params: QueryParams = {}
+  ) {
     return await this.query({
-      endpoint: `/v2/applications/:id/boxes`, 
-      params: { 
+      endpoint: `/v2/applications/:id/boxes`,
+      params: {
         cacheTable: CacheTable.INDEXER_APPLICATION_BOX,
-        ...params, 
-        id: appId, 
-        name: `b64:${boxName}`
+        ...params,
+        id: appId,
+        name: `b64:${boxName}`,
       },
     });
   }
-  private async indexerApplicationBoxes(appId: number, params: QueryParams = {}) {
+  private async indexerApplicationBoxes(
+    appId: number,
+    params: QueryParams = {}
+  ) {
     return await this.query({
-      endpoint: `/v2/applications/:id/boxes`, 
-      params: { 
+      endpoint: `/v2/applications/:id/boxes`,
+      params: {
         cacheTable: CacheTable.INDEXER_APPLICATION_BOXES,
-        ...params, 
-        id: appId
+        ...params,
+        id: appId,
       },
     });
   }
   // asset
   private async indexerAsset(assetId: number, params: QueryParams = {}) {
     return await this.query({
-      endpoint: `/v2/assets/:id`, 
-      params: { 
+      endpoint: `/v2/assets/:id`,
+      params: {
         cacheTable: CacheTable.INDEXER_ASSET,
-        ...params, 
+        ...params,
         id: assetId,
       },
     });
   }
-  private async indexerAssetBalances(assetId: number, params: QueryParams = {}) {
+  private async indexerAssetBalances(
+    assetId: number,
+    params: QueryParams = {}
+  ) {
     return await this.query({
-      endpoint: `/v2/assets/:id/balances`, 
-      params: { 
+      endpoint: `/v2/assets/:id/balances`,
+      params: {
         cacheTable: CacheTable.INDEXER_ASSET_BALANCES,
-        ...params, 
+        ...params,
         id: assetId,
       },
     });
   }
-  private async indexerAssetTransactions(assetId: number, params: QueryParams = {}) {
+  private async indexerAssetTransactions(
+    assetId: number,
+    params: QueryParams = {}
+  ) {
     return await this.query({
-      endpoint: `/v2/assets/:id/transactions`, 
-      params: { 
+      endpoint: `/v2/assets/:id/transactions`,
+      params: {
         cacheTable: CacheTable.INDEXER_ASSET_TRANSACTIONS,
-        ...params, 
+        ...params,
         id: assetId,
       },
     });
@@ -455,10 +502,10 @@ export default class Query extends BaseModule {
   // block
   private async indexerBlock(round: number, params: QueryParams = {}) {
     return await this.query({
-      endpoint: `/v2/blocks/:id`, 
-      params: { 
+      endpoint: `/v2/blocks/:id`,
+      params: {
         cacheTable: CacheTable.INDEXER_BLOCK,
-        ...params, 
+        ...params,
         id: round,
       },
     });
@@ -466,69 +513,80 @@ export default class Query extends BaseModule {
   // transaction
   private async indexerTransaction(id: string, params: QueryParams = {}) {
     return await this.query({
-      endpoint: `/v2/transactions/:id`, 
-      params: { 
+      endpoint: `/v2/transactions/:id`,
+      params: {
         cacheTable: CacheTable.INDEXER_TXN,
-        ...params, 
-        id: id
+        ...params,
+        id: id,
       },
     });
   }
 
-  
-
-
   /**
-  * Node queries (Algod API)
-  * ==================================================
-  */
+   * Node queries (Algod API)
+   * ==================================================
+   */
   private async nodeHealth() {
     if (!this.initiated) await this.waitForInit();
-    const response = await this.fetchData(`${this.stack.configs.apiUrl}/health`);
+    const response = await this.fetchData(
+      `${this.stack.configs.apiUrl}/health`
+    );
     return camelcaseKeys(response, { deep: true });
   }
-  private async  nodeStatus() {
+  private async nodeStatus() {
     if (!this.initiated) await this.waitForInit();
-    const response = await this.fetchData(`${this.stack.configs.apiUrl}/v2/status`);
+    const response = await this.fetchData(
+      `${this.stack.configs.apiUrl}/v2/status`
+    );
     return camelcaseKeys(response, { deep: true });
   }
-  private async  nodeStatusAfter(block: number) {
+  private async nodeStatusAfter(block: number) {
     if (!this.initiated) await this.waitForInit();
-    const response = await this.fetchData(`${this.stack.configs.apiUrl}/v2/status/wait-for-block-after/${block}`);
+    const response = await this.fetchData(
+      `${this.stack.configs.apiUrl}/v2/status/wait-for-block-after/${block}`
+    );
     return camelcaseKeys(response, { deep: true });
   }
 
   private async nodeAccount(accountId: string, params: QueryParams = {}) {
     return await this.query({
       base: ApiUrl.NODE,
-      endpoint: `/v2/accounts/:id`, 
-      params: { 
+      endpoint: `/v2/accounts/:id`,
+      params: {
         cacheTable: CacheTable.NODE_ACCOUNT,
-        ...params, 
-        id: accountId
+        ...params,
+        id: accountId,
       },
     });
   }
-  private async nodeAccountApplication(accountId: string, appId: number, params: QueryParams = {}) {
+  private async nodeAccountApplication(
+    accountId: string,
+    appId: number,
+    params: QueryParams = {}
+  ) {
     return await this.query({
       base: ApiUrl.NODE,
-      endpoint: `/v2/accounts/:id/applications/:appId`, 
-      params: { 
+      endpoint: `/v2/accounts/:id/applications/:appId`,
+      params: {
         cacheTable: CacheTable.NODE_ACCOUNT_APPLICATION,
-        ...params, 
-        id: accountId, 
+        ...params,
+        id: accountId,
         appId,
       },
     });
   }
-  private async nodeAccountAsset(accountId: string, assetId: number, params: QueryParams = {}) {
+  private async nodeAccountAsset(
+    accountId: string,
+    assetId: number,
+    params: QueryParams = {}
+  ) {
     return await this.query({
       base: ApiUrl.NODE,
-      endpoint: `/v2/accounts/:id/assets/:assetId`, 
-      params: { 
+      endpoint: `/v2/accounts/:id/assets/:assetId`,
+      params: {
         cacheTable: CacheTable.NODE_ACCOUNT_ASSET,
-        ...params, 
-        id: accountId, 
+        ...params,
+        id: accountId,
         assetId,
       },
     });
@@ -536,31 +594,30 @@ export default class Query extends BaseModule {
   private async nodeBlock(round: number, params: QueryParams = {}) {
     return await this.query({
       base: ApiUrl.NODE,
-      endpoint: `/v2/blocks/:id`, 
-      params: { 
+      endpoint: `/v2/blocks/:id`,
+      params: {
         cacheTable: CacheTable.NODE_BLOCK,
-        ...params, 
-        id: round
+        ...params,
+        id: round,
       },
     });
   }
   private async nodeDisassembleTeal(b64: string) {
     if (!b64?.length) return undefined;
     if (!this.initiated) await this.waitForInit();
-    const programBuffer = Buffer.from(b64, 'base64');
-    const response = await this.fetch(
-      `${this.stack.configs[ApiUrl.NODE]}/v2/teal/disassemble`, 
+    const programBuffer = Buffer.from(b64, "base64");
+    const response = (await this.fetch(
+      `${this.stack.configs[ApiUrl.NODE]}/v2/teal/disassemble`,
       {
-        method: 'POST',
+        method: "POST",
         cacheTable: CacheTable.NODE_TEAL,
         refreshCache: true,
-        headers: { 'Content-Type': 'application/x-binary' },
+        headers: { "Content-Type": "application/x-binary" },
         data: programBuffer,
       }
-    ) as Payload;
+    )) as Payload;
     return response?.result;
   }
-
 
   // Wrap everything together
   public lookup = {
@@ -577,7 +634,7 @@ export default class Query extends BaseModule {
     assetTransactions: this.indexerAssetTransactions.bind(this),
     block: this.indexerBlock.bind(this),
     transaction: this.indexerTransaction.bind(this),
-    
+
     node: {
       health: this.nodeHealth.bind(this),
       status: this.nodeStatus.bind(this),
@@ -587,20 +644,19 @@ export default class Query extends BaseModule {
       accountAsset: this.nodeAccountAsset.bind(this),
       block: this.nodeBlock.bind(this),
       dissableTeal: this.nodeDisassembleTeal.bind(this),
-    }
-  }
-
+    },
+  };
 
   /**
-  * Search
-  * ==================================================
-  */
+   * Search
+   * ==================================================
+   */
   private async accounts(params: QueryParams = {}) {
     return await this.query({
       endpoint: `/v2/accounts`,
       params: {
-        cacheTable: CacheTable.INDEXER_ACCOUNTS, 
-        ...params, 
+        cacheTable: CacheTable.INDEXER_ACCOUNTS,
+        ...params,
       },
     });
   }
@@ -608,8 +664,8 @@ export default class Query extends BaseModule {
     return await this.query({
       endpoint: `/v2/applications`,
       params: {
-        cacheTable: CacheTable.INDEXER_APPLICATIONS, 
-        ...params, 
+        cacheTable: CacheTable.INDEXER_APPLICATIONS,
+        ...params,
       },
     });
   }
@@ -617,8 +673,8 @@ export default class Query extends BaseModule {
     return await this.query({
       endpoint: `/v2/assets`,
       params: {
-        cacheTable: CacheTable.INDEXER_ASSETS, 
-        ...params, 
+        cacheTable: CacheTable.INDEXER_ASSETS,
+        ...params,
       },
     });
   }
@@ -626,8 +682,8 @@ export default class Query extends BaseModule {
     return await this.query({
       endpoint: `/v2/transactions`,
       params: {
-        cacheTable: CacheTable.INDEXER_TXNS, 
-        ...params, 
+        cacheTable: CacheTable.INDEXER_TXNS,
+        ...params,
       },
     });
   }
@@ -638,17 +694,16 @@ export default class Query extends BaseModule {
     applications: this.applications.bind(this),
     assets: this.assets.bind(this),
     transactions: this.transactions.bind(this),
-  }
-
+  };
 
   /**
-  * Custom fetch queries
-  * ==================================================
-  */
+   * Custom fetch queries
+   * ==================================================
+   */
   public fetch(
-    apiUrl: string, 
+    apiUrl: string,
     originalParams: QueryParams = {},
-    client?: AxiosInstance,
+    client?: AxiosInstance
   ) {
     return new Promise(async (resolve, reject) => {
       if (!this.initiated) await this.waitForInit();
@@ -659,37 +714,36 @@ export default class Query extends BaseModule {
       const cacheTable = originalParams.cacheTable;
       const noCache = originalParams.noCache;
       const refreshCache = originalParams.refreshCache;
-      if (originalParams.cacheTable !== undefined) delete originalParams.cacheTable;
+      if (originalParams.cacheTable !== undefined)
+        delete originalParams.cacheTable;
       if (originalParams.noCache !== undefined) delete originalParams.noCache;
-      if (originalParams.refreshCache !== undefined) delete originalParams.refreshCache;
+      if (originalParams.refreshCache !== undefined)
+        delete originalParams.refreshCache;
 
       let { params, url } = this.mergeUrlAndParams(apiUrl, originalParams);
       params.url = url;
 
       // get cached data
       if (this.cache && cacheTable && !refreshCache && !noCache) {
-        const cached = await this.cache.find(cacheTable, { where: { params }});
+        const cached = await this.cache.find(cacheTable, { where: { params } });
         if (cached) {
-          data = cached.data
+          data = cached.data;
           return resolve(data);
         }
       }
-      
+
       const hash = objHash({ apiUrl, originalParams });
       this.pushToQueue(hash, resolve);
       if (this.queue.get(hash)?.length > 1) return;
-      
-      
+
       data = await this.fetchData(url, params, client);
-      
+
       // cache result
       if (this.cache && cacheTable && !noCache && !data.error) {
         await this.cache.save(cacheTable, data, { params });
       }
-    
+
       this.resolveQueue(hash, data);
-    })
+    });
   }
-
 }
-

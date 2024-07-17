@@ -36,6 +36,9 @@ export type DurationString = string|'never';
 export type CacheEntry = Record<string, any>;
 export type CacheWhere = Record<string, any>; 
 export type CacheFilter = (entry: CacheEntry) => boolean;
+export type CacheBulkEntry = { data: any, entry: CacheEntry };
+export type CacheBulkEntries = CacheBulkEntry[];
+
 export interface CacheQuery {
   where?: CacheWhere,
   filter?: CacheFilter,
