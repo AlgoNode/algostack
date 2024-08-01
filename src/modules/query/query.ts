@@ -4,12 +4,11 @@ import type {
   Payload,
   QueryOptions,
   FilterFn,
-  AddonsList,
-  AddonsMap,
   QueryConfigs,
   QueryQueue,
   RateLimiter,
 } from "./types.js";
+import type { AddonsList, AddonsKeyMap } from "../addons/types.js";
 import type { PromiseResolver } from "../../types.js";
 import type { AxiosHeaders, AxiosInstance } from "axios";
 import { Buffer } from "buffer";
@@ -23,6 +22,7 @@ import AlgoStack from "../../index.js";
 import axios from "axios";
 import merge from "lodash-es/merge.js";
 import cloneDeep from "lodash-es/cloneDeep.js";
+import Addons from "../addons/addons.js";
 import objHash from "object-hash";
 import { CacheTable } from "../cache/index.js";
 
@@ -34,6 +34,7 @@ export default class Query extends BaseModule {
   private configs: QueryConfigs = {};
   private queue: QueryQueue = new Map();
   protected cache?: Cache;
+  protected addons?: Addons;
   protected rateLimiters: Map<string, RateLimiter> = new Map();
 
   constructor(configs: QueryConfigs = {}) {
@@ -59,6 +60,7 @@ export default class Query extends BaseModule {
   public init(stack: AlgoStack) {
     super.init(stack);
     this.cache = stack.cache;
+    this.addons = stack.addons;
     return this;
   }
 
@@ -136,7 +138,9 @@ export default class Query extends BaseModule {
       if (params.noCache !== undefined) delete params.noCache;
       if (params.refreshCache !== undefined) delete params.refreshCache;
 
-      const addons = params.addons as AddonsList | AddonsMap | undefined;
+      const addons = params.addons as AddonsList | AddonsKeyMap | undefined;
+      if (addons) delete params.addons;
+
       const filter = params.filter;
 
       const cleanParams = this.cleanParams(params);
@@ -144,9 +148,7 @@ export default class Query extends BaseModule {
       const reqParams = kebabcaseKeys(encodedParams, { deep: true });
       reqParams.url = `${base}${url}`;
       reqParams.headers = this.getReqHeaders(base, reqParams);
-
       if (filter) delete params.filter;
-      if (addons) delete params.addons;
 
       // get cached data
       if (this.cache && cacheTable && !refreshCache && !noCache) {
@@ -155,6 +157,7 @@ export default class Query extends BaseModule {
         });
         if (cached) {
           data = cached.data;
+          if (addons && this.addons) await this.addons.apply(data, addons);
           return resolve(data);
         }
       }
@@ -168,7 +171,6 @@ export default class Query extends BaseModule {
       );
       data = camelcaseKeys(data, { deep: true });
 
-      if (addons) await this.applyAddons(data, addons);
       if (filter) data = this.applyFilter(data, filter);
 
       // Loop
@@ -181,7 +183,6 @@ export default class Query extends BaseModule {
         );
         delete data.nextToken;
         nextData = camelcaseKeys(nextData, { deep: true });
-        if (addons) await this.applyAddons(nextData, addons);
         if (filter) nextData = this.applyFilter(nextData, filter);
         // merge arrays, including possible new 'next-token'
         Object.entries(nextData).forEach(([key, value]) => {
@@ -196,41 +197,9 @@ export default class Query extends BaseModule {
         await this.cache.save(cacheTable, data, { params: reqParams });
       }
 
+      if (addons && this.addons) await this.addons.apply(data, addons);
       this.resolveQueue(hash, data);
     });
-  }
-
-  /**
-   * Iterate throught results
-   * ==================================================
-   */
-  private async applyAddon(data: Payload | Payload[], addons: AddonsList) {
-    if (!Array.isArray(data)) data = [data];
-    await Promise.all(
-      data.reduce(
-        (promises, dataset) => [
-          ...promises,
-          ...addons.map((addon) => addon(dataset)),
-        ],
-        []
-      )
-    );
-  }
-  private async applyAddons(
-    data: Payload | Payload[],
-    addons: AddonsList | AddonsMap
-  ) {
-    // addons are applied to all data
-    if (Array.isArray(addons)) {
-      await this.applyAddon(data, addons as AddonsList);
-      return;
-    }
-    // addons are applied to specified props
-    const dataKeys = Object.keys(data).filter((key) => addons.has(key));
-    if (!dataKeys.length) return;
-    await Promise.all(
-      dataKeys.map((key) => this.applyAddon(data[key], addons.get(key)))
-    );
   }
 
   private applyFilter(data: Payload | Payload[], filterFn: FilterFn) {
