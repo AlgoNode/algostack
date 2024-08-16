@@ -324,6 +324,22 @@ export default class Cache extends BaseModule {
     });
   }
 
+  /**
+  * Count the total entries in a table
+  * ==================================================
+  */
+  public async count(tableName: string): Promise<number> {
+    if (!this.initiated) await this.waitForInit();
+    return this.commit('r', tableName, async () => {
+      let table = this.db[tableName];
+      if (!table) {
+        console.error(`Table not found (${tableName})`);
+        return undefined;
+      }    
+      return await table.count();
+    });
+  }
+
 
   /**
   * Save an entry
