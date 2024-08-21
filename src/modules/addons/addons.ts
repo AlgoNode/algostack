@@ -106,15 +106,19 @@ export default class Addons extends BaseModule {
   }
 
   public async runAddon(data: Payload | Payload[], addons: AddonsList) {
-    if (!Array.isArray(data)) data = [data];
-    await Promise.all(
-      data.reduce(
-        (promises, dataset) => [
-          ...promises,
-          ...addons.map((addon) => addon(dataset)),
-        ],
-        []
-      )
-    );
+    try {
+      await Promise.all(
+        (Array.isArray(data)? data: [data]).reduce(
+          (promises, dataset) => [
+            ...promises,
+            ...addons.map((addon) => addon(dataset)),
+          ],
+          []
+        )
+      );
+    }
+    catch (e) {
+      console.log('An error occured while running addons.', e)
+    }
   }
 }
