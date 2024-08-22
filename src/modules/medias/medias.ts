@@ -1,11 +1,12 @@
-import type Cache from '../cache/index.js';
-import type { File } from '../files/index.js'
+import type AlgoStack from '../../index';
+import type { Payload } from '../../index';
+import type Cache from '../cache/index';
+import type { File } from '../files/index'
 import { getIpfsFromAddress } from '../../helpers/files.js';
 import { Arc, Encoding, MediaType } from '../../enums.js';
 import { pRateLimit } from 'p-ratelimit';
 import { AssetFiles, AssetFilesOptions, AssetProperties, AssetTraits, MediasConfigs } from './types.js';
 import { BaseModule } from '../_baseModule.js';
-import AlgoStack, { AssetPayload, Payload } from '../../index.js';
 import Files from '../files/index.js';
 import merge from 'lodash-es/merge.js';
 import { isDomainUrl } from '../../helpers/strings.js';

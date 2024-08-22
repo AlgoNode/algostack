@@ -1,6 +1,6 @@
-import type { Payload } from "../query/types.js";
+import type { Payload } from "../query/types";
+import type AlgoStack from "../../index";
 import { BaseModule } from "../_baseModule.js";
-import AlgoStack from "../../index.js";
 import merge from "lodash-es/merge.js";
 import { AddonsConfigs, AddonsList, AddonsKeyMap, AddonsKey, AddonsKeys } from "./types.js";
 

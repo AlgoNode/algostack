@@ -1,4 +1,5 @@
 import type { ConnectionSettings } from '@randlabs/myalgo-connect';
+import type AlgoStack from '../../index';
 import { Connector } from '../../enums.js';
 import { BaseModule } from '../_baseModule.js';
 import { ClientConfigs } from './types.js';
@@ -8,7 +9,6 @@ import Pera from '../../connectors/pera.js';
 import Defly from '../../connectors/defly.js';
 import Mnemonic from '../../connectors/mnemonic.js';
 import merge from 'lodash-es/merge.js';
-import AlgoStack from '../../index.js';
 
 
 /**

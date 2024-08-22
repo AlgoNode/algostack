@@ -1,10 +1,10 @@
+import type AlgoStack from '../../index';
 import { durationStringToMs } from '../../helpers/format.js';
 import { CacheConfigs, CacheEntry, CacheQuery, IdbTxn } from './types.js';
 import { BaseModule } from '../_baseModule.js';
 import { indexedDB, IDBKeyRange } from "fake-indexeddb";
 import Dexie, { Collection, DexieError, TransactionMode } from 'dexie';
 import objHash from 'object-hash';
-import AlgoStack from '../../index.js';
 import defaultsDeep from 'lodash-es/defaultsDeep.js';
 import intersection from 'lodash-es/intersection.js';
 import isEqual from 'lodash-es/isEqual.js';

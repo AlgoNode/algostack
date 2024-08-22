@@ -1,4 +1,5 @@
-import type Cache from "../cache/index.js";
+import type AlgoStack from "../../index";
+import type Cache from "../cache/index";
 import type {
   QueryParams,
   Payload,
@@ -7,9 +8,9 @@ import type {
   QueryConfigs,
   QueryQueue,
   RateLimiter,
-} from "./types.js";
-import type { AddonsList, AddonsKeyMap } from "../addons/types.js";
-import type { PromiseResolver } from "../../types.js";
+} from "./types";
+import type { AddonsList, AddonsKeyMap } from "../addons/types";
+import type { PromiseResolver } from "../../types";
 import type { AxiosHeaders, AxiosInstance } from "axios";
 import { Buffer } from "buffer";
 import { pRateLimit } from "p-ratelimit";
@@ -18,7 +19,6 @@ import { ApiUrl } from "./enums.js";
 import { BaseModule } from "../_baseModule.js";
 import camelcaseKeys from "camelcase-keys";
 import kebabcaseKeys from "kebabcase-keys";
-import AlgoStack from "../../index.js";
 import axios from "axios";
 import merge from "lodash-es/merge.js";
 import cloneDeep from "lodash-es/cloneDeep.js";

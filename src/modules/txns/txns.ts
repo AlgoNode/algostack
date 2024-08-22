@@ -1,9 +1,9 @@
 // import Buffer from 'buffer';
-import type { TransactionParams, TxnsConfigs } from './types.js';
+import type AlgoStack from '../../index';
+import type { TransactionParams, TxnsConfigs } from './types';
 import { BaseModule } from '../_baseModule.js';
-import algosdk, { Transaction, TransactionLike } from 'algosdk';
+import algosdk, { Transaction } from 'algosdk';
 import camelcaseKeys from 'camelcase-keys';
-import AlgoStack from '../../index.js';
 import Client from '../client/index.js';
 import merge from 'lodash-es/merge.js';
 

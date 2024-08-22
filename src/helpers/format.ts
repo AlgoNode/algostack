@@ -1,4 +1,4 @@
-import { DurationString } from "../types";
+import type { DurationString } from "../types";
 
 
 /**

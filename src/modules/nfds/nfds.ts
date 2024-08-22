@@ -1,8 +1,8 @@
+import type Cache from '../cache/index';
+import type AlgoStack from '../../index';
 import axios from 'axios';
 import throttle from 'lodash-es/throttle.js';
 import chunk from 'lodash-es/chunk.js';
-import AlgoStack from '../../index.js';
-import type Cache from '../cache/index.js';
 import { NFDConfigs, NFDProps, NFDQueryCallback } from './types.js';
 import { isAddress, isDomain } from '../../helpers/strings.js';
 import { QueryParams } from '../query/types.js';
