@@ -111,7 +111,7 @@ export default class Addons extends BaseModule {
         (Array.isArray(data)? data: [data]).reduce(
           (promises, dataset) => [
             ...promises,
-            ...addons.map((addon) => addon(dataset)),
+            ...addons.map((addon) => addon.call(this.stack, dataset)),
           ],
           []
         )
