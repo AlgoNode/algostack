@@ -512,11 +512,8 @@ export default class Cache extends BaseModule {
     const cleaned = [];
     if (tables === undefined) tables = this.currentTables;
     else if (typeof tables === 'string') tables = [tables];
-    const persisted = new Set([
-      CacheTable.DB_STATE,
-      ...(this.configs.persist || []),
-    ]);
-    tables = [...new Set(tables).difference(persisted)];
+    const persisted = [CacheTable.DB_STATE, ...(this.configs.persist || [])];
+    tables = tables.filter((table) => !persisted.includes(table));
     for (let i = 0; i < tables.length; i++) {
       const tableName = tables[i];
       const success = await this.commit('rw', tableName, async () => {
