@@ -37,6 +37,7 @@ export default class Cache extends BaseModule {
       [CacheTable.MEDIAS_ASSET]: '4h',
     },
     pruningInterval: undefined,
+    autoClean: false,
     maxTxnsBatch: 100,
     logExpiration: false,
   };
@@ -71,6 +72,10 @@ export default class Cache extends BaseModule {
       ...(this.configs.tables || []),
       ...(configs.tables || []),
     ];
+    configs.persist = [
+      ...(this.configs.persist || []),
+      ...(configs.persist || []),
+    ];
     this.configs = defaultsDeep(configs, this.configs);
   }
 
@@ -82,6 +87,8 @@ export default class Cache extends BaseModule {
     try {
       this.initTables();
       this.db.version(this.v).stores(this.tables);
+      // Auto clean
+      if (this.configs.autoClean) this.initAutoClean();
       // Auto prune
       if (this.configs.pruningInterval) this.initAutoPrune();
     } catch (e) {
@@ -493,5 +500,37 @@ export default class Cache extends BaseModule {
     if (!this.configs.pruningInterval) return;
     const interval = durationStringToMs(this.configs.pruningInterval);
     setInterval(this.autoPrune.bind(this), interval);
+  }
+
+  /**
+   * Cleaning
+   * Empties tables that are not persisted
+   * ==================================================
+   */
+  public async clean(tables?: string | string[]) {
+    if (!this.initiated) await this.waitForInit();
+    const cleaned = [];
+    if (tables === undefined) tables = this.currentTables;
+    else if (typeof tables === 'string') tables = [tables];
+    const persisted = new Set([
+      CacheTable.DB_STATE,
+      ...(this.configs.persist || []),
+    ]);
+    tables = [...new Set(tables).difference(persisted)];
+    for (let i = 0; i < tables.length; i++) {
+      const tableName = tables[i];
+      const success = await this.commit('rw', tableName, async () => {
+        const table = this.db[tableName];
+        await table.clear();
+        return table;
+      });
+      if (success) cleaned.push(tableName);
+    }
+    return cleaned;
+  }
+
+  private async initAutoClean() {
+    if (!this.initiated) await this.waitForInit();
+    if (this.configs.autoClean) await this.clean();
   }
 }
