@@ -1,15 +1,17 @@
 import type AlgoStack from '../../index';
-import { durationStringToMs } from '../../helpers/format.js';
-import { CacheConfigs, CacheEntry, CacheQuery, IdbTxn } from './types.js';
-import { BaseModule } from '../_baseModule.js';
-import { indexedDB, IDBKeyRange } from "fake-indexeddb";
+
 import Dexie, { Collection, DexieError, TransactionMode } from 'dexie';
-import objHash from 'object-hash';
+import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
+import cloneDeep from 'lodash-es/cloneDeep.js';
 import defaultsDeep from 'lodash-es/defaultsDeep.js';
 import intersection from 'lodash-es/intersection.js';
 import isEqual from 'lodash-es/isEqual.js';
-import cloneDeep from 'lodash-es/cloneDeep.js';
+import objHash from 'object-hash';
+
+import { BaseModule } from '../_baseModule.js';
+import { durationStringToMs } from '../../helpers/format.js';
 import { CacheTable } from './enums.js';
+import { CacheConfigs, CacheEntry, CacheQuery, IdbTxn } from './types.js';
 
 /**
  * Cache module
@@ -20,7 +22,7 @@ export default class Cache extends BaseModule {
     namespace: 'algostack',
     tables: undefined,
     expiration: {
-      'default': '1h',
+      default: '1h',
       [CacheTable.DB_STATE]: 'never',
       [CacheTable.INDEXER_ASSET]: '1h',
       [CacheTable.INDEXER_ASSET_BALANCES]: '2s',
@@ -40,26 +42,25 @@ export default class Cache extends BaseModule {
   };
   private db: Dexie;
   private v: number = 1;
-  private tables: Record<string,string> = {};
+  private tables: Record<string, string> = {};
   private queue: IdbTxn<any>[] = [];
-  private get currentTables() { return this.db?.tables.map(table => table.name) || [] };
+  private get currentTables() {
+    return this.db?.tables.map((table) => table.name) || [];
+  }
   private isBusy: boolean = false;
-
 
   constructor(configs: CacheConfigs = {}) {
     super();
-    const isBrowser = typeof window !== 'undefined'; 
-    this.db = new Dexie(
-      configs.namespace, 
-      {
-        cache: 'disabled',
-        ...isBrowser && window.indexedDB 
-          ? {}
-          : { indexedDB, IDBKeyRange }
-      }
-    )
+    const isBrowser = typeof window !== 'undefined';
+    this.db = new Dexie(configs.namespace, {
+      cache: 'disabled',
+      ...(isBrowser && window.indexedDB ? {} : { indexedDB, IDBKeyRange }),
+    });
     if (isBrowser) {
-      window.addEventListener('unhandledrejection', this.handleError.bind(this))
+      window.addEventListener(
+        'unhandledrejection',
+        this.handleError.bind(this),
+      );
     }
     this.setConfigs(configs);
   }
@@ -68,11 +69,10 @@ export default class Cache extends BaseModule {
     super.setConfigs(configs);
     configs.tables = [
       ...(this.configs.tables || []),
-      ...(configs.tables || [])
+      ...(configs.tables || []),
     ];
-    this.configs = defaultsDeep( configs, this.configs );
+    this.configs = defaultsDeep(configs, this.configs);
   }
-
 
   public init(stack: AlgoStack) {
     super.init(stack);
@@ -84,13 +84,12 @@ export default class Cache extends BaseModule {
       this.db.version(this.v).stores(this.tables);
       // Auto prune
       if (this.configs.pruningInterval) this.initAutoPrune();
-    }
-    catch (e) {
-      console.log(e)
-      this.handleError(e)
+    } catch (e) {
+      console.log(e);
+      this.handleError(e);
     }
     return this;
-  } 
+  }
 
   private initTables() {
     let tables: Record<string, string> = {
@@ -98,12 +97,11 @@ export default class Cache extends BaseModule {
       ...this.tables,
     };
 
-
     if (this.stack) {
       // Query module
       if (this.stack.query) {
-        tables = { 
-          ...tables, 
+        tables = {
+          ...tables,
           // indexer
           [CacheTable.INDEXER_ACCOUNT]: '&params',
           [CacheTable.INDEXER_ACCOUNT_ASSETS]: '&params',
@@ -117,7 +115,7 @@ export default class Cache extends BaseModule {
           [CacheTable.INDEXER_ASSET_TRANSACTIONS]: '&params',
           [CacheTable.INDEXER_BLOCK]: '&params',
           [CacheTable.INDEXER_TXN]: '&params',
-  
+
           // node
           [CacheTable.NODE_ACCOUNT]: '&params',
           [CacheTable.NODE_ACCOUNT_APPLICATION]: '&params',
@@ -126,7 +124,7 @@ export default class Cache extends BaseModule {
           [CacheTable.NODE_BLOCK_PROOF]: '&params',
           [CacheTable.NODE_BLOCK_TRANSACTION_PROOF]: '&params',
           [CacheTable.NODE_TEAL]: '&params',
-  
+
           // search
           [CacheTable.INDEXER_APPLICATIONS]: '&params',
           [CacheTable.INDEXER_ACCOUNTS]: '&params',
@@ -136,45 +134,43 @@ export default class Cache extends BaseModule {
       }
       // NFDs
       if (this.stack.nfds) {
-        tables = { 
-          ...tables, 
+        tables = {
+          ...tables,
           [CacheTable.NFD_LOOKUP]: '&address, nfd',
-          [CacheTable.NFD_SEARCH]: '&params', 
+          [CacheTable.NFD_SEARCH]: '&params',
         };
       }
       // Medias
       if (this.stack.medias) {
-        tables = { 
-          ...tables, 
-          [CacheTable.MEDIAS_ASSET]: '&id, [id+options]' 
+        tables = {
+          ...tables,
+          [CacheTable.MEDIAS_ASSET]: '&id, [id+options]',
         };
       }
     }
 
     if (this.configs.tables?.length) {
-      const extraStores: Record<string, string> = {} 
-      this.configs.tables.forEach(table => {
+      const extraStores: Record<string, string> = {};
+      this.configs.tables.forEach((table) => {
         if (typeof table === 'string') extraStores[table] = '&params';
         else extraStores[table.name] = table.index || '&params';
       });
       tables = Object.fromEntries(
-        Object.entries({ ...extraStores, ...tables })
-          .sort(([a],[b]) => a.localeCompare(b))
-      );  
+        Object.entries({ ...extraStores, ...tables }).sort(([a], [b]) =>
+          a.localeCompare(b),
+        ),
+      );
     }
 
     this.tables = tables;
   }
 
-
-
-
   /**
-  * Error handler
-  * ==================================================
-  */
+   * Error handler
+   * ==================================================
+   */
   private async handleError(event: any) {
-    const error = event?.reason as DexieError
+    const error = event?.reason as DexieError;
     const errorNames: string[] = [error?.name];
     if (error?.inner?.name) errorNames.push(error.inner.name);
     const fatal = [
@@ -184,22 +180,21 @@ export default class Cache extends BaseModule {
     ];
 
     // Db is closed
-    const dbIsClosed = errorNames.includes(Dexie.errnames.DatabaseClosed)
+    const dbIsClosed = errorNames.includes(Dexie.errnames.DatabaseClosed);
     if (dbIsClosed) {
       await this.db.open();
     }
 
-    const shouldClearTables = intersection(errorNames, fatal)?.length
+    const shouldClearTables = intersection(errorNames, fatal)?.length;
     if (shouldClearTables) {
       console.log('An error occured while upgrading IndexedDB tables.');
     }
   }
 
-
   /**
-  * Reset
-  * ==================================================
-  */
+   * Reset
+   * ==================================================
+   */
   private async clearAll() {
     const isOpen = this.db.isOpen();
     if (isOpen) this.db.close();
@@ -208,28 +203,32 @@ export default class Cache extends BaseModule {
   private async resetDb() {
     await this.clearAll();
     if (this.db.isOpen()) this.db.close();
-    this.db.version(this.v).stores(this.tables); 
+    this.db.version(this.v).stores(this.tables);
     this.db.open();
   }
 
-
   /**
-  * Transaction Queue
-  * ==================================================
-  */
-  private commit<T>(scope: TransactionMode, table: string|string[], txn: () => Promise<T>): Promise<T> {
+   * Transaction Queue
+   * ==================================================
+   */
+  private commit<T>(
+    scope: TransactionMode,
+    table: string | string[],
+    txn: () => Promise<T>,
+  ): Promise<T> {
     const tables = Array.isArray(table) ? table : [table];
-    const isMissingStores = intersection(tables, this.currentTables).length < tables.length;
+    const isMissingStores =
+      intersection(tables, this.currentTables).length < tables.length;
     if (isMissingStores) {
       console.warn('Stores are missing', tables);
       return;
     }
     return new Promise((resolve) => {
-      this.queue.push({scope, tables, txn, resolve});
-      if (!this.isBusy) this.runQueue();   
+      this.queue.push({ scope, tables, txn, resolve });
+      if (!this.isBusy) this.runQueue();
     });
   }
- 
+
   private async runQueue() {
     if (this.isBusy) return;
     if (!this.queue.length) return;
@@ -239,7 +238,6 @@ export default class Cache extends BaseModule {
     }
     this.isBusy = false;
   }
-  
 
   private async runBatch() {
     if (!this.queue.length) return;
@@ -247,10 +245,13 @@ export default class Cache extends BaseModule {
     const scope = refTxn.scope;
     const tables = refTxn.tables;
     const batch: IdbTxn<any>[] = [];
-    for( let i=0; i<this.configs.maxTxnsBatch && i<this.queue.length; i++) {
+    for (
+      let i = 0;
+      i < this.configs.maxTxnsBatch && i < this.queue.length;
+      i++
+    ) {
       const txn = this.queue[i];
-      const isSimilar = txn.scope === scope
-        && isEqual(txn.tables, tables);
+      const isSimilar = txn.scope === scope && isEqual(txn.tables, tables);
       if (isSimilar) batch.push(txn);
       else break;
     }
@@ -263,48 +264,55 @@ export default class Cache extends BaseModule {
           txn.resolve(results);
         }
       });
-    } 
-    catch (e) {
-      console.log('Dexie Txn error', e)
-      console.log('scope:', scope, 'tables:', tables)
+    } catch (e) {
+      console.log('Dexie Txn error', e);
+      console.log('scope:', scope, 'tables:', tables);
       if (!this.db.isOpen) this.db.open();
     }
   }
 
-
   /**
-  * Get a collection bvased on a query
-  * ==================================================
-  */
-  private async getCollection(tableName: string, query: CacheQuery): Promise<Collection|undefined> {
+   * Get a collection bvased on a query
+   * ==================================================
+   */
+  private async getCollection(
+    tableName: string,
+    query: CacheQuery,
+  ): Promise<Collection | undefined> {
     let table = this.db[tableName];
     if (!table) {
       console.error(`Table not found (${tableName})`);
       return undefined;
     }
-    
+
     if (query.orderBy) table = table.orderBy(query.orderBy);
-    if (query.order && ['desc', 'DESC'].includes(query.order)) table = table.desc();
+    if (query.order && ['desc', 'DESC'].includes(query.order))
+      table = table.desc();
     if (query.where) {
       const where = this.hashObjectProps(query.where);
       if (Object.keys(where).length) {
-        table = table.where( this.hashObjectProps(query.where) );
+        table = table.where(this.hashObjectProps(query.where));
       }
     }
-    if (query.filter) table = table.filter( query.filter );
-    if (!query.includeExpired) table = table.filter( (entry: CacheEntry) => !this.isExpired(tableName, entry));
+    if (query.filter) table = table.filter(query.filter);
+    if (!query.includeExpired)
+      table = table.filter(
+        (entry: CacheEntry) => !this.isExpired(tableName, entry),
+      );
     return table;
-  } 
-
+  }
 
   /**
-  * Find an entry based on its ID and the query
-  * ==================================================
-  */
-  public async find<Q extends CacheQuery>(tableName: string, query: Q): Promise<
+   * Find an entry based on its ID and the query
+   * ==================================================
+   */
+  public async find<Q extends CacheQuery>(
+    tableName: string,
+    query: Q,
+  ): Promise<
     Q extends { limit: number }
-      ? CacheEntry[]|undefined
-      : CacheEntry|undefined
+      ? CacheEntry[] | undefined
+      : CacheEntry | undefined
   > {
     if (!this.initiated) await this.waitForInit();
     return this.commit('r', tableName, async () => {
@@ -312,22 +320,22 @@ export default class Cache extends BaseModule {
       if (!collection) return undefined;
       //
       // Return a single entry object
-      // if no limit param is defined 
+      // if no limit param is defined
       // Default behavior
       // --------------------------------------------------
       if (query.limit === undefined) return await collection.first();
-  
+
       //
       // Find multiple entries
-      // --------------------------------------------------    
+      // --------------------------------------------------
       return await collection.limit(query.limit).toArray();
     });
   }
 
   /**
-  * Count the total entries in a table
-  * ==================================================
-  */
+   * Count the total entries in a table
+   * ==================================================
+   */
   public async count(tableName: string): Promise<number> {
     if (!this.initiated) await this.waitForInit();
     return this.commit('r', tableName, async () => {
@@ -335,60 +343,61 @@ export default class Cache extends BaseModule {
       if (!table) {
         console.error(`Table not found (${tableName})`);
         return undefined;
-      }    
+      }
       return await table.count();
     });
   }
 
-
   /**
-  * Save an entry
-  * ==================================================
-  */
+   * Save an entry
+   * ==================================================
+   */
   public async save(tableName: string, data: any, entry: CacheEntry) {
     if (!this.initiated) await this.waitForInit();
     entry = {
-      ...this.hashObjectProps(entry), 
-      data, 
+      ...this.hashObjectProps(entry),
+      data,
       timestamp: Date.now(),
-    }
+    };
     return this.commit('rw', tableName, async () => {
-      return await this.db[tableName].put(entry)
-    })
+      return await this.db[tableName].put(entry);
+    });
   }
 
-  public async bulkSave(tableName: string, entries: { data: any, entry: CacheEntry }[] ) {
+  public async bulkSave(
+    tableName: string,
+    entries: { data: any; entry: CacheEntry }[],
+  ) {
     if (!this.initiated) await this.waitForInit();
     if (!entries.length) return;
     const timestamp = Date.now();
-    const rows = entries.map(row => ({
-        ...this.hashObjectProps(row.entry), 
-        data: row.data, 
-        timestamp,
-      }
-    ))
+    const rows = entries.map((row) => ({
+      ...this.hashObjectProps(row.entry),
+      data: row.data,
+      timestamp,
+    }));
     return this.commit('rw', tableName, async () => {
-      return await this.db[tableName].bulkPut(rows)
+      return await this.db[tableName].bulkPut(rows);
     });
   }
 
   /**
-  * Delete en entry
-  * ==================================================
-  */
+   * Delete en entry
+   * ==================================================
+   */
   public async delete(tableName: string, query: CacheQuery): Promise<number> {
     if (!this.initiated) await this.waitForInit();
     return this.commit('rw', tableName, async () => {
       const collection = await this.getCollection(tableName, query);
       if (!collection) return 0;
       return collection.delete();
-    }) 
+    });
   }
 
   /**
-  * Clear a table
-  * ==================================================
-  */
+   * Clear a table
+   * ==================================================
+   */
   public async clear(tableName: string): Promise<void> {
     if (!this.initiated) await this.waitForInit();
     return this.commit('rw', tableName, async () => {
@@ -398,74 +407,66 @@ export default class Cache extends BaseModule {
         return;
       }
       await table.clear();
-    }) 
+    });
   }
 
-
-
   /**
-  * Prepare cache entry
-  * ==================================================
-  */
-  private hashObjectProps (entry: CacheEntry = {}) {
+   * Prepare cache entry
+   * ==================================================
+   */
+  private hashObjectProps(entry: CacheEntry = {}) {
     if (typeof entry !== 'object') return entry;
     const result = cloneDeep(entry);
-    Object.entries(result)
-      .forEach(([key, value]) => {
-        if (typeof value === 'object' && !Array.isArray(value))
-          return result[key] = objHash(value)
-        if (value === null || value === undefined)
-          return delete result[key];
-      });
+    Object.entries(result).forEach(([key, value]) => {
+      if (typeof value === 'object' && !Array.isArray(value))
+        return (result[key] = objHash(value));
+      if (value === null || value === undefined) return delete result[key];
+    });
     return result;
   }
-  
-
-
 
   /**
-  * Expiration
-  * ==================================================
-  */
+   * Expiration
+   * ==================================================
+   */
   public isExpired(tableName: string, entry: CacheEntry) {
     if (this.configs.expiration[tableName] === 'never') return false;
     const expiration = this.getExpiration(tableName);
     const isExpired = entry.timestamp + expiration < Date.now();
-    if ( isExpired && this.configs.logExpiration) 
-      console.warn(`[${tableName}] Cache entry has expired.`)
+    if (isExpired && this.configs.logExpiration)
+      console.warn(`[${tableName}] Cache entry has expired.`);
     return isExpired;
   }
 
   private getExpiration(tableName: string) {
-    const expirationStr = this.configs.expiration[tableName] 
-      || this.configs.expiration.default;
+    const expirationStr =
+      this.configs.expiration[tableName] || this.configs.expiration.default;
     return durationStringToMs(expirationStr);
   }
 
-
-
   /**
-  * Pruning
-  * ==================================================
-  */
-  public async prune(tables?: string|string[]) {
+   * Pruning
+   * Remove expired entries
+   * ==================================================
+   */
+  public async prune(tables?: string | string[]) {
     if (!this.initiated) await this.waitForInit();
-    const pruned = {}; 
+    const pruned = {};
     if (tables === undefined) tables = this.currentTables;
     else if (typeof tables === 'string') tables = [tables];
     if (this.configs.persist?.length) {
-      tables = tables.filter(table => !this.configs.persist.includes(table))
+      tables = tables.filter((table) => !this.configs.persist.includes(table));
     }
-    for (let i=0; i<tables.length; i++) {
-      const tableName = tables[i]
+    for (let i = 0; i < tables.length; i++) {
+      const tableName = tables[i];
       // continue to the next table if it never expires
       if (this.configs.expiration[tableName] === 'never') continue;
       const expirationLimit = Date.now() - this.getExpiration(tableName);
       const expired = await this.commit('rw', tableName, async () => {
         const table = this.db[tableName];
         const expired = await table
-          .filter(entry => entry.timestamp < expirationLimit)
-          .delete()
+          .filter((entry) => entry.timestamp < expirationLimit)
+          .delete();
         return expired;
       });
       if (expired) pruned[tableName] = expired;
@@ -475,13 +476,15 @@ export default class Cache extends BaseModule {
 
   private async autoPrune() {
     const now = Date.now();
-    const lastTimestamp = await this.find(CacheTable.DB_STATE, { where: { key: 'prunedAt' } });
-    const pruneAfter =  durationStringToMs(this.configs.pruningInterval);
-    const nextPruning = (lastTimestamp?.timestamp || 0 ) + pruneAfter;
+    const lastTimestamp = await this.find(CacheTable.DB_STATE, {
+      where: { key: 'prunedAt' },
+    });
+    const pruneAfter = durationStringToMs(this.configs.pruningInterval);
+    const nextPruning = (lastTimestamp?.timestamp || 0) + pruneAfter;
     if (now < nextPruning) return;
 
     const pruned = await this.prune();
-    await this.save(CacheTable.DB_STATE, null, {key: 'prunedAt'});
+    await this.save(CacheTable.DB_STATE, null, { key: 'prunedAt' });
     console.warn('Caches pruned: ', pruned);
   }
 
@@ -490,8 +493,5 @@ export default class Cache extends BaseModule {
     if (!this.configs.pruningInterval) return;
     const interval = durationStringToMs(this.configs.pruningInterval);
     setInterval(this.autoPrune.bind(this), interval);
-    
   }
-
 }
-
