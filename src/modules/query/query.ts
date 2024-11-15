@@ -1,30 +1,32 @@
-import type AlgoStack from "../../index";
-import type Cache from "../cache/index";
+import type AlgoStack from '../../index';
+import type { PromiseResolver } from '../../types';
+import type { AddonsKeyMap, AddonsList } from '../addons/types';
+import type Cache from '../cache/index';
 import type {
-  QueryParams,
-  Payload,
-  QueryOptions,
   FilterFn,
+  Payload,
   QueryConfigs,
+  QueryOptions,
+  QueryParams,
   QueryQueue,
   RateLimiter,
-} from "./types";
-import type { AddonsList, AddonsKeyMap } from "../addons/types";
-import type { PromiseResolver } from "../../types";
-import type { AxiosHeaders, AxiosInstance } from "axios";
-import { Buffer } from "buffer";
-import { pRateLimit } from "p-ratelimit";
-import { utf8ToB64 } from "../../helpers/encoding.js";
-import { ApiUrl } from "./enums.js";
-import { BaseModule } from "../_baseModule.js";
-import camelcaseKeys from "camelcase-keys";
-import kebabcaseKeys from "kebabcase-keys";
-import axios from "axios";
-import merge from "lodash-es/merge.js";
-import cloneDeep from "lodash-es/cloneDeep.js";
-import Addons from "../addons/addons.js";
-import objHash from "object-hash";
-import { CacheTable } from "../cache/index.js";
+} from './types';
+import type { AxiosHeaders, AxiosInstance } from 'axios';
+
+import { Buffer } from 'buffer';
+import axios from 'axios';
+import camelcaseKeys from 'camelcase-keys';
+import kebabcaseKeys from 'kebabcase-keys';
+import cloneDeep from 'lodash-es/cloneDeep.js';
+import merge from 'lodash-es/merge.js';
+import objHash from 'object-hash';
+import { pRateLimit } from 'p-ratelimit';
+
+import { BaseModule } from '../_baseModule.js';
+import { utf8ToB64 } from '../../helpers/encoding.js';
+import Addons from '../addons/addons.js';
+import { CacheTable } from '../cache/index.js';
+import { ApiUrl } from './enums.js';
 
 /**
  * Query class
@@ -52,7 +54,7 @@ export default class Query extends BaseModule {
         },
       },
       this.configs,
-      configs
+      configs,
     );
     this.initRateLimiters();
   }
@@ -76,7 +78,7 @@ export default class Query extends BaseModule {
       ...(this.configs.rateLimiter || {}),
     };
 
-    this.rateLimiters.set("default", pRateLimit(defaultConfigs));
+    this.rateLimiters.set('default', pRateLimit(defaultConfigs));
     if (!this.configs.rateLimiters) return;
     Object.entries(this.configs.rateLimiters).forEach(([key, configs]) => {
       this.rateLimiters.set(
@@ -84,7 +86,7 @@ export default class Query extends BaseModule {
         pRateLimit({
           ...defaultConfigs,
           ...configs,
-        })
+        }),
       );
     });
   }
@@ -97,8 +99,8 @@ export default class Query extends BaseModule {
     const token = this.stack.configs.apiToken;
     if (!token) return params?.headers;
     let tokenHeader: string | undefined = undefined;
-    if (api === ApiUrl.INDEXER) tokenHeader = "X-Indexer-API-Token";
-    else if (api === ApiUrl.NODE) tokenHeader = "X-Algo-API-Token";
+    if (api === ApiUrl.INDEXER) tokenHeader = 'X-Indexer-API-Token';
+    else if (api === ApiUrl.NODE) tokenHeader = 'X-Algo-API-Token';
     if (!tokenHeader) return params;
     return {
       ...(params.headers || {}),
@@ -167,7 +169,7 @@ export default class Query extends BaseModule {
 
       data = await this.fetchData(
         `${this.stack.configs[base]}${url}`,
-        reqParams
+        reqParams,
       );
       data = camelcaseKeys(data, { deep: true });
 
@@ -179,7 +181,7 @@ export default class Query extends BaseModule {
         i++;
         let nextData: Payload = await this.fetchData(
           `${this.stack.configs[base]}${url}`,
-          { ...reqParams, next: data.nextToken }
+          { ...reqParams, next: data.nextToken },
         );
         delete data.nextToken;
         nextData = camelcaseKeys(nextData, { deep: true });
@@ -193,7 +195,7 @@ export default class Query extends BaseModule {
       }
 
       // cache result
-      if (this.cache && cacheTable && !noCache && !data.error) {
+      if (this.cache && cacheTable && !noCache && !data?.error) {
         await this.cache.save(cacheTable, data, { params: reqParams });
       }
 
@@ -236,12 +238,12 @@ export default class Query extends BaseModule {
    * ==================================================
    */
   private mergeUrlAndParams(url: string, params: Record<string, any>) {
-    if (!url) return { url: "/", params };
+    if (!url) return { url: '/', params };
     const unusedParams: Record<string, any> = {};
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        if (url && url.indexOf(":" + key) > -1) {
-          url = url.replace(":" + key, String(value));
+        if (url && url.indexOf(':' + key) > -1) {
+          url = url.replace(':' + key, String(value));
         } else {
           unusedParams[key] = value;
         }
@@ -258,7 +260,7 @@ export default class Query extends BaseModule {
   }
 
   private encodeParams(params: QueryParams) {
-    if (typeof params.notePrefix === "string") {
+    if (typeof params.notePrefix === 'string') {
       params.notePrefix = utf8ToB64(params.notePrefix);
     }
     return params;
@@ -287,24 +289,24 @@ export default class Query extends BaseModule {
   private async fetchData(
     url: string,
     params: QueryParams = {},
-    client: AxiosInstance = this.configs.client || axios
+    client: AxiosInstance = this.configs.client || axios,
   ) {
     try {
-      if (url.indexOf(":id") > -1) {
+      if (url.indexOf(':id') > -1) {
         return {
           error: {
             url,
-            message: "Url is invalid",
+            message: 'Url is invalid',
           },
         };
       }
       params = cloneDeep(params);
       const method: string = params.method
         ? String(params.method).toUpperCase()
-        : "GET";
+        : 'GET';
       const headers = params.headers as AxiosHeaders;
       const data = params?.data || params;
-      const rateLimiterKey = params.rateLimiter || "default";
+      const rateLimiterKey = params.rateLimiter || 'default';
       if (params.method) delete params.method;
       if (params.headers) delete params.headers;
       if (params.url) delete params.url;
@@ -318,9 +320,9 @@ export default class Query extends BaseModule {
           url,
           method,
           headers,
-          params: method === "GET" ? data : undefined,
-          data: method !== "GET" ? data : undefined,
-        })
+          params: method === 'GET' ? data : undefined,
+          data: method !== 'GET' ? data : undefined,
+        }),
       );
       return response.data;
     } catch (e: any) {
@@ -337,7 +339,7 @@ export default class Query extends BaseModule {
   private async indexerHealth() {
     if (!this.initiated) await this.waitForInit();
     const response = await this.fetchData(
-      `${this.stack.configs.indexerUrl}/health`
+      `${this.stack.configs.indexerUrl}/health`,
     );
     return camelcaseKeys(response, { deep: true });
   }
@@ -355,7 +357,7 @@ export default class Query extends BaseModule {
   }
   private async indexerAccountTransactions(
     accountId: string,
-    params: QueryParams = {}
+    params: QueryParams = {},
   ) {
     return await this.query({
       endpoint: `/v2/accounts/:id/transactions`,
@@ -368,7 +370,7 @@ export default class Query extends BaseModule {
   }
   private async indexerAccountAssets(
     accountId: string,
-    params: QueryParams = {}
+    params: QueryParams = {},
   ) {
     return await this.query({
       endpoint: `/v2/accounts/:id/assets`,
@@ -381,7 +383,7 @@ export default class Query extends BaseModule {
   }
   private async indexerAccountApplications(
     accountId: string,
-    params: QueryParams = {}
+    params: QueryParams = {},
   ) {
     return await this.query({
       endpoint: `/v2/accounts/:id/apps-local-state`,
@@ -406,7 +408,7 @@ export default class Query extends BaseModule {
   private async indexerApplicationBox(
     appId: number,
     boxName: string,
-    params: QueryParams = {}
+    params: QueryParams = {},
   ) {
     return await this.query({
       endpoint: `/v2/applications/:id/boxes`,
@@ -420,7 +422,7 @@ export default class Query extends BaseModule {
   }
   private async indexerApplicationBoxes(
     appId: number,
-    params: QueryParams = {}
+    params: QueryParams = {},
   ) {
     return await this.query({
       endpoint: `/v2/applications/:id/boxes`,
@@ -444,7 +446,7 @@ export default class Query extends BaseModule {
   }
   private async indexerAssetBalances(
     assetId: number,
-    params: QueryParams = {}
+    params: QueryParams = {},
   ) {
     return await this.query({
       endpoint: `/v2/assets/:id/balances`,
@@ -457,7 +459,7 @@ export default class Query extends BaseModule {
   }
   private async indexerAssetTransactions(
     assetId: number,
-    params: QueryParams = {}
+    params: QueryParams = {},
   ) {
     return await this.query({
       endpoint: `/v2/assets/:id/transactions`,
@@ -498,21 +500,21 @@ export default class Query extends BaseModule {
   private async nodeHealth() {
     if (!this.initiated) await this.waitForInit();
     const response = await this.fetchData(
-      `${this.stack.configs.apiUrl}/health`
+      `${this.stack.configs.apiUrl}/health`,
     );
     return camelcaseKeys(response, { deep: true });
   }
   private async nodeStatus() {
     if (!this.initiated) await this.waitForInit();
     const response = await this.fetchData(
-      `${this.stack.configs.apiUrl}/v2/status`
+      `${this.stack.configs.apiUrl}/v2/status`,
     );
     return camelcaseKeys(response, { deep: true });
   }
   private async nodeStatusAfter(block: number) {
     if (!this.initiated) await this.waitForInit();
     const response = await this.fetchData(
-      `${this.stack.configs.apiUrl}/v2/status/wait-for-block-after/${block}`
+      `${this.stack.configs.apiUrl}/v2/status/wait-for-block-after/${block}`,
     );
     return camelcaseKeys(response, { deep: true });
   }
@@ -531,7 +533,7 @@ export default class Query extends BaseModule {
   private async nodeAccountApplication(
     accountId: string,
     appId: number,
-    params: QueryParams = {}
+    params: QueryParams = {},
   ) {
     return await this.query({
       base: ApiUrl.NODE,
@@ -547,7 +549,7 @@ export default class Query extends BaseModule {
   private async nodeAccountAsset(
     accountId: string,
     assetId: number,
-    params: QueryParams = {}
+    params: QueryParams = {},
   ) {
     return await this.query({
       base: ApiUrl.NODE,
@@ -574,16 +576,16 @@ export default class Query extends BaseModule {
   private async nodeDisassembleTeal(b64: string) {
     if (!b64?.length) return undefined;
     if (!this.initiated) await this.waitForInit();
-    const programBuffer = Buffer.from(b64, "base64");
+    const programBuffer = Buffer.from(b64, 'base64');
     const response = (await this.fetch(
       `${this.stack.configs[ApiUrl.NODE]}/v2/teal/disassemble`,
       {
-        method: "POST",
+        method: 'POST',
         cacheTable: CacheTable.NODE_TEAL,
         refreshCache: true,
-        headers: { "Content-Type": "application/x-binary" },
+        headers: { 'Content-Type': 'application/x-binary' },
         data: programBuffer,
-      }
+      },
     )) as Payload;
     return response?.result;
   }
@@ -672,7 +674,7 @@ export default class Query extends BaseModule {
   public fetch(
     apiUrl: string,
     originalParams: QueryParams = {},
-    client?: AxiosInstance
+    client?: AxiosInstance,
   ) {
     return new Promise(async (resolve, reject) => {
       if (!this.initiated) await this.waitForInit();
@@ -708,7 +710,7 @@ export default class Query extends BaseModule {
       data = await this.fetchData(url, params, client);
 
       // cache result
-      if (this.cache && cacheTable && !noCache && !data.error) {
+      if (this.cache && cacheTable && !noCache && !data?.error) {
         await this.cache.save(cacheTable, data, { params });
       }
 
