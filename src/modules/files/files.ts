@@ -1,11 +1,11 @@
 import axios from 'axios';
+import merge from 'lodash-es/merge.js';
+
+import { BaseModule } from '../_baseModule.js';
 import { MediaType } from '../../enums.js';
 import { getFileType, getIpfsCid } from '../../helpers/files.js';
 import { isIpfsProtocol, isUrl } from '../../helpers/strings.js';
-import { BaseModule } from '../_baseModule.js';
 import { File, FilesConfigs } from './types.js';
-import merge from 'lodash-es/merge.js';
-
 
 /**
  * Files class
@@ -25,10 +25,14 @@ export default class Files extends BaseModule {
 
   public setConfigs(configs: FilesConfigs) {
     super.setConfigs(configs);
-    this.configs = merge({
-      ipfsGatewayUrl: 'https://ipfs.algonode.xyz/ipfs',
-      transformUrl: undefined,
-    }, this.configs, configs);
+    this.configs = merge(
+      {
+        ipfsGatewayUrl: '',
+        transformUrl: undefined,
+      },
+      this.configs,
+      configs,
+    );
   }
   /**
    * load data from URL
@@ -43,8 +47,9 @@ export default class Files extends BaseModule {
       mime: undefined,
       thumbnail: undefined,
       content: undefined,
-    }
-    if (this.configs.transformUrl) file.url = await Promise.resolve(this.configs.transformUrl(url));
+    };
+    if (this.configs.transformUrl)
+      file.url = await Promise.resolve(this.configs.transformUrl(url));
     if (!isUrl(file.url) && !isIpfsProtocol(file.url)) return file;
     file.cid = getIpfsCid(file.url);
     if (file.cid) file.url = this.getIpfsUrl(file.cid);
@@ -55,7 +60,6 @@ export default class Files extends BaseModule {
     await this.setType(file);
     return file;
   }
-
 
   /**
    * Set props based on type
@@ -80,8 +84,6 @@ export default class Files extends BaseModule {
       return;
     }
   }
-  
-
 
   /**
    * load JSON media
@@ -93,7 +95,6 @@ export default class Files extends BaseModule {
     file.content = json.data;
   }
 
-
   /**
    * Get an IPFS gateway url for a specific cid
    * ==================================================
@@ -102,6 +103,4 @@ export default class Files extends BaseModule {
   public getIpfsUrl(cid: string) {
     return `${this.configs.ipfsGatewayUrl}/${cid}`;
   }
-
 }
-
