@@ -23,14 +23,37 @@ export interface DecodedB64 {
  * ==================================================
  */
 
-export function utf8ToB64(str: string) {
+export const utf8ToB64 = utf8ToBase64;
+export function utf8ToBase64(str: string) {
   return Buffer.from(str).toString('base64');
 }
-export function hexToB64(str: string) {
+
+export const hexToB64 = hexToBase64;
+export function hexToBase64(str: string): string {
   return Buffer.from(str.replace(/^0x/, ''), 'hex').toString('base64');
 }
-export function b64ToUtf8(str: string) {
+
+export const b64ToUtf8 = base64ToUtf8;
+export function base64ToUtf8(str: string): string {
   return Buffer.from(str, 'base64').toString();
+}
+
+export const b64ToBytes = base64ToBytes;
+export function base64ToBytes(str: string): Uint8Array {
+  return Buffer.from(str, 'base64');
+}
+
+export const bytesToB64 = bytesToBase64;
+export function bytesToBase64(buffer: Uint8Array): string {
+  return Buffer.from(buffer).toString('base64');
+}
+
+export function utf8ToBytes(str: string): Uint8Array {
+  return new TextEncoder().encode(str);
+}
+
+export function bytesToUtf8(bytes: Uint8Array): string {
+  return new TextDecoder().decode(bytes);
 }
 
 /**
