@@ -1,4 +1,5 @@
 import { Buffer } from 'buffer';
+import { createHash } from 'crypto';
 import { decodeObj, encodeAddress } from 'algosdk';
 import axios from 'axios';
 
@@ -28,6 +29,10 @@ export function utf8ToBase64(str: string) {
   return Buffer.from(str).toString('base64');
 }
 
+export function utf8ToBytes(str: string): Uint8Array {
+  return new TextEncoder().encode(str);
+}
+
 export const hexToB64 = hexToBase64;
 export function hexToBase64(str: string): string {
   return Buffer.from(str.replace(/^0x/, ''), 'hex').toString('base64');
@@ -48,14 +53,21 @@ export function bytesToBase64(buffer: Uint8Array): string {
   return Buffer.from(buffer).toString('base64');
 }
 
-export function utf8ToBytes(str: string): Uint8Array {
-  return new TextEncoder().encode(str);
+export function bytesToHex(bytes: Uint8Array): string {
+  return Buffer.from(bytes).toString('hex').toUpperCase();
 }
 
 export function bytesToUtf8(bytes: Uint8Array): string {
   return new TextDecoder().decode(bytes);
 }
 
+export async function sha256(bytes: Uint8Array): Promise<Uint8Array> {
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+}
+
+export async function sha512(bytes: Uint8Array): Promise<Uint8Array> {
+  return new Uint8Array(await crypto.subtle.digest('SHA-512', bytes));
+}
 /**
  * Convert object values to strings
  * ==================================================
