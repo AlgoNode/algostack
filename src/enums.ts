@@ -1,20 +1,18 @@
 export * from './modules/cache/enums.js';
-export * from './modules/txns/enums.js';
 
 /**
-* Asset categories
-* ==================================================
-*/
+ * Asset categories
+ * ==================================================
+ */
 export enum AssetCategory {
   NFT = 'nft',
   TOKEN = 'token',
 }
 
-
 /**
-* Arcs standards
-* ==================================================
-*/
+ * Arcs standards
+ * ==================================================
+ */
 export enum Arc {
   ARC3 = 'ARC3',
   ARC19 = 'ARC19',
@@ -23,9 +21,9 @@ export enum Arc {
 }
 
 /**
-* Note encoding
-* ==================================================
-*/
+ * Note encoding
+ * ==================================================
+ */
 export enum Encoding {
   NONE = 'none',
   TEXT = 'text',
@@ -40,11 +38,10 @@ export enum Encoding {
   TIMESTAMP = 'timestamp',
 }
 
-
 /**
-* Media types
-* ==================================================
-*/
+ * Media types
+ * ==================================================
+ */
 export enum MediaType {
   IMAGE = 'image',
   VIDEO = 'video',
@@ -54,16 +51,3 @@ export enum MediaType {
   JSON = 'json',
   OTHER = 'other',
 }
-
-
-/**
-* Connectors
-* ==================================================
-*/
-export enum Connector {
-  MYALGO = 'myalgo',
-  PERA = 'pera',
-  DEFLY = 'defly',
-  MNEMONIC = 'mnemonic',
-}
-

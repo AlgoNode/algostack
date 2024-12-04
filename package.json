@@ -28,23 +28,23 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json -w"
   },
+  "peerDependencies": {
+    "algosdk": "^3.0.0",
+    "axios": "^1.7.2"
+  },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.3.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.2",
     "tslib": "^2.6.3",
+    "algosdk": "^3.0.0",
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@blockshake/defly-connect": "^1.1.6",
     "@json-rpc-tools/utils": "^1.7.6",
-    "@perawallet/connect": "^1.3.4",
-    "@randlabs/myalgo-connect": "^1.4.2",
     "@types/lodash": "^4.17.7",
     "@types/node": "^18.19.42",
-    "algosdk": "^2.8.0",
-    "axios": "^1.7.2",
     "buffer": "^6.0.3",
     "camelcase-keys": "^7.0.2",
     "dexie": "^4.0.8",

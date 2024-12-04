@@ -1,19 +1,14 @@
-import type {
-  Asset,
-  Account,
-  Application,
-  Transaction,
-  Block,
-} from "algosdk/src/client/v2/indexer/models/types.js";
-import type { AxiosInstance } from "axios";
-import type Query from "./query.js";
-import { ApiUrl } from "./enums.js";
-import { CacheTable } from "../cache/enums.js";
-import { PromiseResolver } from "../../types.js";
-import { AddonsList, AddonsKeyMap } from "../addons/types.js";
+import type Query from './query.js';
+import type { indexerModels as IndexerModels } from 'algosdk';
+import type { AxiosInstance } from 'axios';
 
-export type LookupMethods = Query["lookup"];
-export type SearchMethods = Query["search"];
+import { PromiseResolver } from '../../types.js';
+import { AddonsKeyMap, AddonsList } from '../addons/types.js';
+import { CacheTable } from '../cache/enums.js';
+import { ApiUrl } from './enums.js';
+
+export type LookupMethods = Query['lookup'];
+export type SearchMethods = Query['search'];
 
 export interface QueryConfigs {
   client?: AxiosInstance;
@@ -54,8 +49,8 @@ export interface RateLimiterConfig {
 }
 
 export type PayloadWithAddons = { addons: Payload };
-export type AssetPayload = Asset & PayloadWithAddons;
-export type AccountPayload = Account & PayloadWithAddons;
-export type ApplicationPayload = Application & PayloadWithAddons;
-export type TransactionPayload = Transaction & PayloadWithAddons;
-export type BlockPayload = Block & PayloadWithAddons;
+export type AssetPayload = IndexerModels.Asset & PayloadWithAddons;
+export type AccountPayload = IndexerModels.Account & PayloadWithAddons;
+export type ApplicationPayload = IndexerModels.Application & PayloadWithAddons;
+export type TransactionPayload = IndexerModels.Transaction & PayloadWithAddons;
+export type BlockPayload = IndexerModels.Block & PayloadWithAddons;
