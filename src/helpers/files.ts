@@ -1,4 +1,4 @@
-import type { Version as CIDVersion } from 'multiformats/dist/types/src/link/interface';
+import type { Version as CIDVersion } from 'multiformats/cid';
 
 import {
   decodeAddress,

@@ -219,7 +219,7 @@ export default class Cache extends BaseModule {
    * ==================================================
    */
   private commit<T>(
-    scope: TransactionMode,
+    mode: TransactionMode,
     table: string | string[],
     txn: () => Promise<T>,
   ): Promise<T> {
@@ -230,8 +230,8 @@ export default class Cache extends BaseModule {
       console.warn('Stores are missing', tables);
       return;
     }
-    return new Promise((resolve) => {
-      this.queue.push({ scope, tables, txn, resolve });
+    return new Dexie.Promise((resolve) => {
+      this.queue.push({ mode, tables, txn, resolve });
       if (!this.isBusy) this.runQueue();
     });
   }
@@ -249,7 +249,7 @@ export default class Cache extends BaseModule {
   private async runBatch() {
     if (!this.queue.length) return;
     const refTxn = this.queue[0];
-    const scope = refTxn.scope;
+    const mode = refTxn.mode;
     const tables = refTxn.tables;
     const batch: IdbTxn<any>[] = [];
     for (
@@ -258,24 +258,24 @@ export default class Cache extends BaseModule {
       i++
     ) {
       const txn = this.queue[i];
-      const isSimilar = txn.scope === scope && isEqual(txn.tables, tables);
+      const isSimilar = txn.mode === mode && isEqual(txn.tables, tables);
       if (isSimilar) batch.push(txn);
       else break;
     }
-
     try {
-      this.queue.splice(0, batch.length);
-      await this.db.transaction(scope, tables, async () => {
+      await this.db.transaction(mode, tables, async () => {
         for (const txn of batch) {
-          const results = await txn.txn();
-          txn.resolve(results);
+          const resutlts = await txn.txn();
+          txn.resolve(resutlts);
         }
       });
     } catch (e) {
       console.log('Dexie Txn error', e);
-      console.log('scope:', scope, 'tables:', tables);
+      console.log('mode:', mode, 'tables:', tables);
       if (!this.db.isOpen) this.db.open();
     }
+
+    this.queue.splice(0, batch.length);
   }
 
   /**

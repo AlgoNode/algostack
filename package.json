@@ -26,6 +26,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:clean": "rm -rf dist && npm run build",
     "dev": "tsc -p tsconfig.json -w"
   },
   "peerDependencies": {
@@ -38,21 +39,21 @@
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.2",
     "tslib": "^2.6.3",
-    "algosdk": "^3.0.0",
+    "algosdk": "~3.2.0",
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^1.7.6",
+    "@json-rpc-tools/utils": "~1.7.6",
     "@types/lodash": "^4.17.7",
     "@types/node": "^18.19.42",
-    "buffer": "^6.0.3",
-    "camelcase-keys": "^7.0.2",
-    "dexie": "^4.0.8",
-    "fake-indexeddb": "^6.0.0",
-    "kebabcase-keys": "^1.0.0",
-    "lodash-es": "^4.17.21",
-    "multiformats": "^12.1.3",
-    "object-hash": "^3.0.0",
-    "p-ratelimit": "^1.0.1"
+    "buffer": "~6.0.3",
+    "camelcase-keys": "~7.0.2",
+    "dexie": "~4.0.11",
+    "fake-indexeddb": "~6.0.0",
+    "kebabcase-keys": "~1.0.0",
+    "lodash-es": "~4.17.21",
+    "multiformats": "~12.1.3",
+    "object-hash": "~3.0.0",
+    "p-ratelimit": "~1.0.1"
   }
 }

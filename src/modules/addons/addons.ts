@@ -1,14 +1,23 @@
-import type { Payload } from "../query/types";
-import type AlgoStack from "../../index";
-import { BaseModule } from "../_baseModule.js";
-import merge from "lodash-es/merge.js";
-import { AddonsConfigs, AddonsList, AddonsKeyMap, AddonsKey, AddonsKeys } from "./types.js";
+import type AlgoStack from '../../index';
+import type { Payload } from '../query/types';
+
+import merge from 'lodash-es/merge.js';
+
+import { BaseModule } from '../_baseModule.js';
+import {
+  AddonsConfigs,
+  AddonsKey,
+  AddonsKeyMap,
+  AddonsKeys,
+  AddonsList,
+} from './types.js';
 
 export default class Addons extends BaseModule {
   private configs: AddonsConfigs = {};
 
   constructor(configs: AddonsConfigs = {}) {
     super();
+
     this.setConfigs(configs);
   }
 
@@ -23,13 +32,10 @@ export default class Addons extends BaseModule {
 
   public setConfigs(configs: AddonsConfigs) {
     if (configs.mapping) {
-      this.register(configs.mapping)
+      this.register(configs.mapping);
       delete configs.mapping;
     }
-    this.configs = merge(
-      this.configs,
-      configs
-    );
+    this.configs = merge(this.configs, configs);
   }
 
   /**
@@ -62,11 +68,12 @@ export default class Addons extends BaseModule {
    */
   public async apply(
     data: Payload | Payload[],
-    addons: AddonsList | AddonsKeyMap | AddonsKey | AddonsKeys
+    addons: AddonsList | AddonsKeyMap | AddonsKey | AddonsKeys,
   ) {
-    const isAddonsArray = Array.isArray(addons)
+    const isAddonsArray = Array.isArray(addons);
     // Array of callbacks
-    const isAddonsFunctions = isAddonsArray && addons.every(addon => typeof addon === 'function')
+    const isAddonsFunctions =
+      isAddonsArray && addons.every((addon) => typeof addon === 'function');
     if (isAddonsFunctions) {
       await this.runAddon(data, addons);
       return;
@@ -77,48 +84,47 @@ export default class Addons extends BaseModule {
       const dataKeys = Object.keys(data).filter((key) => addons.has(key));
       if (!dataKeys.length) return;
       await Promise.all(
-        dataKeys.map((key) => this.runAddon(data[key], addons.get(key)))
+        dataKeys.map((key) => this.runAddon(data[key], addons.get(key))),
       );
       return;
     }
-    
+
     // single key
     const isAddonsKey = typeof addons === 'string';
     if (isAddonsKey) {
       const key = addons;
       const dataHasKey = this._mapping.has(key);
       if (!dataHasKey) return;
-      await this.runAddon(data[key], this._mapping.get(key))
+      await this.runAddon(data[key], this._mapping.get(key));
       return;
     }
 
     // array of keys
-    const isAddonsKeys = isAddonsArray && addons.every(addon => typeof addon === 'string');
+    const isAddonsKeys =
+      isAddonsArray && addons.every((addon) => typeof addon === 'string');
     if (isAddonsKeys) {
-      const dataKeys = addons.filter(key => this._mapping.has(key));
+      const dataKeys = addons.filter((key) => this._mapping.has(key));
       if (!dataKeys.length) return;
       await Promise.all(
-        dataKeys.map((key) => this.runAddon(data[key], this._mapping.get(key)))
+        dataKeys.map((key) => this.runAddon(data[key], this._mapping.get(key))),
       );
       return;
     }
-
   }
 
   public async runAddon(data: Payload | Payload[], addons: AddonsList) {
     try {
       await Promise.all(
-        (Array.isArray(data)? data: [data]).reduce(
+        (Array.isArray(data) ? data : [data]).reduce(
           (promises, dataset) => [
             ...promises,
             ...addons.map((addon) => addon.call(this.stack, dataset)),
           ],
-          []
-        )
+          [],
+        ),
       );
-    }
-    catch (e) {
-      console.log('An error occured while running addons.', e)
+    } catch (e) {
+      console.log('An error occured while running addons.', e);
     }
   }
 }

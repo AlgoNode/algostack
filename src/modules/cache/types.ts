@@ -52,7 +52,7 @@ export interface CacheQuery {
 }
 
 export interface IdbTxn<T> {
-  scope: TransactionMode;
+  mode: TransactionMode;
   tables: string[];
   txn: () => Promise<T>;
   resolve: PromiseResolver;
