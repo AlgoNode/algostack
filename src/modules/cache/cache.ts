@@ -44,6 +44,7 @@ export default class Cache extends BaseModule {
   private db: Dexie;
   private v: number = 1;
   private tables: Record<string, string> = {};
+  private primaryKeyFields: Record<string, string[]> = {};
   private queue: IdbTxn<any>[] = [];
   private get currentTables() {
     return this.db?.tables.map((table) => table.name) || [];
@@ -170,6 +171,55 @@ export default class Cache extends BaseModule {
     }
 
     this.tables = tables;
+    this.primaryKeyFields = {};
+    Object.keys(tables).forEach((tableName) => {
+      this.primaryKeyFields[tableName] =
+        this.computePrimaryKeyFields(tableName);
+    });
+  }
+
+  /**
+   * Compute primary key fields from table schema
+   * ==================================================
+   */
+  private computePrimaryKeyFields(tableName: string): string[] {
+    const schema = this.tables[tableName];
+    if (!schema) return [];
+
+    // Extract unique keys (marked with &) from schema string
+    // According to Dexie schema syntax: & means Unique
+    // Examples:
+    // '&params' -> ['params']
+    // '&address, nfd' -> ['address'] (only address is unique)
+    // '&id, [id+options]' -> ['id']
+    // '++id, name, age' -> ['id'] (++ is auto-incremented primary key, which is unique)
+    const uniqueKeys: string[] = [];
+    const parts = schema.split(',').map((part) => part.trim());
+    for (const part of parts) {
+      // Handle auto-incremented primary key (++)
+      if (part.startsWith('++')) {
+        const keyName = part.replace('++', '').trim();
+        uniqueKeys.push(keyName);
+      }
+      // Handle unique keys (&)
+      else if (part.startsWith('&')) {
+        const keyName = part.replace('&', '').trim();
+        // Skip compound indexes in brackets
+        if (!keyName.includes('[')) {
+          uniqueKeys.push(keyName);
+        }
+      }
+    }
+
+    return uniqueKeys;
+  }
+
+  /**
+   * Extract primary key fields from table schema
+   * ==================================================
+   */
+  private getPrimaryKeyFields(tableName: string): string[] {
+    return this.primaryKeyFields[tableName] || [];
   }
 
   /**
@@ -356,11 +406,32 @@ export default class Cache extends BaseModule {
   }
 
   /**
+   * Check if entry has required primary key fields
+   * ==================================================
+   */
+  private hasRequiredPrimaryKeys(
+    tableName: string,
+    entry: CacheEntry,
+  ): boolean {
+    const primaryKeyFields = this.getPrimaryKeyFields(tableName);
+    if (!primaryKeyFields.length) return true; // No primary key requirements
+
+    return primaryKeyFields.every((field) => {
+      const value = entry[field];
+      return value !== null && value !== undefined;
+    });
+  }
+
+  /**
    * Save an entry
    * ==================================================
    */
   public async save(tableName: string, data: any, entry: CacheEntry) {
     if (!this.initiated) await this.waitForInit();
+    if (!this.hasRequiredPrimaryKeys(tableName, entry)) {
+      return;
+    }
+
     entry = {
       ...this.hashObjectProps(entry),
       data,
@@ -377,8 +448,16 @@ export default class Cache extends BaseModule {
   ) {
     if (!this.initiated) await this.waitForInit();
     if (!entries.length) return;
+
+    // Filter out entries that don't have required primary key fields
+    const validEntries = entries.filter(({ entry }) =>
+      this.hasRequiredPrimaryKeys(tableName, entry),
+    );
+
+    if (!validEntries.length) return; // Do nothing if no valid entries
+
     const timestamp = Date.now();
-    const rows = entries.map((row) => ({
+    const rows = validEntries.map((row) => ({
       ...this.hashObjectProps(row.entry),
       data: row.data,
       timestamp,
