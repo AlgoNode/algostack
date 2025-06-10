@@ -30,8 +30,8 @@
     "dev": "tsc -p tsconfig.json -w"
   },
   "peerDependencies": {
-    "algosdk": "^3.0.0",
-    "axios": "^1.7.2"
+    "algosdk": "~3.2.0",
+    "axios": "~1.9.0"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.3.0",
