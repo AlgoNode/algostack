@@ -34,6 +34,16 @@ export default class AlgoStack {
   constructor(configs: GlobalConfigs = {}, modules: PlugableModules = {}) {
     this.configs = merge(defaultGlobalConfigs, configs);
     // Add modules
+    this.addModules(modules);
+    // Init
+    if (this.configs.autoInit) this.init();
+  }
+
+  /**
+   * Add modules to the instance
+   * ==================================================
+   */
+  public addModules(modules: PlugableModules) {
     if (modules.cache) this.cache = modules.cache;
     if (modules.nfds) this.nfds = modules.nfds;
     if (modules.files) this.files = modules.files;
@@ -44,8 +54,6 @@ export default class AlgoStack {
       this.lookup = this.query.lookup;
       this.search = this.query.search;
     }
-
-    if (this.configs.autoInit) this.init();
   }
 
   /**
