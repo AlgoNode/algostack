@@ -411,7 +411,7 @@ export default class Query extends BaseModule {
     params: QueryParams = {},
   ) {
     return await this.query({
-      endpoint: `/v2/applications/:id/boxes`,
+      endpoint: `/v2/applications/:id/box`,
       params: {
         cacheTable: CacheTable.INDEXER_APPLICATION_BOX,
         ...params,
