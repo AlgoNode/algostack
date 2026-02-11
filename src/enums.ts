@@ -36,6 +36,7 @@ export enum Encoding {
   ADDRESS = 'address',
   NUMBER = 'number',
   TIMESTAMP = 'timestamp',
+  UUID = 'uuid',
 }
 
 /**

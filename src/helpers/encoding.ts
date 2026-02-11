@@ -61,6 +61,56 @@ export function bytesToUtf8(bytes: Uint8Array): string {
   return new TextDecoder().decode(bytes);
 }
 
+/**
+ * Format 16 bytes as a standard UUID string (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+ * 
+ * UUID Format:
+ * - time_low (8 hex chars)
+ * - time_mid (4 hex chars)  
+ * - time_hi_and_version (4 hex chars) - includes version in bits 48-51
+ * - clock_seq_and_variant (4 hex chars) - includes variant in bits 64-65
+ * - node (12 hex chars)
+ */
+export function bytesToUUID(bytes: Uint8Array): string {
+  if (bytes.length !== 16) {
+    throw new Error('UUID must be exactly 16 bytes');
+  }
+  const hex = Buffer.from(bytes).toString('hex').toLowerCase();
+  return [
+    hex.substring(0, 8),   // time_low
+    hex.substring(8, 12),   // time_mid
+    hex.substring(12, 16),  // time_hi_and_version
+    hex.substring(16, 20),  // clock_seq_and_variant
+    hex.substring(20, 32),  // node
+  ].join('-');
+}
+
+/**
+ * Get UUID version from 16 bytes
+ * Returns version number (1-8) or null if invalid
+ */
+export function getUUIDVersion(bytes: Uint8Array): number | null {
+  if (bytes.length !== 16) return null;
+  // Version is in byte 6, high nibble (bits 48-51)
+  const version = (bytes[6] >> 4) & 0x0F;
+  return version >= 1 && version <= 8 ? version : null;
+}
+
+/**
+ * Check if 16 bytes form a valid UUID (proper version and variant)
+ */
+export function isValidUUID(bytes: Uint8Array): boolean {
+  if (bytes.length !== 16) return false;
+  
+  // Check version (bits 48-51, byte 6, high nibble)
+  const version = (bytes[6] >> 4) & 0x0F;
+  if (version < 1 || version > 8) return false;
+  
+  // Check variant (bits 64-65, byte 8, high 2 bits should be 10)
+  const variantBits = (bytes[8] >> 6) & 0x03;
+  return variantBits === 0x02; // 10 in binary = 2 in decimal
+}
+
 export async function sha256(bytes: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
 }
@@ -164,6 +214,24 @@ export class B64Decoder {
         if (isAddress(address)) {
           this.parsed[Encoding.ADDRESS] = encodeAddress(buffer) as string;
           this.encoding = Encoding.ADDRESS;
+        }
+      } catch {}
+    }
+
+    // UUID (16 bytes = 128 bits)
+    if (buffer.length === 16) {
+      try {
+        const uuid = bytesToUUID(buffer);
+        const version = getUUIDVersion(buffer);
+        const valid = isValidUUID(buffer);
+        
+        // Always include UUID format for reference
+        this.parsed[Encoding.UUID] = uuid;
+        
+        // Only set as primary encoding if it's a valid UUID
+        // UUID versions: 1 (time), 3 (MD5), 4 (random), 5 (SHA-1), 6-8 (future)
+        if (valid && version !== null && this.encoding === Encoding.B64) {
+          this.encoding = Encoding.UUID;
         }
       } catch {}
     }
@@ -396,7 +464,12 @@ export function decodeABITuple(
         if (fieldType === 'string') {
           result[field.name] = fieldBytes.toString('utf-8');
         } else if (fieldType === 'byte[]') {
-          result[field.name] = fieldBytes;
+          // Use B64Decoder to get multiple representations
+          const decoder = new B64Decoder(fieldBytes.toString('base64'));
+          result[field.name] = {
+            value: decoder.decoded,
+            decoder: decoder,
+          };
         } else {
           result[field.name] = fieldBytes;
         }
@@ -408,7 +481,12 @@ export function decodeABITuple(
         
         // Decode based on type
         if (fieldType.startsWith('byte[')) {
-          result[field.name] = fieldBytes;
+          // Use B64Decoder to get multiple representations (UTF-8, hex, UUID, etc.)
+          const decoder = new B64Decoder(fieldBytes.toString('base64'));
+          result[field.name] = {
+            value: decoder.decoded,
+            decoder: decoder,
+          };
         } else if (fieldType.startsWith('uint')) {
           let value = BigInt(0);
           for (let i = 0; i < size; i++) {
@@ -419,7 +497,10 @@ export function decodeABITuple(
           result[field.name] = fieldBytes[0] !== 0;
         } else if (fieldType === 'address') {
           const decoder = new B64Decoder(fieldBytes.toString('base64'));
-          result[field.name] = decoder.parsed[Encoding.ADDRESS] || fieldBytes;
+          result[field.name] = {
+            value: decoder.parsed[Encoding.ADDRESS] || fieldBytes,
+            decoder: decoder,
+          };
         } else {
           result[field.name] = fieldBytes;
         }
