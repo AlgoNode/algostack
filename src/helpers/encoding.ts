@@ -173,3 +173,267 @@ export class B64Decoder {
     return this.parsed?.[this.encoding];
   }
 }
+
+/**
+ * ABI Type Decoders
+ * ==================================================
+ * Generic decoders for Algorand ABI types
+ */
+
+export interface ABIField {
+  name: string;
+  type: string;
+}
+
+/**
+ * Calculate the size of an ABI type in bytes
+ * Returns null for dynamic types (string, byte[], arrays)
+ */
+export function getABITypeSize(type: string): number | null {
+  // Fixed-size types
+  if (type === 'bool') return 1;
+  if (type === 'address') return 32;
+  
+  // uint types
+  if (type.startsWith('uint')) {
+    const match = type.match(/^uint(\d+)$/);
+    if (match) {
+      const bits = parseInt(match[1]);
+      return Math.ceil(bits / 8);
+    }
+  }
+  
+  // byte[N] - fixed-size byte array
+  const byteArrayMatch = type.match(/^byte\[(\d+)\]$/);
+  if (byteArrayMatch) {
+    return parseInt(byteArrayMatch[1]);
+  }
+  
+  // Dynamic types (string, byte[], arrays) have variable size
+  if (type === 'string' || type === 'byte[]' || type.includes('[]')) {
+    return null;
+  }
+  
+  return null;
+}
+
+/**
+ * Decode ABI uint64 (8 bytes, big-endian)
+ */
+export function decodeABIUint64(base64Value: string): bigint {
+  try {
+    const bytes = Buffer.from(base64Value, 'base64');
+    if (bytes.length !== 8) return BigInt(0);
+    let result = BigInt(0);
+    for (let i = 0; i < 8; i++) {
+      result = (result << BigInt(8)) | BigInt(bytes[i]);
+    }
+    return result;
+  } catch {
+    return BigInt(0);
+  }
+}
+
+/**
+ * Decode ABI uint of any size (bits must be multiple of 8)
+ */
+export function decodeABIUint(base64Value: string, bits: number): bigint {
+  try {
+    const bytes = Buffer.from(base64Value, 'base64');
+    const expectedBytes = Math.ceil(bits / 8);
+    if (bytes.length !== expectedBytes) return BigInt(0);
+    
+    let result = BigInt(0);
+    for (let i = 0; i < bytes.length; i++) {
+      result = (result << BigInt(8)) | BigInt(bytes[i]);
+    }
+    return result;
+  } catch {
+    return BigInt(0);
+  }
+}
+
+/**
+ * Decode ABI bool (single byte, 0 or 1)
+ */
+export function decodeABIBool(base64Value: string): boolean {
+  try {
+    const bytes = Buffer.from(base64Value, 'base64');
+    return bytes.length > 0 && bytes[bytes.length - 1] !== 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Decode ABI address (32 bytes)
+ */
+export function decodeABIAddress(base64Value: string): string {
+  try {
+    const decoder = new B64Decoder(base64Value);
+    const address = decoder.parsed[Encoding.ADDRESS];
+    return typeof address === 'string' ? address : base64Value;
+  } catch {
+    return base64Value;
+  }
+}
+
+/**
+ * Decode ABI string (2-byte length prefix + UTF-8 bytes)
+ */
+export function decodeABIString(base64Value: string): string {
+  try {
+    const bytes = Buffer.from(base64Value, 'base64');
+    if (bytes.length < 2) return '';
+    
+    // Read 2-byte length prefix
+    const length = (bytes[0] << 8) | bytes[1];
+    if (bytes.length < 2 + length) return '';
+    
+    // Decode UTF-8 string
+    return bytes.slice(2, 2 + length).toString('utf-8');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Decode ABI bytes (2-byte length prefix + raw bytes)
+ */
+export function decodeABIBytes(base64Value: string): Uint8Array {
+  try {
+    const bytes = Buffer.from(base64Value, 'base64');
+    if (bytes.length < 2) return new Uint8Array();
+    
+    // Read 2-byte length prefix
+    const length = (bytes[0] << 8) | bytes[1];
+    if (bytes.length < 2 + length) return new Uint8Array();
+    
+    return bytes.slice(2, 2 + length);
+  } catch {
+    return new Uint8Array();
+  }
+}
+
+/**
+ * Calculate total size of a tuple/struct (returns null if dynamic)
+ */
+export function calculateTupleSize(
+  fields: ABIField[],
+  structs?: Record<string, ABIField[]>,
+): number | null {
+  let totalSize = 0;
+  
+  for (const field of fields) {
+    const fieldType = field.type;
+    
+    // Check if it's a nested struct
+    if (structs && structs[fieldType]) {
+      const structSize = calculateTupleSize(structs[fieldType], structs);
+      if (structSize === null) return null;
+      totalSize += structSize;
+    } else {
+      const size = getABITypeSize(fieldType);
+      if (size === null) return null; // Dynamic type
+      totalSize += size;
+    }
+  }
+  
+  return totalSize;
+}
+
+/**
+ * Decode an ABI tuple (struct) by parsing fields sequentially
+ * @param base64Value - The base64-encoded tuple bytes
+ * @param fields - Array of field definitions with name and type
+ * @param structs - Optional struct definitions for nested structs
+ * @returns Object with decoded fields
+ */
+export function decodeABITuple(
+  base64Value: string,
+  fields: ABIField[],
+  structs?: Record<string, ABIField[]>,
+): Record<string, any> {
+  try {
+    const bytes = Buffer.from(base64Value, 'base64');
+    const result: Record<string, any> = {};
+    let offset = 0;
+
+    for (const field of fields) {
+      const fieldType = field.type;
+      
+      // Handle nested structs
+      if (structs && structs[fieldType]) {
+        // Calculate struct size
+        const structSize = calculateTupleSize(structs[fieldType], structs);
+        if (structSize === null) {
+          result[field.name] = { error: 'Dynamic struct size not supported' };
+          continue;
+        }
+        
+        const fieldBytes = bytes.slice(offset, offset + structSize);
+        result[field.name] = decodeABITuple(
+          fieldBytes.toString('base64'),
+          structs[fieldType],
+          structs,
+        );
+        offset += structSize;
+        continue;
+      }
+
+      // Handle primitive types
+      const size = getABITypeSize(fieldType);
+      
+      if (size === null) {
+        // Dynamic type - read length prefix first
+        if (offset + 2 > bytes.length) break;
+        const length = (bytes[offset] << 8) | bytes[offset + 1];
+        offset += 2;
+        
+        if (offset + length > bytes.length) break;
+        const fieldBytes = bytes.slice(offset, offset + length);
+        
+        if (fieldType === 'string') {
+          result[field.name] = fieldBytes.toString('utf-8');
+        } else if (fieldType === 'byte[]') {
+          result[field.name] = fieldBytes;
+        } else {
+          result[field.name] = fieldBytes;
+        }
+        offset += length;
+      } else {
+        // Fixed-size type
+        if (offset + size > bytes.length) break;
+        const fieldBytes = bytes.slice(offset, offset + size);
+        
+        // Decode based on type
+        if (fieldType.startsWith('byte[')) {
+          result[field.name] = fieldBytes;
+        } else if (fieldType.startsWith('uint')) {
+          let value = BigInt(0);
+          for (let i = 0; i < size; i++) {
+            value = (value << BigInt(8)) | BigInt(fieldBytes[i]);
+          }
+          result[field.name] = size <= 8 ? Number(value) : value;
+        } else if (fieldType === 'bool') {
+          result[field.name] = fieldBytes[0] !== 0;
+        } else if (fieldType === 'address') {
+          const decoder = new B64Decoder(fieldBytes.toString('base64'));
+          result[field.name] = decoder.parsed[Encoding.ADDRESS] || fieldBytes;
+        } else {
+          result[field.name] = fieldBytes;
+        }
+        
+        offset += size;
+      }
+    }
+
+    return result;
+  } catch (e) {
+    console.warn('Failed to decode ABI tuple:', e);
+    return {
+      error: 'Tuple decoding failed',
+      raw: base64Value,
+    };
+  }
+}
