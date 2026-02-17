@@ -614,7 +614,7 @@ export default class Query extends BaseModule {
       accountApplicaction: this.nodeAccountApplication.bind(this),
       accountAsset: this.nodeAccountAsset.bind(this),
       block: this.nodeBlock.bind(this),
-      dissableTeal: this.nodeDisassembleTeal.bind(this),
+      disassembleTeal: this.nodeDisassembleTeal.bind(this),
     },
   };
 
