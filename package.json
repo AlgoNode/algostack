@@ -1,6 +1,6 @@
 {
   "name": "algostack",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "description": "",
   "author": "",
   "license": "MIT",
@@ -27,7 +27,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "build:clean": "rm -rf dist && npm run build",
-    "dev": "tsc -p tsconfig.json -w"
+    "dev": "tsc -p tsconfig.json -w",
+    "prepublishOnly": "npm run build:clean"
   },
   "peerDependencies": {
     "algosdk": "~3.2.0",
