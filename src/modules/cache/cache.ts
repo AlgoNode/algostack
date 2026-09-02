@@ -46,6 +46,7 @@ export default class Cache extends BaseModule {
   private tables: Record<string, string> = {};
   private primaryKeyFields: Record<string, string[]> = {};
   private queue: IdbTxn<any>[] = [];
+  private usesIdbShim: boolean;
   private get currentTables() {
     return this.db?.tables.map((table) => table.name) || [];
   }
@@ -54,9 +55,10 @@ export default class Cache extends BaseModule {
   constructor(configs: CacheConfigs = {}) {
     super();
     const isBrowser = typeof window !== 'undefined';
+    this.usesIdbShim = !(isBrowser && window.indexedDB);
     this.db = new Dexie(configs.namespace, {
       cache: 'disabled',
-      ...(isBrowser && window.indexedDB ? {} : { indexedDB, IDBKeyRange }),
+      ...(this.usesIdbShim ? { indexedDB, IDBKeyRange } : {}),
     });
     if (isBrowser) {
       window.addEventListener(
@@ -92,6 +94,8 @@ export default class Cache extends BaseModule {
       if (this.configs.autoClean) this.initAutoClean();
       // Auto prune
       if (this.configs.pruningInterval) this.initAutoPrune();
+      // fake-indexeddb transactions sweeper
+      if (this.usesIdbShim) this.initIdbTxnSweeper();
     } catch (e) {
       console.log(e);
       this.handleError(e);
@@ -579,6 +583,32 @@ export default class Cache extends BaseModule {
     if (!this.configs.pruningInterval) return;
     const interval = durationStringToMs(this.configs.pruningInterval);
     setInterval(this.autoPrune.bind(this), interval);
+  }
+
+  /**
+   * fake-indexeddb transactions sweeper
+   * fake-indexeddb (in use whenever there is no real IndexedDB, i.e. on Node)
+   * never removes finished transactions from its internal
+   * Database.transactions array, so a long-lived process retains every
+   * transaction ever created (~5-7KB each) and rescans the growing array on
+   * every operation. Unfixed upstream as of fake-indexeddb 6.2.5. Every
+   * upstream reader of that array filters on transaction state, so dropping
+   * finished entries is safe.
+   * ==================================================
+   */
+  private initIdbTxnSweeper() {
+    const sweep = () => {
+      const backend = this.db.backendDB?.() as unknown as
+        | { _rawDatabase?: { transactions?: { _state: string }[] } }
+        | undefined;
+      const raw = backend?._rawDatabase;
+      if (!raw?.transactions?.length) return;
+      raw.transactions = raw.transactions.filter(
+        (txn) => txn._state !== 'finished',
+      );
+    };
+    const timer = setInterval(sweep, 10_000);
+    (timer as unknown as { unref?: () => void }).unref?.();
   }
 
   /**
